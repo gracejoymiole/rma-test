@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#521018">
+  <title>Teacher Portal | RMA PATHWAYS</title>
+  <style>
+    :root { --wine:#521018; --wine-dark:#31090e; --gold:#e8be51; --ink:#24191a; --muted:#71666a; --line:#e8ded7; }
+    * { box-sizing:border-box; } body { margin:0; min-height:100vh; color:var(--ink); background:#f5f1eb; font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    header { padding:18px max(22px,calc((100% - 1180px)/2)); color:#fff; background:linear-gradient(120deg,var(--wine-dark),var(--wine)); border-bottom:4px solid var(--gold); }
+    .brand { display:flex; justify-content:space-between; align-items:center; gap:15px; width:100%; max-width:1180px; margin:auto; }
+    .brand a { color:#f6d979; text-decoration:none; font-size:.82rem; font-weight:700; }
+    .brand h1 { margin:0; font-family:Georgia,serif; font-size:clamp(1.4rem,4vw,2rem); }
+    main { width:min(1180px,calc(100% - 32px)); margin:32px auto; }
+    .card { padding:24px; border:1px solid var(--line); border-radius:16px; background:white; box-shadow:0 8px 24px #31090e0a; }
+    .auth { max-width:430px; margin:40px auto; } h2 { margin:0 0 7px; color:var(--wine); } p { color:var(--muted); }
+    label { display:grid; gap:6px; margin:14px 0; font-size:.88rem; font-weight:700; }
+    input,select { width:100%; padding:11px 12px; border:1px solid #d8d1cc; border-radius:8px; font:inherit; background:white; }
+    button { padding:11px 15px; border:0; border-radius:8px; color:#fff; background:var(--wine); font:700 .95rem system-ui,sans-serif; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:wait; }
+    .primary { width:100%; margin-top:8px; } .secondary { color:var(--wine); background:#f5efea; }
+    .filters { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:600px; margin-top:22px; }
+    .summary { display:grid; grid-template-columns:repeat(3,minmax(120px,1fr)); gap:12px; margin:20px 0; }
+    .metric { padding:15px; border-radius:12px; background:#f8f4e8; } .metric b { display:block; color:var(--wine); font-size:1.55rem; }
+    .scroll { overflow:auto; } table { width:100%; border-collapse:collapse; font-size:.88rem; } th,td { padding:10px 11px; border-bottom:1px solid #eee8e3; text-align:left; white-space:nowrap; } th { color:var(--wine); background:#faf7f2; }
+    .bar { width:130px; height:9px; overflow:hidden; border-radius:9px; background:#eee; } .bar i { display:block; height:100%; background:#5c9b70; }
+    .error { padding:10px; border-radius:8px; background:#fff0ee; color:#7a1818; } .success { padding:10px; border-radius:8px; background:#edf9f0; color:#155b30; }
+    .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    [hidden] { display:none !important; }
+    @media(max-width:650px) { .filters,.summary { grid-template-columns:1fr; } .card { padding:17px; } header { padding:16px; } }
+  </style>
+</head>
+<body>
+  <header><div class="brand"><h1>RMA PATHWAYS · Teacher Portal</h1><a href="index.html">← Student Portal</a></div></header>
+  <main>
+    <section id="loginCard" class="card auth">
+      <h2>Teacher sign in</h2>
+      <p>Teacher access is restricted to the classroom mastery dashboard.</p>
+      <div id="teacherMessage" role="alert" hidden></div>
+      <label>Username<input id="teacherUsername" autocomplete="username" value="teacher123"></label>
+      <label>Password<input id="teacherPassword" type="password" autocomplete="current-password" placeholder="Enter teacher password"></label>
+      <button id="teacherLogin" class="primary">Sign in</button>
+    </section>
+    <section id="changeCard" class="card auth" hidden>
+      <h2>Set a new teacher password</h2>
+      <p>The initial account must be secured before student mastery records can be viewed. Use at least 12 characters.</p>
+      <div id="passwordMessage" role="alert" hidden></div>
+      <label>New password<input id="newTeacherPassword" type="password" autocomplete="new-password" minlength="12"></label>
+      <label>Confirm new password<input id="confirmTeacherPassword" type="password" autocomplete="new-password" minlength="12"></label>
+      <button id="saveTeacherPassword" class="primary">Change password and continue</button>
+    </section>
+    <section id="dashboard" hidden>
+      <div class="card">
+        <div class="toolbar"><div><h2>Student RMA mastery</h2><p>Latest attempt per student. Question mastery is the percentage correct for each item among students with a recorded attempt.</p></div><button id="teacherLogout" class="secondary">Sign out</button></div>
+        <div id="dashboardMessage" role="status"></div>
+        <div class="filters">
+          <label>Grade level<select id="gradeFilter"><option value="">Select grade</option></select></label>
+          <label>Section<select id="sectionFilter"><option value="">Select section</option></select></label>
+        </div>
+      </div>
+      <div id="reportCard" class="card" style="margin-top:16px" hidden>
+        <div id="summary" class="summary"></div>
+        <h2>Question mastery</h2>
+        <p>RMA question numbers and randomized bank item IDs are shown as tracked by each grade assessment.</p>
+        <div class="scroll"><table><thead><tr><th>Question</th><th>Correct</th><th>Responses</th><th>Mastery</th><th>Rate</th></tr></thead><tbody id="masteryRows"></tbody></table></div>
+        <h2 style="margin-top:28px">Students</h2>
+        <div class="scroll"><table><thead><tr><th>Student ID</th><th>Name</th><th>Teacher entered</th><th>Latest score</th><th>Attempt</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+  <script src="supabase-config.js"></script>
+  <script src="teacher-portal.js"></script>
+</body>
+</html>

@@ -260,28 +260,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
  </head>
  <body data-grade="9">
-  <div id="loginOverlay" class="no-print">
-   <div class="login-box">
-    <h2 style="color: var(--primary);">RMA Student Login</h2><input type="text" id="lastName" placeholder="Enter LAST NAME (Apelyido)" oninput="this.value = this.value.toUpperCase()" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"> <input type="text" id="firstName" placeholder="Enter FIRST NAME (Pangalan)" oninput="this.value = this.value.toUpperCase()" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"> <input type="text" id="midInitial" placeholder="Enter MIDDLE INITIAL" oninput="this.value = this.value.toUpperCase()" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"> 
-	<select id="studentSection" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #ccc;">
-	<option value="" disabled selected>Select Section</option> 
-	<option value="Avogadro">Grade 9 - Avogadro</option> 
-	<option value="Boyle">Grade 9 - Boyle</option>
-    <option value="Charity">Grade 9 - Charity</option>
-	<option value="Courage">Grade 9 - Courage</option>
-	<option value="Faith">Grade 9 - Faith</option> 
-	<option value="Fortitude">Grade 9 - Fortitude</option>
-	<option value="Grace">Grade 9 - Grace</option> 
-	<option value="Hope">Grade 9 - Hope</option> 
-	<option value="Humility">Grade 9 - Humility</option>
-	<option value="Joy">Grade 9 - Joy</option>
-	<option value="Justice">Grade 9 - Justice</option> 
-	<option value="Loyalty">Grade 9 - Loyalty</option> 
-	<option value="Sincerity">Grade 9 - Sincerity</option>
-	<option value="Wisdom">Grade 9 - Wisdom</option> 
-	</select> <button class="btn" id="startBtn" style="width:100%;">Start Practice</button>
-   </div>
-  </div>
+  <div id="loginOverlay" class="no-print"></div>
 <header class="no-print" style="background:var(--primary); color:white; padding: 10px 20px; display:flex; justify-content:space-between; align-items:flex-end; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
    
    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 5px; border-bottom: 2px solid #FFD700; padding-bottom: 10px;">
@@ -384,6 +363,7 @@
        100%
       </div>
       <p class="cert-text">on <span id="certDate">Date</span></p>
+    <p class="cert-text" id="certSection"></p>
       <div class="cert-footer">
        <div style="text-align: center;">
         <div class="sign-line" id="teacherName"></div>
@@ -404,6 +384,7 @@
   <audio id="soundWin" src="https://assets.mixkit.co/active_storage/sfx/510/510-preview.mp3"></audio>
     <script src="../supabase-config.js"></script>
     <script src="../rma-data.js"></script>
+    <script src="../rma-auth.js"></script>
     <script>
 // ==========================================
 // 1. CONFIGURATION & VARIABLES
@@ -2424,41 +2405,16 @@ async function fetchLeaderboard() {
 window.showCertificate = function() {
     document.getElementById('certName').textContent = gameState.student.name;
     document.getElementById('certDate').textContent = new Date().toLocaleDateString();
-
-    const studentSec = gameState.student.section;
-    let teacher = "Mathematics Teacher"; 
-    
-    if (["Loyalty", "Wisdom", "Sincerity"].includes(studentSec)) {
-        teacher = "Genelyn B. Asis";
-    } else if (["Avogadro", "Boyle", "Charity", "Faith"].includes(studentSec)) {
-        teacher = "Mary Grace C. Cadavez";
-    } else if (["Justice", "Courage"].includes(studentSec)) {
-        teacher = "Cherry Lyn S. Quising";
-    } else if (["Hope", "Grace", "Humility", "Fortitude", "Joy"].includes(studentSec)) {
-        teacher = "Sir Joseph C. Taguiam";
-    }
-
-    document.getElementById('teacherName').textContent = teacher;
+    const profile = window.RMAAuth && window.RMAAuth.session && window.RMAAuth.session.profile;
+    if (!profile) return;
+    document.getElementById('certSection').textContent = `Grade ${profile.grade} · Section ${profile.section}`;
+    document.getElementById('teacherName').textContent = `${profile.teacher_title} ${profile.teacher_first_name} ${profile.teacher_last_name}`;
     document.getElementById('certificateContainer').style.display = 'flex';
 };
 
 window.closeCertificate = function() {
     document.getElementById('certificateContainer').style.display = 'none';
 };
-
-function voluntaryExit() {
-    let studentName = document.getElementById("displayStudentName").innerText;
-    
-    if (studentName !== "Guest" && window.isExamFinished === false) {
-        reportViolation(studentName, "SPAM QUITTING", "Voluntary Exit (Clicked Logout while exam is ongoing)");
-        alert("Session ended and recorded as Quit.");
-        setTimeout(() => {
-            location.reload(); 
-        }, 1000); 
-    } else {
-        location.reload(); 
-    }
-}
 	// HUMBLE BRAG CONFETTI (NASA KALIWA NA)
     function devConfetti() {
         confetti({

@@ -265,35 +265,7 @@
     </style>
  </head>
  <body data-grade="7">
-  <div id="loginOverlay" class="no-print">
-   <div class="login-box">
-    <h2 style="color: var(--primary);">RMA Student Login</h2>
-    <input type="text" id="lastName" placeholder="Enter LAST NAME (Apelyido)" oninput="this.value = this.value.toUpperCase()"> 
-    <input type="text" id="firstName" placeholder="Enter FIRST NAME (Pangalan)" oninput="this.value = this.value.toUpperCase()"> 
-    <input type="text" id="midInitial" placeholder="Enter MIDDLE INITIAL" oninput="this.value = this.value.toUpperCase()"> 
-    <select id="studentSection">
-        <option value="" disabled selected>Select Section</option> 
-        <option value="Aristotle">Grade 7 - Aristotle</option> 
-        <option value="Amber">Grade 7 - Amber</option> 
-        <option value="Amethyst">Grade 7 - Amethyst</option>
-        <option value="Aquamarine">Grade 7 - Aquamarine</option> 
-        <option value="Alexandrite">Grade 7 - Alexandrite</option> 
-        <option value="Beryl">Grade 7 - Beryl</option> 
-        <option value="Coral">Grade 7 - Coral</option> 
-        <option value="Diamond">Grade 7 - Diamond</option> 
-        <option value="Emerald">Grade 7 - Emerald</option>
-        <option value="Garnet">Grade 7 - Garnet</option> 
-        <option value="Jasper">Grade 7 - Jasper</option> 
-        <option value="Opal">Grade 7 - Opal</option> 
-        <option value="Peridot">Grade 7 - Peridot</option> 
-        <option value="Quartz">Grade 7 - Quartz</option> 
-        <option value="Ruby">Grade 7 - Ruby</option> 
-        <option value="Sapphire">Grade 7 - Sapphire</option> 
-        <option value="Topaz">Grade 7 - Topaz</option>
-    </select> 
-    <button class="btn" id="startBtn" style="width:100%; margin-top: 10px; padding: 14px;">Start Practice</button>
-   </div>
-  </div>
+    <div id="loginOverlay" class="no-print"></div>
 
 <header class="no-print" style="background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding: 15px 30px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-bottom: 4px solid var(--gold);">
    <div style="display: flex; align-items: center; gap: 20px;">
@@ -399,6 +371,7 @@
       <p class="cert-text" style="color: #555; max-width: 80%; margin: 0 auto;">has successfully completed the Grade 7 RMA Practice Test with a PERFECT SCORE of</p>
       <div class="cert-score">100%</div>
       <p class="cert-text" style="color: #555;">on <span id="certDate" style="font-weight: bold;">Date</span></p>
+    <p class="cert-text" id="certSection" style="color: #555;"></p>
       <div class="cert-footer">
        <div style="text-align: center;">
         <div class="sign-line" id="teacherName"></div>
@@ -418,6 +391,7 @@
   <audio id="soundWin" src="https://assets.mixkit.co/active_storage/sfx/510/510-preview.mp3"></audio>
     <script src="../supabase-config.js"></script>
     <script src="../rma-data.js"></script>
+    <script src="../rma-auth.js"></script>
     <script>
 // ==========================================
 // 1. CONFIGURATION & VARIABLES
@@ -1919,21 +1893,10 @@ async function fetchLeaderboard() {
 window.showCertificate = function() {
     document.getElementById('certName').textContent = gameState.student.name;
     document.getElementById('certDate').textContent = new Date().toLocaleDateString();
-
-    const studentSec = gameState.student.section;
-    let teacher = "Mathematics Teacher"; 
-    
-    if (["Diamond", "Beryl", "Amethyst", "Coral", "Sapphire"].includes(studentSec)) {
-        teacher = "Adelaida P. Andrada";
-    } else if (["Ruby", "Aquamarine", "Emerald"].includes(studentSec)) {
-        teacher = "Karen L. Tapec";
-    } else if (["Opal", "Jasper", "Garnet", "Peridot", "Alexandrite"].includes(studentSec)) {
-        teacher = "Gelie A. Campanilla";
-    } else if (["Quartz", "Aristotle", "Amber", "Topaz"].includes(studentSec)) {
-        teacher = "RJ Christopher G. Cruz";
-    }
-
-    document.getElementById('teacherName').textContent = teacher;
+    const profile = window.RMAAuth && window.RMAAuth.session && window.RMAAuth.session.profile;
+    if (!profile) return;
+    document.getElementById('certSection').textContent = `Grade ${profile.grade} · Section ${profile.section}`;
+    document.getElementById('teacherName').textContent = `${profile.teacher_title} ${profile.teacher_first_name} ${profile.teacher_last_name}`;
     document.getElementById('certificateContainer').style.display = 'flex';
 };
 

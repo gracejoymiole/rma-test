@@ -27,6 +27,11 @@
     return response;
   }
 
+  async function rpc(name, payload) {
+    const response = await request(`rpc/${name}`, { method: "POST", body: JSON.stringify(payload) });
+    return response.json();
+  }
+
   function durationSeconds(value) {
     if (typeof value === "number") return Math.max(0, Math.floor(value));
     const text = String(value || "");
@@ -39,32 +44,30 @@
 
   window.RMAData = Object.freeze({
     async submit(formData) {
-      const payload = {
-        grade,
-        last_name: String(formData.get("lastName") || "").trim().slice(0, 100),
-        first_name_mi: String(formData.get("firstNameMI") || "").trim().slice(0, 100),
-        section: String(formData.get("section") || "").trim().slice(0, 100),
-        score: Math.max(0, Math.min(100, Number.parseInt(formData.get("score"), 10) || 0)),
-        start_time: String(formData.get("startTime") || "").slice(0, 40),
-        end_time: String(formData.get("endTime") || "").slice(0, 40),
-        duration: String(formData.get("duration") || "").slice(0, 40),
-        duration_seconds: durationSeconds(formData.get("duration")),
-        rma_data: String(formData.get("rma") || "").slice(0, 12000),
-        bank_data: String(formData.get("bankData") || "").slice(0, 12000)
-      };
-      await request("rma_scores", { method: "POST", body: JSON.stringify(payload), headers: { Prefer: "return=minimal" } });
-      return { success: true };
+      const token = window.RMAAuth?.session?.token;
+      if (!token) throw new Error("Student session is missing. Sign in again before submitting.");
+      return rpc("rma_submit_score", {
+        p_token: token,
+        p_grade: grade,
+        p_score: Math.max(0, Math.min(100, Number.parseInt(formData.get("score"), 10) || 0)),
+        p_start_time: String(formData.get("startTime") || "").slice(0, 40),
+        p_end_time: String(formData.get("endTime") || "").slice(0, 40),
+        p_duration: String(formData.get("duration") || "").slice(0, 40),
+        p_duration_seconds: durationSeconds(formData.get("duration")),
+        p_rma_data: String(formData.get("rma") || "").slice(0, 12000),
+        p_bank_data: String(formData.get("bankData") || "").slice(0, 12000)
+      });
     },
 
     async reportViolation(formData) {
-      const payload = {
-        grade,
-        student_name: String(formData.get("name") || "Unknown").trim().slice(0, 200),
-        category: String(formData.get("category") || "OTHER").slice(0, 80),
-        action: String(formData.get("action") || "").slice(0, 240)
-      };
-      await request("rma_violations", { method: "POST", body: JSON.stringify(payload), headers: { Prefer: "return=minimal" } });
-      return { success: true };
+      const token = window.RMAAuth?.session?.token;
+      if (!token) throw new Error("Student session is missing.");
+      return rpc("rma_report_violation", {
+        p_token: token,
+        p_grade: grade,
+        p_category: String(formData.get("category") || "OTHER").slice(0, 80),
+        p_action: String(formData.get("action") || "").slice(0, 240)
+      });
     },
 
     async getLeaderboard(section) {
@@ -82,6 +85,8 @@
         mode: "ALL-TIME",
         data: rows.map((row, index) => ({ ...row, rank: index + 1 }))
       };
-    }
+    },
+
+    rpc
   });
 })();
