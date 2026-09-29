@@ -20,14 +20,27 @@
     button { padding:11px 15px; border:0; border-radius:8px; color:#fff; background:var(--wine); font:700 .95rem system-ui,sans-serif; cursor:pointer; }
     button:disabled { opacity:.6; cursor:wait; }
     .primary { width:100%; margin-top:8px; } .secondary { color:var(--wine); background:#f5efea; }
-    .filters { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:600px; margin-top:22px; }
-    .summary { display:grid; grid-template-columns:repeat(3,minmax(120px,1fr)); gap:12px; margin:20px 0; }
+    .filters { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:760px; margin-top:22px; }
+    .summary { display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:12px; margin:20px 0; }
     .metric { padding:15px; border-radius:12px; background:#f8f4e8; } .metric b { display:block; color:var(--wine); font-size:1.55rem; }
     .scroll { overflow:auto; } table { width:100%; border-collapse:collapse; font-size:.88rem; } th,td { padding:10px 11px; border-bottom:1px solid #eee8e3; text-align:left; white-space:nowrap; } th { color:var(--wine); background:#faf7f2; }
     .bar { width:130px; height:9px; overflow:hidden; border-radius:9px; background:#eee; } .bar i { display:block; height:100%; background:#5c9b70; }
+    .report-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:16px 0; }
+    .report-heading { margin:0 0 6px; color:var(--wine); font-size:1.1rem; }
+    .report-note { margin:0 0 14px; font-size:.82rem; }
+    .chart-wrap { width:100%; overflow-x:auto; }
+    .chart-wrap svg { display:block; width:100%; min-width:560px; height:auto; }
+    .highlight { padding:15px; border-radius:12px; background:#f8f4e8; }
+    .highlight strong { display:block; margin:5px 0; color:var(--wine); }
+    .status { display:inline-block; padding:5px 9px; border-radius:999px; font-size:.76rem; font-weight:800; }
+    .status-mastered { color:#14532d; background:#dcfce7; }
+    .status-track { color:#854d0e; background:#fef3c7; }
+    .status-support { color:#991b1b; background:#fee2e2; }
+    .status-pending { color:#475569; background:#e2e8f0; }
     .error { padding:10px; border-radius:8px; background:#fff0ee; color:#7a1818; } .success { padding:10px; border-radius:8px; background:#edf9f0; color:#155b30; }
     .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     [hidden] { display:none !important; }
+    @media(max-width:760px) { .report-grid { grid-template-columns:1fr; } }
     @media(max-width:650px) { .filters,.summary { grid-template-columns:1fr; } .card { padding:17px; } header { padding:16px; } }
   </style>
 </head>
@@ -52,20 +65,31 @@
     </section>
     <section id="dashboard" hidden>
       <div class="card">
-        <div class="toolbar"><div><h2>Student RMA mastery</h2><p>Latest attempt per student. Question mastery is the percentage correct for each item among students with a recorded attempt.</p></div><button id="teacherLogout" class="secondary">Sign out</button></div>
+        <div class="toolbar"><div><h2>Grade-level mastery dashboard</h2><p>Section progress and item mastery use each registered student’s latest attempt.</p></div><button id="teacherLogout" class="secondary">Sign out</button></div>
         <div id="dashboardMessage" role="status"></div>
         <div class="filters">
-          <label>Grade level<select id="gradeFilter"><option value="">Select grade</option></select></label>
-          <label>Section<select id="sectionFilter"><option value="">Select section</option></select></label>
+          <label>Select grade level<select id="gradeFilter" required><option value="">Choose a grade level</option></select></label>
+          <label>Student report section<select id="sectionFilter" disabled><option value="">Select a grade first</option></select></label>
         </div>
       </div>
-      <div id="reportCard" class="card" style="margin-top:16px" hidden>
+      <div id="reportCard" hidden>
         <div id="summary" class="summary"></div>
-        <h2>Question mastery</h2>
-        <p>RMA question numbers and randomized bank item IDs are shown as tracked by each grade assessment.</p>
-        <div class="scroll"><table><thead><tr><th>Question</th><th>Correct</th><th>Responses</th><th>Mastery</th><th>Rate</th></tr></thead><tbody id="masteryRows"></tbody></table></div>
-        <h2 style="margin-top:28px">Students</h2>
-        <div class="scroll"><table><thead><tr><th>Student ID</th><th>Name</th><th>Teacher entered</th><th>Latest score</th><th>Attempt</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+        <div class="report-grid">
+          <section class="card"><h2 class="report-heading">Section completion</h2><p class="report-note">Share of registered students with a submitted attempt.</p><div id="completionChart" class="chart-wrap"></div></section>
+          <section class="card"><h2 class="report-heading">Section average score</h2><p class="report-note">Mean of latest submitted scores for students in each section.</p><div id="scoreChart" class="chart-wrap"></div></section>
+        </div>
+        <div class="report-grid">
+          <section class="card"><h2 class="report-heading">Whole-grade question extremes</h2><p class="report-note">Highest and lowest mastery across students in the selected grade.</p><div id="gradeHighlights" class="report-grid"></div></section>
+          <section class="card"><h2 class="report-heading">Most / least mastered by section</h2><p class="report-note">Extremes are calculated from the latest attempt for each student.</p><div class="scroll"><table><thead><tr><th>Section</th><th>Least mastered</th><th>Rate</th><th>Most mastered</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div></section>
+        </div>
+        <section class="card" style="margin-bottom:16px">
+          <h2 class="report-heading">Question mastery details</h2><p id="questionScope" class="report-note"></p>
+          <div class="scroll"><table><thead><tr><th>Question</th><th>Correct</th><th>Responses</th><th>Mastery</th><th>Rate</th></tr></thead><tbody id="masteryRows"></tbody></table></div>
+        </section>
+        <section class="card">
+          <h2 class="report-heading">Student status</h2><p id="studentScope" class="report-note"></p>
+          <div class="scroll"><table><thead><tr><th>Student ID</th><th>Name</th><th>Teacher entered</th><th>Latest score</th><th>Status</th><th>Latest attempt</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+        </section>
       </div>
     </section>
   </main>
