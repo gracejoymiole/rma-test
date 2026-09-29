@@ -18,3 +18,7 @@ Deploy this folder as a static site with this folder as the project root and no 
 ## GitHub
 
 Repository: <https://github.com/gracejoymiole/rma-test>
+
+The workspace has a local `main` commit and `origin` configured. GitHub returned 404 without authenticated access, so the commit has not been pushed. After signing in to an account with write access, push `main` from this folder and connect `gracejoymiole/rma-test` in the Vercel project's **Settings → Git** to enable automatic deployments on pushes. The current production deployment was created directly from the workspace and is already live independently of GitHub.
+
+Supabase setup: <https://supabase.com/dashboard/project/ogcrbrfzsjjizsubzdpg/sql/new>
