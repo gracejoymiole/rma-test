@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade 8 RMA - Practice Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+  <style>
+    :root {
+        --primary: #f57f17;  /* Deep Yellow/Gold for borders, progress bars, etc. */
+        --accent: #ffb300;   /* Vibrant Yellow */
+        --success: #2e7d32;  /* Green for correct */
+        --danger: #d32f2f;   /* Red for wrong */
+        --gold: #ffca28;     /* Lighter Gold */
+        --bg-light: #fffde7; /* Soft yellow background for the whole page */
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-light); /* Soft blue background na naka-set sa :root natin */
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        box-sizing: border-box;
+    }
+
+    @media print {
+        body * { visibility: hidden; }
+        #certificateContainer, #certificateContainer * { visibility: visible; }
+        #certificateContainer {
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            background: white; z-index: 9999;
+            display: flex !important; align-items: center; justify-content: center;
+        }
+        .no-print { display: none !important; }
+    }
+
+    #certificateContainer {
+        display: none;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 5000;
+        overflow-y: auto;
+        align-items: center; justify-content: center;
+    }
+
+    .certificate-wrapper {
+        position: relative;
+        width: 800px; max-width: 95%;
+        margin: 20px auto;
+        text-align: center;
+        background: white;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border-radius: 4px;
+    }
+
+    @keyframes popIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .certificate-border { 
+        border: 12px solid var(--primary);
+        padding: 12px; 
+        background-color: var(--bg-light); /* Soft Blue Background */
+    }
+    .certificate-inner { 
+        border: 4px solid var(--gold);
+        outline: 2px solid var(--gold);
+        outline-offset: 4px;
+        padding: 40px; 
+        background-color: white;
+    }
+    .cert-title { font-size: 2.8rem; color: #4B0304; margin-bottom: 10px; font-family: 'Times New Roman', serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;}
+	.cert-subtitle { font-size: 1.3rem; color: var(--accent); margin-bottom: 10px; font-family: sans-serif; font-weight: 700; letter-spacing: 2px;}
+    .cert-name { font-size: 2.2rem; font-weight: bold; border-bottom: 2px solid var(--primary); display: inline-block; padding: 0 30px 10px; margin: 20px 0; color: #4B0304; }
+    .cert-score { font-size: 2.8rem; color: var(--success); font-weight: 900; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+    .cert-footer { margin-top: 40px; display: flex; justify-content: space-around; }
+    .sign-line { border-top: 2px solid #333; width: 220px; padding-top: 8px; font-size: 1.1rem; font-weight: bold; color: var(--primary); }
+
+    /* MODERNIZED LOGIN OVERLAY (BLUE TINT) */
+    /* MODERNIZED LOGIN OVERLAY (WARM/MAROON TINT) */
+    #loginOverlay {
+        position: fixed; 
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(40, 10, 10, 0.9); /* Warm dark maroon transparent background */
+        display: flex; justify-content: center; align-items: center; 
+        z-index: 9999; 
+    }
+    .login-box {
+        background: white; padding: 3rem 2.5rem; border-radius: 16px; 
+        width: 90%; max-width: 420px; text-align: center;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        border-top: 6px solid var(--primary);
+    }
+    .login-box h2 { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 25px; color: #4B0304 !important; }
+    
+    /* MAIN CONTAINER & CARDS */
+    .main-container {
+        display: flex; flex-wrap: wrap; max-width: 1200px;
+        margin: 30px auto; padding: 0 20px; gap: 25px; flex: 1;
+    }
+    .quiz-section { flex: 2; min-width: 300px; }
+    .sidebar { flex: 1; min-width: 250px; }
+    .card {
+        background: white; border-radius: 12px; padding: 30px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 20px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .progress-container { background: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; margin-bottom: 10px; }
+    .progress-bar { background: linear-gradient(90deg, var(--accent), var(--success)); height: 100%; width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .question-text { font-size: 1.3rem; margin-bottom: 25px; line-height: 1.6; color: #2c3e50; }
+    
+    /* OPTIONS GRID AESTHETICS (BLUE THEME) */
+    .options-grid { display: grid; gap: 12px; }
+    .option-label {
+        display: flex; align-items: center; gap: 15px; padding: 16px;
+        background: white; border: 2px solid #e0e0e0; border-radius: 10px;
+        cursor: pointer; font-size: 1.05rem; font-weight: bold; color: #444;
+        transition: all 0.2s ease; margin: 0;
+    }
+    .option-label:hover { border-color: var(--accent); background: var(--bg-light); transform: translateY(-1px); }
+    .option-label.selected { background: #fff9c4; border-color: var(--primary); color: #4B0304; }
+    .option-label.correct { background: #d4efdf; border-color: var(--success); color: var(--success); }
+    .option-label.wrong { background: #fadbd8; border-color: var(--danger); color: var(--danger); }
+    
+    .option-label input[type="checkbox"] {
+        transform: scale(1.4); cursor: pointer; margin: 0; accent-color: var(--primary);
+    }
+    .option-label.disabled {
+        pointer-events: none; opacity: 0.7;
+    }
+
+    /* MODERN 3D BUTTONS (YELLOW THEME WITH MAROON TEXT) */
+    .btn {
+        background-color: var(--primary); color: #4B0304; /* Maroon Text */
+        padding: 12px 24px; border: none; border-radius: 30px; 
+        font-size: 1.05rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;
+        cursor: pointer; transition: all 0.1s ease; display: inline-block; text-align: center;
+        /* 3D Chunky Shadow (Dark Orange/Gold) */
+        box-shadow: 0 6px 0 #c46200, 
+                    0 10px 15px rgba(0, 0, 0, 0.3);
+        text-shadow: none; 
+    }
+    .btn:hover:not([disabled]) {
+        background-color: var(--accent);
+        transform: translateY(-2px); 
+        box-shadow: 0 8px 0 #cc8f00, 
+                    0 12px 18px rgba(0, 0, 0, 0.3);
+    }
+    .btn:active:not([disabled]) {
+        transform: translateY(4px); 
+        box-shadow: 0 2px 0 #c46200, 
+                    0 5px 8px rgba(0, 0, 0, 0.3);
+    }
+    .btn:disabled { 
+        opacity: 0.6; cursor: not-allowed; 
+        transform: translateY(4px); 
+        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); 
+        background-color: #9e9e9e; 
+        color: #ffffff;
+    }
+    
+    /* 3D Effect para sa GOLD Button */
+    .btn-gold { 
+        background: var(--gold) !important; color: #333 !important; 
+        box-shadow: 0 6px 0 #cc8f00, 0 10px 15px rgba(0,0,0,0.3) !important; 
+        text-shadow: 1px 1px 1px rgba(255,255,255,0.8) !important;
+    }
+    .btn-gold:hover:not([disabled]) { 
+        background: #ffc107 !important; 
+        box-shadow: 0 8px 0 #cc8f00, 0 12px 18px rgba(0,0,0,0.3) !important;
+    }
+    .btn-gold:active:not([disabled]) { 
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 #cc8f00, 0 5px 8px rgba(0,0,0,0.3) !important; 
+    }
+
+    /* 3D Effect para sa DANGER (Red) Button */
+    .btn-danger { 
+        background: var(--danger) !important; color: white !important; 
+        box-shadow: 0 6px 0 #9a0007, 0 10px 15px rgba(0,0,0,0.3) !important; 
+    }
+    .btn-danger:hover:not([disabled]) { 
+        box-shadow: 0 8px 0 #9a0007, 0 12px 18px rgba(0,0,0,0.3) !important; 
+    }
+    .btn-danger:active:not([disabled]) { 
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 #9a0007, 0 5px 8px rgba(0,0,0,0.3) !important; 
+    }
+    }
+    .hidden { display: none !important; }
+    .explanation { background: #fcf3cf; border-left: 5px solid #f1c40f; padding: 15px; margin-top: 20px; display: none; }
+    .img-placeholder { background: #f8f9fa; border: 2px dashed #bdc3c7; padding: 20px; text-align: center; margin: 10px 0; font-style: italic; }
+    .question-img { max-width: 100%; height: auto; display: block; margin: 10px auto; border: 1px solid #ccc; }
+    
+    .leaderboard-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .leaderboard-table th, .leaderboard-table td { padding: 14px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.95rem; overflow: hidden; }
+    .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { text-align: center; width: 12%; }
+    .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { text-align: left; width: 40%; }
+    .leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3) { text-align: center; width: 24%; }
+    .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { text-align: center; width: 24%; }
+    .active-user { background-color: #e8f8f5; font-weight: bold; border-left: 4px solid var(--success); }
+    .rank-top-3-name { font-weight: bold; font-size: 1.1rem; }
+
+    .medal { font-size: 1.4rem; margin-right: 6px; }
+    .rank-1 { background-color: rgba(255, 215, 0, 0.2); }
+    .rank-2 { background-color: rgba(192, 192, 192, 0.15); }
+    .rank-3 { background-color: rgba(205, 127, 50, 0.15); }
+	
+	/* DEVELOPER CREDIT BADGE (SUPER LIIT NA PANG-WATERMARK) */
+    .developer-credit {
+        position: fixed;
+        bottom: 10px; /* Ibinaba pa natin nang konti */
+        left: 10px; /* Isinagad pa sa kaliwa */
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--primary);
+        padding: 3px 8px; /* Sobrang nipis na ng spacing */
+        border-radius: 12px;
+        font-size: 0.55rem; /* SUPER LIIT NA FONT (parang 8-9px na lang) */
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        border: 1px solid var(--primary); /* Pinanipis ang border */
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+
+    .developer-credit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        background: var(--primary);
+        color: white;
+        cursor: pointer;
+    }
+
+    /* DEVELOPER SIGNATURE IN MAROON */
+    .dev-signature {
+        font-family: 'Gill Sans', sans-serif;
+        font-size: 0.7rem; 
+        font-weight: normal;
+        letter-spacing: 0.5px;
+        margin-left: 2px;
+        color: #4B0304; 
+    }
+    
+    @media print {
+        .developer-credit { display: none !important; }
+    }
+	
+    </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+ </head>
+ <body data-grade="8">
+  <div id="loginOverlay" class="no-print">
+   <div class="login-box">
+    <h2 style="color: var(--primary);">RMA Student Login</h2><input type="text" id="lastName" placeholder="Enter LAST NAME (Apelyido)" oninput="this.value = this.value.toUpperCase()" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"> <input type="text" id="firstName" placeholder="Enter FIRST NAME (Pangalan)" oninput="this.value = this.value.toUpperCase()" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"> <input type="text" id="midInitial" placeholder="Enter MIDDLE INITIAL" oninput="this.value = this.value.toUpperCase()" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"> 
+	<select id="studentSection" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #ccc;">
+	<option value="" disabled selected>Select Section</option> 
+            <option value="Mendel">Grade 8 - Mendel</option>
+            <option value="Watson">Grade 8 - Watson</option>
+            <option value="Acacia">Grade 8 - Acacia</option>
+            <option value="Almaciga">Grade 8 - Almaciga</option>
+            <option value="Apitong">Grade 8 - Apitong</option>
+            <option value="Guijo">Grade 8 - Guijo</option>
+            <option value="Hemlock">Grade 8 - Hemlock</option>
+            <option value="Ipil-Ipil">Grade 8 - Ipil-Ipil</option>
+            <option value="Kamagong">Grade 8 - Kamagong</option>
+            <option value="Lanete">Grade 8 - Lanete</option>
+            <option value="Lawaan">Grade 8 - Lawaan</option>
+            <option value="Mahogany">Grade 8 - Mahogany</option>
+            <option value="Narra">Grade 8 - Narra</option>
+            <option value="Tindalo">Grade 8 - Tindalo</option>
+            <option value="Yakal">Grade 8 - Yakal</option>
+            <option value="Eucalyptus">Grade 8 - Eucalyptus</option>
+            <option value="Molave">Grade 8 - Molave</option>
+            <option value="OHSP Bakawan">Grade 8 - OHSP Bakawan</option>
+	</select> <button class="btn" id="startBtn" style="width:100%;">Start Practice</button>
+   </div>
+  </div>
+  
+<header class="no-print" style="background: #FFD700; color:#4B0304; padding: 10px 20px; display:flex; justify-content:space-between; align-items:flex-end; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+   
+   <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 5px; border-bottom: 2px solid #4B0304; padding-bottom: 10px;">
+    
+    <img src="mwnhslogo.png" alt="MWNHS Logo" width="100" height="100" style="border-radius: 50%; background: white; padding: 5px; object-fit: contain; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));" onerror="this.style.display='none';">
+    
+    <div style="display: flex; flex-direction: column; text-align: left; gap: 4px;">
+     <h1 style="margin: 0; line-height: 1; font-size: 2.5rem; color: #4B0304; text-transform: uppercase; font-weight: 900; text-shadow: 1px 1px 0 #ffffff, 2px 2px 0 #ffffff, 3px 3px 0 #ffffff, 4px 4px 0 #ffffff, 5px 5px 5px rgba(0,0,0,0.3);">MOONWALK NATIONAL HIGH SCHOOL</h1>
+     
+     <h2 style="margin: 0; line-height: 1; font-size: 2rem; color: #4B0304; font-weight: 900; text-shadow: 1px 1px 0 #ffffff, 2px 2px 0 #ffffff, 3px 3px 0 #ffffff, 4px 4px 4px rgba(0,0,0,0.3);">RMA PRACTICE TEST</h2>
+     
+     <h3 style="margin: 0; line-height: 1; font-size: 1.5rem; color: #4B0304; font-weight: bold; text-shadow: 1px 1px 0px rgba(255,255,255,0.7);">S.Y. 2025-2026</h3>
+    </div>
+   </div>
+
+   <div class="user-info" style="text-align:right; margin-bottom: 5px; border-bottom: 2px solid #4B0304; padding-bottom: 10px;">
+    <div id="displayStudentName" style="margin: 0; line-height: 1; font-weight: bold; color: #4B0304; font-size: 1.8rem; text-shadow: 1px 1px 0px rgba(255,255,255,0.7);">
+     Guest
+    </div>
+    <div id="displaySection" style="margin: 5px 0 0 0; line-height: 1; opacity:0.9; font-weight: bold; color: #4B0304; font-size: 1.5rem;">
+     Grade 8
+    </div>
+    <div style="margin-top: 10px;">
+     <span id="timerDisplay" style="font-weight: bold; color: #4B0304; font-size: 1.3rem; background: rgba(255,255,255,0.6); padding: 5px 15px; border-radius: 8px; display: none; border: 2px solid #4B0304; box-shadow: 2px 2px 0 #ffffff;"> 00:00 </span>
+    </div>
+   </div>
+
+  </header>
+  
+  <div class="main-container no-print">
+   <div class="quiz-section">
+    <div id="questionTimerContainer" style="display: none; text-align: center; margin-bottom: 15px; border-bottom: 1px dashed #ddd; padding-bottom: 10px;">
+     <span style="font-size: 1.1rem; font-weight: bold;"> Time Left: </span> <span id="timeRemaining" style="font-weight: bold; color: #e74c3c; font-size: 1.3rem;">30</span><span style="color: #e74c3c; font-weight: bold;">s</span>
+    </div>
+    <div class="card">
+     <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+     </div>
+     <div style="text-align: right; font-size: 0.9rem; color: #777; margin-bottom: 10px;">
+      Question <span id="qIndexDisp">1</span> of <span id="qTotalDisp">50</span>
+     </div>
+     <div id="quizContent">
+      <h3 id="qNumber" style="color:var(--primary)">Question 1</h3>
+      <div id="imgContainer"></div>
+      <div class="question-text" id="qText" style="font-weight: bold;">
+       Loading...
+      </div>
+      <div class="options-grid" id="optionsBox"></div>
+      <div class="explanation" id="explanationBox">
+       <strong>Explanation:</strong> <span id="explanationText"></span>
+      </div>
+      <div class="controls" style="margin-top: 25px; text-align: right;">
+       <button class="btn btn-primary" id="checkBtn" style="background-color: var(--accent);" disabled>Check Answer</button> <button class="btn btn-success hidden" id="nextBtn" style="background-color: var(--primary);">Next Question</button>
+      </div>
+     </div>
+     <div id="resultContent" class="hidden" style="text-align: center; padding: 20px;">
+      <h2 id="resultTitle">Practice Complete</h2>
+      <div style="font-size: 3.5rem; font-weight: bold; margin: 20px 0; color: var(--primary);">
+       <span id="finalScore">0</span>
+      </div>
+      <p id="resultMessage" style="font-size: 1.5rem;">You answered <span id="finalCorrectCount">0</span> correctly.</p><img id="resultGif" src="" alt="Result GIF" style="width: 200px; margin: 15px auto; display: none; border-radius: 10px;">
+      <div id="actionButtons" style="margin-top: 30px;">
+       <button class="btn btn-primary" id="retryBtn" onclick="initGame()" style="background-color: var(--accent);">Try Again</button> <button class="btn btn-gold hidden" id="certBtn" onclick="showCertificate()">View Certificate</button> <button class="btn btn-danger" onclick="voluntaryExit()">Logout / New Student</button>
+      </div>
+     </div>
+    </div>
+   </div>
+   <div class="sidebar">
+    <div class="card">
+     <h3 id="leaderboard-title" style="color: #4B0304 !important; border-bottom: 2px solid #eee; padding-bottom: 10px; font-weight: bold;">Live Leaderboard <span id="lb-status" style="font-size: 0.8rem; background: #eee; padding: 3px 8px; border-radius: 4px; color: #666;">LOADING</span></h3>
+     <table class="leaderboard-table" id="leaderboard">
+      <thead>
+       <tr>
+        <th>#</th>
+        <th>Student</th>
+        <th>Mastery</th>
+        <th>Time</th>
+       </tr>
+      </thead>
+      <tbody>
+      </tbody>
+     </table>
+    </div>
+   </div>
+  </div>
+  <div id="certificateContainer">
+   <div class="certificate-wrapper">
+    <div class="certificate-border">
+     <div class="certificate-inner">
+      <div class="cert-title">
+       Certificate of Mastery
+      </div>
+      <div class="cert-subtitle">
+       RAPID MATHEMATICS ASSESSMENT
+      </div>
+      <p class="cert-text">This certifies that</p>
+      <div class="cert-name" id="certName">
+       Student Name
+      </div>
+      <p class="cert-text">has successfully completed the Grade 8 RMA Practice Test with a PERFECT SCORE of</p>
+      <div class="cert-score">
+       100%
+      </div>
+      <p class="cert-text">on <span id="certDate">Date</span></p>
+      <div class="cert-footer">
+       <div style="text-align: center;">
+        <div class="sign-line" id="teacherName"></div>
+        <div>
+         Mathematics Teacher
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="no-print" style="margin-top: 20px;">
+      <button class="btn btn-primary" onclick="window.print()">Print Certificate</button> <button class="btn btn-danger" onclick="closeCertificate()">Close</button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <audio id="soundCorrect" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+  <audio id="soundWrong" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+  <audio id="soundWin" src="https://assets.mixkit.co/active_storage/sfx/510/510-preview.mp3"></audio>
+    <script src="../supabase-config.js"></script>
+    <script src="../rma-data.js"></script>
+    <script>
+// ==========================================
+// 1. CONFIGURATION & VARIABLES
+// ==========================================
+let isExamFinished = false; 
+let gameStartTime = null;
+let gameEndTime = null;
+let timerInterval = null;
+let idleTimeout = null; 
+let questionTimerInterval = null;
+let selectedOptions = [];
+
+const IDLE_TIME_LIMIT = 60000; // 60 seconds
+
+// ==========================================
+// 2. SECURITY CONFIGURATION
+// ==========================================
+const SECURITY = {
+    examStarted: false,
+    cheatDetected: false,
+    isWarningActive: false,
+    maxStrikes: 3,
+    maxQuits: 3,
+    banDuration: 3 * 24 * 60 * 60 * 1000,
+    
+    get strikes() { return parseInt(localStorage.getItem("g8_exam_strikes") || "0"); },
+    set strikes(val) { localStorage.setItem("g8_exam_strikes", val); },
+    
+    get quits() { return parseInt(localStorage.getItem("g8_exam_quits") || "0"); },
+    set quits(val) { localStorage.setItem("g8_exam_quits", val); },
+
+    get banUntil() { return parseInt(localStorage.getItem("g8_exam_ban_until") || "0"); },
+    set banUntil(val) { localStorage.setItem("g8_exam_ban_until", val); }
+};
+
+// ==========================================
+// 3. GAME STATE & DOM ELEMENTS
+// ==========================================
+const gameState = {
+    student: { name: "", section: "", lastName: "", firstNameMI: "" }, 
+    activeQuestions: [],
+    currentQIndex: 0,
+    correctCount: 0,
+    scorePoints: 0,
+    userAnswers: {},
+    itemAnalysisRecords: []
+};
+
+const dom = {
+    login: document.getElementById('loginOverlay'),
+    startBtn: document.getElementById('startBtn'),
+    qNumber: document.getElementById('qNumber'),
+    qIndexDisp: document.getElementById('qIndexDisp'),
+    qTotalDisp: document.getElementById('qTotalDisp'),
+    qText: document.getElementById('qText'),
+    imgContainer: document.getElementById('imgContainer'),
+    optionsBox: document.getElementById('optionsBox'),
+    checkBtn: document.getElementById('checkBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    progressBar: document.getElementById('progressBar'),
+    explanationBox: document.getElementById('explanationBox'),
+    explanationText: document.getElementById('explanationText'),
+    resultContent: document.getElementById('resultContent'),
+    quizContent: document.getElementById('quizContent'),
+    finalScore: document.getElementById('finalScore'),
+    finalCorrectCount: document.getElementById('finalCorrectCount'),
+    retryBtn: document.getElementById('retryBtn'),
+    certBtn: document.getElementById('certBtn')
+};
+
+// ==========================================
+// 4. DATA: QUESTIONS 
+// ==========================================
+const getMathObjective = (itemId) => {
+    if (itemId >= 39 && itemId <= 52) return "NUMBER EXPRESSIONS";
+    if (itemId >= 53 && itemId <= 62) return "DATA";
+    if (itemId >= 63 && itemId <= 76) return "COORDINATES";
+    if (itemId >= 77 && itemId <= 86) return "TRIANGLES";
+	if (itemId >= 87 && itemId <= 96) return "VARIABLES";
+    if (itemId >= 97 && itemId <= 108) return "EQUATIONS";
+    if (itemId >= 109 && itemId <= 122) return "CIRCLES";
+	
+    
+    // RMA mapping
+    const rmaMap = {
+        1: "NUMBER EXPRESSIONS", 2: "NUMBER EXPRESSIONS", 3: "NUMBER EXPRESSIONS", 4: "NUMBER EXPRESSIONS", 5: "NUMBER EXPRESSIONS", 6: "NUMBER EXPRESSIONS",
+		7: "NUMBER EXPRESSIONS", 8: "NUMBER EXPRESSIONS", 9: "NUMBER EXPRESSIONS", 10: "NUMBER EXPRESSIONS", 11: "NUMBER EXPRESSIONS", 12: "DATA",
+		13: "DATA", 14: "DATA", 15: "DATA", 16: "DATA", 17: "DATA", 18: "COORDINATES", 19: "COORDINATES", 20: "COORDINATES", 21: "COORDINATES", 22: "COORDINATES", 23: "TRIANGLES", 24: "TRIANGLES", 25: "TRIANGLES",
+		26: "VARIABLES", 27: "VARIABLES",  28: "VARIABLES", 29: "VARIABLES", 30: "EQUATIONS", 31: "EQUATIONS", 32: "TRIANGLES", 33: "TRIANGLES", 34: "TRIANGLES",
+        35: "CIRCLES", 36: "CIRCLES", 37: "CIRCLES", 38: "CIRCLES"
+    };
+    return rmaMap[itemId] || "UNKNOWN";
+};
+
+// RMA SECTION (Items 1-38)
+const rawQuestions = [
+    
+    {
+        text: "[Refer to Box 1] Your classmate said that each of the four expressions in Box 1 is equivalent to 1. Verify what your classmate said by computing the value for the number expression 4×4 - 5×3.",
+        options: ["0", "1", "2", "-1"],
+        answer: "1",
+        explanation: "Following the order of operations (PEMDAS/GEMDAS), multiply first: (4 × 4) = 16 and (5 × 3) = 15. Then subtract: 16 - 15 = 1."
+    },
+    {
+        text: "[Refer to Box 1] What must be the next number expression to 5×5 - 6×4 in Box 1?",
+        options: ["6×6 - 7×5", "6×5 - 7×4", "7×7 - 8×6", "5×6 - 6×7"],
+        answer: "6×6 - 7×5",
+        explanation: "The pattern increments each number by 1 for every consecutive expression: (n)×(n) - (n+1)×(n-1). Following 5, the next base number is 6."
+    },
+    {
+        text: "[Refer to Box 1] [Refer to eq1] Which of the following algebraic expressions represents the set of number expressions in Box 1?",
+        options: ["(n)(n) - (n+3)(n+1)", "(n)(n) - (n+1)(n-1)", "(n-1)(n-1) - n(n-2)", "n² - 3n(1)", "n² - n - 1"],
+        answer: "(n)(n) - (n+1)(n-1)",
+        explanation: "Each expression takes a number squared (n × n) and subtracts the product of the number after it (n+1) and the number before it (n-1)."
+    },
+    {
+        text: "[Refer to Box 1] [Refer to addimg 1] Which of the following best explains why your chosen expression correctly represents the set of number expressions in Box 1?",
+        options: ["The first term is always the square of a number n (n²), subtracts by the product of the number after it (n+1) and the number before it (n-1).", "The first term is a number n multiplied by 2, minus the product of n and n-1.", "The terms are increasing multiples of 2 and 3.", "The difference between consecutive expressions is always 1."],
+        answer: "The first term is always the square of a number n (n²), subtracts by the product of the number after it (n+1) and the number before it (n-1).",
+        explanation: "This directly describes the structure of the pattern:(n)(n) - (n+1)(n-1) or n² − (n² − 1)."
+    },
+    {
+        text: "[Refer to Box 1] [Refer to addimg 1] What does n represent in your chosen expression?",
+        options: ["The final answer of the expression", "The first number in the expression", "The number of terms in the expression", "A random variable"],
+        answer: "The first number in the expression",
+        explanation: "In the expression (n)(n) - [(n+1)(n-1)], 'n' is the first number that is squared at the beginning of each sequence."
+    },
+    {
+        text: "Which of the following shows that 1024 is a power of 2?",
+        options: ["It is divisible by 2.", "It can be written as 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2.", "It is a multiple of 4.", "It ends in an even number."],
+        answer: "It can be written as 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2.",
+        explanation: "A power of 2 means the number can be expressed exclusively as 2 multiplied by itself a certain number of times. 2¹⁰ = 1024."
+    },
+    {
+        text: "What is the exponential form of 1024?",
+        options: ["2⁸", "2⁹", "2¹⁰", "2¹²"],
+        answer: "2¹⁰",
+        explanation: "Multiplying 2 by itself 10 times gives 1024."
+    },
+    {
+        text: "Which power of 2 meets BOTH of these conditions: The number is a multiple of 16, and it is more than 50 but less than 200?",
+        options: ["32", "64", "128", "Both 64 and 128"],
+        answer: "Both 64 and 128",
+        explanation: "The powers of 2 between 50 and 200 are 64 (2^6) and 128 (2^7). Both 64 and 128 are divisible by 16."
+    },
+    {
+        text: "Is there a number between 0.998 and 0.999?",
+        options: ["Yes, for example 0.9985", "Yes, for example 0.9995", "No, they are consecutive decimals", "Yes, for example 0.9975"],
+        answer: "Yes, for example 0.9985",
+        explanation: "Real numbers are infinitely dense. You can always find a number between two given decimals by adding another decimal place."
+    },
+    {
+        text: "What is the difference when you subtract 0.998 from 0.999?",
+        options: ["0.1", "0.01", "0.001", "0.0001"],
+        answer: "0.001",
+        explanation: "0.999 - 0.998 = 0.001. You are subtracting the thousandths place."
+    },
+    {
+        text: "Is there a fraction that is greater than 3/4 but less than 1?",
+        options: ["Yes, for example 4/5", "Yes, for example 2/3", "No, 3/4 is the highest fraction before 1", "Yes, for example 5/8"],
+        answer: "Yes, for example 4/5",
+        explanation: "3/4 is equivalent to 0.75. 4/5 is equivalent to 0.80, which is greater than 0.75 but less than 1."
+    },
+    {
+        text: "[Refer to Figure 1] Based on the graph in Figure 1, how many students had an overall academic grade below 84?",
+        options: ["3", "4", "5", "Cannot be determined without the exact plot points"],
+        answer: "5",
+        explanation: "By counting the specific data points that fall below the 84-grade mark/line on the y-axis, you find 5 students."
+    },
+    {
+        text: "[Refer to Figure 1] How do you determine students below 84?",
+        options: ["Counting the data points that fall below the horizontal line representing a grade of 84 on the y-axis.", "Counting the data points on the x-axis.", "Looking at the highest grade achieved.", "Averaging all the grades."],
+        answer: "Counting the data points that fall below the horizontal line representing a grade of 84 on the y-axis.",
+        explanation: "To find students with a grade below a certain threshold, you look at the vertical axis (grades) and count the points strictly below that value."
+    },
+    {
+        text: "[Refer to Figure 1] Which of the following can be a correct interpretation of the data presented in the graph in Figure 1?",
+        options: ["As the number of absences increases, the overall academic grade also increases.", "As the number of absences decreases, the overall academic grade increases.", "As the number of absences increases, the overall academic grade decreases.", "As the number of absences decreases, the overall academic grade also decreases."],
+        answer: "As the number of absences increases, the overall academic grade decreases.",
+        explanation: "Usually, scatter plots of absences vs. grades show a negative correlation/relationship: more absences lead to lower grades."
+    },
+	{
+        text: "[Refer to Table 2] Based on Table 2, how many students participated in the music activity?",
+        options: ["18", "31", "49", "60"],
+        answer: "49",
+        explanation: "You must add the number of students who participated exclusively in music to those who participated in both music and sports."
+    },
+    {
+        text: "[Refer to Table 2] Based on Table 2, how many students did not participate in any of the two activities?",
+        options: ["18", "19", "31", "42"],
+        answer: "19",
+        explanation: "This is the number located in the 'None' or 'Neither' category on a Venn diagram or two-way table."
+    },
+    {
+        text: "[Refer to Table 2] Which of the following is a question that can be answered using the information in Table 2?",
+        options: ["What is the favorite sport of the students?", "How many students participated in sports activity but not in music activity?", "What time did the music activity start?", "How many teachers organized the activities?"],
+        answer: "How many students participated in sports activity but not in music activity?",
+        explanation: "A two-way table for participation shows numbers of students per category, not qualitative data like time, favorite sports, or teacher count."
+    },
+    {
+        text: "[Refer to Figure 3] What is the position of point F in Figure 3?",
+        options: ["Point F is at -500.", "Point F is at -400.", "Point F is at -300.", "Point F is at -200.", "Point F is at 50."],
+        answer: "Point F is at -300.",
+        explanation: "By counting the intervals from zero on the number line in the negative direction, F lands on -300."
+    },
+    {
+        text: "[Refer to Figure 3] What is the position of point G in Figure 3?",
+        options: ["-100", "0", "200", "-200"],
+        answer: "0",
+        explanation: "G is located 100 units from the left of '100' and the line uses 100-unit interval."
+    },
+    {
+        text: "[Refer to Figure 4] What are the coordinates of Point C in Figure 4?",
+        options: ["(-2, 4)", "(2, 0)", "(-2, 0)", "(4, 4)"],
+        answer: "(4, 4)",
+        explanation: "Point C is located 4 units to the right from the origin and goes up 4 units."
+    },
+    {
+        text: "[Refer to Figure 4] A line is drawn passing through points B and C in Figure 4. Select the ordered pairs that represent the coordinates of points that are also in this line.",
+        options: ["(2, 3)", "(3, 2)", "(4, 7)", "(5,6)"],
+        answer: ["(3, 2)", "(5,6)"],
+        explanation: "Using the slope created by points B and C (rise/run = 4/2 or 2/1), (3, 2) continues that exact linear trajectory (How: add 1 unit in x, add 2 units in y -> (2,0) -> (2+1,0+2) = (3,2) ; (3+1,2+2) = (4,4) which is the coordinates of C ; (4+1,4+2) = (5,6)."
+    },
+    {
+        text: "[Refer to Figure 4] Draw a line through points A and B in Figure 4. Which of the following ordered pairs represent all the points that are on this line?",
+        options: ["(x, -2x)", "(x, -2x+1)", "(x, -x)", "(x, -x+1)", "(x, -x+2)"],
+        answer: "(x, -x+2)",
+        explanation: "The line AB has a slope of -1 (rise/run = 4/-4 or 1/-1 or -1) -> starting from (2,0) you will add 1 unit for every x and 1 unit for every y to the left since it is a negative/decreasing line. This is represented by (x,-x+2)."
+    },
+    {
+        text: "[Refer to Figure 4] In Figure 4, connecting the points A, B and C will form a triangle, called triangle ABC. What is the area of triangle ABC?",
+        options: ["4 square units", "8 square units", "12 square units", "16 square units"],
+        answer: "12 square units",
+        explanation: "Base AC = 6 units. Vertical Height from Base to Point B = 4 units. Area = 1/2 * 6 * 4 = 12 square units."
+    },
+    {
+        text: "[Refer to Figure 4] Suppose point A represents your house, point B represents your school and point C represents the barangay hall. Which is the shorter walk from your house, going to the school or to the barangay hall?",
+        options: ["Going to the school", "Going to the barangay hall", "They are the same distance", "Cannot be determined"],
+        answer: "Going to the school",
+        explanation: "Find each distance using distance formula: A to C = 6 units; A to B = 5.66 units."
+    },
+    {
+        text: "[Refer to Figure 4] Suppose point A represents your house, point B represents your school and point C represents the barangay hall. How will you determine each distance?",
+        options: ["Using coordinate distance", "Using area", "Using slope only", "Estimation"],
+        answer: "Using coordinate distance",
+        explanation: "Distance formula applies; d = sqrt{(x2 - x1)^2 + (y2 - y1)^2}. How it works in simple steps: Imagine trying to walk a straight line from your house to school, but you have to walk along city blocks (the grid lines). Count the left/right steps: The (x2 - x1) part just counts how many blocks you walk sideways.Count the up/down steps: The (y2 - y1) part just counts how many blocks you walk up or down. Find the shortcut - Instead of walking along the blocks, the formula uses those steps to calculate the slanted shortcut right across the middle. This shortcut is the exact distance!"
+    },
+    {
+        text: "If r is an integer, select all possible values that can be represented by 2r-1.",
+        options: ["-5", "-27", "46", "99", "-82", "122"],
+        answer: ["-5", "-27", "99"],
+        explanation: "The expression 2r-1 always produces an odd integer. -5, -27, 99 are odd, whereas 46 and 122 are even."
+    },
+    {
+        text: "At a fruit stand, apples are priced at 3 for Php100. Which of the following expressions can be used to find the amount to be paid (cost) for any number of apples?",
+        options: ["cost = 100/3", "cost = 3n/100", "cost = 100n", "cost = (100/3)n"],
+        answer: "cost = (100/3)n",
+        explanation: "If 3 apples cost 100, one apple costs 100/3. Therefore, 'n' apples cost (100/3) * n, or (100/3)n."
+    },
+    {
+        text: "Given 17 + a = b + 3, which of the following are two possible values for a and b that will make the equation true?",
+        options: ["a = 1, b = 15", "a = 2, b = 10", "a = 0, b = 17", "a = 5, b = 5"],
+        answer: "a = 1, b = 15",
+        explanation: "Simplify the equation: 17 + a = b + 3 translates to b - a = 14. If a = 1, then b must be 15 (since 15 - 1 = 14)."
+    },
+    {
+        text: "Which statement is always true about a and b in the equation 17 + a = b + 3?",
+        options: ["a is greater than b.", "The sum of a and b, (a+b) is 20.", "The difference between b and a, (b-a) is 14.", "a and b can take any value."],
+        answer: "The difference between b and a, (b-a) is 14.",
+        explanation: "By subtracting 'a' from both sides and subtracting '3' from both sides, 17 - 3 = b - a, so 14 = b - a."
+    },
+    {
+        text: "[Refer to addimg 2] What reason can we use to transform equation 1: (5y - 8 = 14 - 3y) into equation 2: (5y + 3y - 8 = 14)?",
+        options: ["If we subtract 3y from both sides of equation 1, the equation will remain true.", "If we subtract 8 from both sides of equation 1, the equation will remain true.", "If we add 3y to both sides of equation 1, the equation will remain true.", "If we divide both sides of equation 1 by 8, the equation will remain true."],
+        answer: "If we add 3y to both sides of equation 1, the equation will remain true.",
+        explanation: "Adding 3y to both sides cancels out the -3y on the right side and moves it to the left side as +3y, utilizing the Addition Property of Equality."
+    },
+    {
+        text: "[Refer to Figure 5] How much does it cost to rent the tricycle for 5 days?",
+        options: ["1000", "1250", "1450", "1500"],
+        answer: "1250",
+        explanation: "Using a linear formula like Cost = 250 + 200(days), Cost = 250 + 200(5) = 250 + 1000 = 1250."
+    },
+    {
+        text: "[Refer to Figure 6] In Figure 6, if the measure of angle P is 30 degrees (that is, p = 30), which of the following are possible values for q and r? Choose 2 that are correct among the choices.",
+        options: ["q = 10 and r = 140", "q = 10 and r = 130", "q = 110 and r = 30", "q = 100 and r = 80", "q = 100 and r = 50"],
+        answer: ["q = 10 and r = 140", "q = 100 and r = 50"],
+        explanation: "The sum of interior angles in a triangle is 180. If p = 30, then q + r must equal 150. 10 + 140 = 150 ; 100 + 50 = 150"
+    },
+    {
+        text: "[Refer to Figure 6] In Figure 6, if the measure of angle R is 60 degrees (that is, r = 60) and the measure of the exterior angle at Q is 130, what is true about the values of p and q? Choose two correct statements. (NOTE: The exterior angle of a triangle forms a 180-degree angle with the adjacent interior angle.)",
+        options: ["The sum of p and q is 130.", "p and q can have several values.", "The value of p is 70 and the value of q is 50.", "The value of p is 50 and the value of q is 70.", "The value of r plus p is 130."],
+        answer: ["The value of p is 70 and the value of q is 50.", "The value of r plus p is 130."],
+        explanation: "Interior q + exterior Q = 180, so q = 180 - 130 = 50. Then p = 180 - (60 + 50) = 70. ; r = 60, p = 70, q = 50 ; r + p = 130 -> 60 + 70 = 130"
+    },
+    {
+        text: "[Refer to Figure 7] What are the lengths of the other two sides of the triangular dog house?",
+        options: ["The other two sides are 1.5 meters each.", "The other two sides are 2 meters and 3 meters.", "The other two sides are 3 meters each.", "The other two sides are 4 meters and 6 meters."],
+        answer: "The other two sides are 1.5 meters each.",
+        explanation: "By applying the ratio from similar figures, if you have one scaled side, you multiply the known sides of the original by the scale factor. How: ratio of the sides = 3:3:2 from longest to shortest. Let x = 2 longer sides and shortest side = 1 meter; x meters : x meters : 1 meter = 3:3:2 -> scale factor of known measure and ratio = shortest side/2 = 1/2 or 0.5 -> 2 longer sides = (3 meters)(0.5) = 1.5 meters ; To check ratio if still correct divide all sides to scale factor (0.5) -> 1.5m/0.5 : 1.5m/0.5 : 1m/0.5 = 3 : 3 : 2"
+    },
+    {
+        text: "[Refer to Figure 8] What is the area of the sidewalk in square meters surrounding the pool? (Use pi = 3.14)",
+        options: ["11.5π", "21π", "34.54", "36.14"],
+        answer: "34.54",
+        explanation: "The pool diameter is 10 (r = 5). The sidewalk adds 1m uniformly (R = 6). Area = Area(outer) - Area(inner) = π(6²) - π(5²) = 36π - 25π = 11π = 11(3.14) = 34.54 square meters"
+    },
+    {
+        text: "[Refer to Figure 9] Which of the following will give the total volume of water in the pool?",
+        options: ["10π(2.1) cubic meters", "25π(2.1) cubic meters", "10π(2.1)/2 cubic meters", "25π(2.1)/2 cubic meters", "100π(2.1)/2 cubic meters"],
+        answer: "25π(2.1)/2 cubic meters",
+        explanation: "Volume = Base Area × Average Depth. Base Area = π(5²) = 25π. Average Depth = (1.5 + 0.6) / 2 = 2.1 / 2. Volume = 25π(2.1) / 2."
+    },
+    {
+        text: "[Refer to Figure 10] The wheel in Figure 10 is rolled exactly 5 times. Which of the following shows how you can compute the distance travelled by the wheel?",
+        options: ["5 × π × 60", "5 × π × 30²", "5 × 60", "5 × π × 30"],
+        answer: "5 × π × 60",
+        explanation: "Distance traveled is Rotations × Circumference. Circumference = π × diameter. The diameter is 60. So, 5 × (π × 60)."
+    },
+    {
+        text: "[Refer to Figure 10] How many degrees did the wheel’s pin rotate after 5 rolls?",
+        options: ["360 degrees", "720 degrees", "1800 degrees", "900 degrees"],
+        answer: "1800 degrees",
+        explanation: "One full roll (rotation) is 360 degrees. Therefore, 5 full rolls is 5 × 360 = 1800 degrees."
+    },
+    {
+        "text": "Which of the following expressions is equivalent to 24?",
+        "options": [
+            "3 × 4 + 6 × 2 because you multiply first to get 12 + 12, which equals 24.",
+            "5 × 5 - 1 because you multiply first to get 25, minus 1 equals 24.",
+            "10 × 3 - 2 × 3 because you multiply first to get 30 - 6, which equals 24.",
+            "All of the above because every single expression mathematically simplifies to the number 24."
+        ],
+        "answer": "All of the above because every single expression mathematically simplifies to the number 24.",
+        "explanation": "In math, there are many ways to write the same number. If you follow the order of operations (doing multiplication before addition or subtraction), you will see that every single one of these choices is just a secret way of writing the number 24."
+    },
+    {
+        "text": "If 2⁵ = 32, what is the value of 2⁷?",
+        "options": [
+            "64 because you just multiply 32 by 2 once.",
+            "128 because 2⁷ means you are multiplying by two extra 2s than 2⁵, so 32 × 2 × 2 = 128.",
+            "256 because you multiply the exponent 7 by 32.",
+            "512 because you just guess a large number."
+        ],
+        "answer": "128 because 2⁷ means you are multiplying by two extra 2s than 2⁵, so 32 × 2 × 2 = 128.",
+        "explanation": "An exponent just tells you how many times to multiply a number by itself. If 2 multiplied by itself 5 times is 32, then multiplying it 7 times just means taking that 32 and multiplying it by 2, and then by 2 again! (32 × 2 = 64, and 64 × 2 = 128)."
+    },
+    {
+        "text": "Which of the following statements is true?",
+        "options": [
+            "0.509 is greater than 0.51 because 509 looks like a bigger number than 51.",
+            "0.99 is less than 0.989 because it has fewer digits.",
+            "0.125 is exactly halfway between 0.12 and 0.13 because if you add a zero to the ends, 125 is exactly between 120 and 130.",
+            "0.005 is equal to 1/20 because 5 goes into 100 twenty times."
+        ],
+        "answer": "0.125 is exactly halfway between 0.12 and 0.13 because if you add a zero to the ends, 125 is exactly between 120 and 130.",
+        "explanation": "Decimals can trick your eyes! The easiest way to compare decimals is to give them the same number of digits by adding zeros to the end. So, 0.12 becomes 0.120 and 0.13 becomes 0.130. Suddenly, it is easy to see that 125 is perfectly in the middle of 120 and 130."
+    },
+    {
+        "text": "What is the difference when 2.005 is subtracted from 2.010?",
+        "options": [
+            "0.005 because when you line up the decimals, 10 thousandths minus 5 thousandths leaves 5 thousandths.",
+            "0.05 because you just drop a zero.",
+            "0.5 because 10 minus 5 is 5.",
+            "0.015 because you add the numbers instead."
+        ],
+        "answer": "0.005 because when you line up the decimals, 10 thousandths minus 5 thousandths leaves 5 thousandths.",
+        "explanation": "Think of this like money or building blocks. You have 2 whole blocks and 10 tiny pieces (2.010). You take away 2 whole blocks and 5 tiny pieces (2.005). You are left with just 5 tiny pieces, which we write as 0.005."
+    },
+    {
+        "text": "Which of the following fractions is the largest?",
+        "options": [
+            "1/2 because it is the most common fraction.",
+            "3/5 because 3 and 5 are odd numbers.",
+            "2/3 because when converted to a decimal it is roughly 0.667, which is larger than the others.",
+            "5/8 because 8 is the largest denominator."
+        ],
+        "answer": "2/3 because when converted to a decimal it is roughly 0.667, which is larger than the others.",
+        "explanation": "Fractions are hard to compare when the bottom numbers (denominators) are different. The easiest trick is to turn them into decimals! 1/2 is 0.50. 3/5 is 0.60. 5/8 is 0.625. But 2/3 is about 0.667. Therefore, 2/3 gives you the biggest piece of the pie!"
+    },
+    {
+        "text": "Evaluate the mathematical expression: 5 × 5 - 4 × 6",
+        "options": [
+            "1 because you must multiply first (25 and 24) and then subtract them.",
+            "4 because you subtract 5 from 9.",
+            "6 because you just pick the last number.",
+            "24 because that is the answer to 4 × 6."
+        ],
+        "answer": "1 because you must multiply first (25 and 24) and then subtract them.",
+        "explanation": "Math has a strict traffic light system called the Order of Operations (PEMDAS). You are required to do multiplication before subtraction. So, first we do 5 × 5 = 25. Then we do 4 × 6 = 24. Finally, we do the subtraction: 25 - 24 = 1."
+    },
+    {
+        "text": "A graph shows the relationship between days absent and final grades. As the days absent increase, the final grades decrease. What kind of correlation is this?",
+        "options": [
+            "Positive correlation because the days are going up.",
+            "Negative correlation because one thing goes up while the exact opposite thing goes down.",
+            "No correlation because absences don't always mean bad grades.",
+            "Constant correlation because grades always change."
+        ],
+        "answer": "Negative correlation because one thing goes up while the exact opposite thing goes down.",
+        "explanation": "\"Correlation\" is just a fancy word for how two things move together. If you push a seesaw up on one side, the other side goes down. Because \"days absent\" goes UP while \"grades\" go DOWN, they are moving in opposite directions. We call this a negative correlation."
+    },
+    {
+        "text": "In which quadrant of the Cartesian plane does the ordered pair (-5, 7) lie?",
+        "options": [
+            "Quadrant I because it has a 7.",
+            "Quadrant II because the first number tells you to go left (negative) and the second number tells you to go up (positive).",
+            "Quadrant III because it has a negative number.",
+            "Quadrant IV because 7 is bigger than 5."
+        ],
+        "answer": "Quadrant II because the first number tells you to go left (negative) and the second number tells you to go up (positive).",
+        "explanation": "Think of a graph like a map with a cross in the middle. The first number (x) tells you to walk Left or Right. The second number (y) tells you to walk Up or Down. Since we walk Left (-5) and then Up (+7), we end up in the top-left corner, which mathematicians call Quadrant II."
+    },
+    {
+        "text": "Two interior angles of a triangle are 45° and 65°. What is the measure of the third angle?",
+        "options": [
+            "70° because the inside angles of every triangle on earth always add up to exactly 180°.",
+            "80° because you just guess an even number.",
+            "90° because it looks like a right angle.",
+            "110° because you add 45 and 65."
+        ],
+        "answer": "70° because the inside angles of every triangle on earth always add up to exactly 180°.",
+        "explanation": "This is a golden rule of geometry: if you add up the three inside corners (angles) of any triangle, they will always equal 180 degrees. If we already have 45 and 65 (which add up to 110), we just subtract 110 from 180 to find our missing piece: 70 degrees."
+    },
+    {
+        "text": "To solve the equation 4y = 20, why do we divide both sides by 4?",
+        "options": [
+            "Because dividing by 4 is the exact opposite (inverse) of multiplying by 4, which removes the 4 and leaves the 'y' all by itself.",
+            "Because 20 divided by 4 is a nice whole number.",
+            "Because you always divide by the larger number.",
+            "We shouldn't divide; we should subtract 4 from both sides."
+        ],
+        "answer": "Because dividing by 4 is the exact opposite (inverse) of multiplying by 4, which removes the 4 and leaves the 'y' all by itself.",
+        "explanation": "In algebra, your main goal is to get the letter completely by itself. \"4y\" actually means \"4 times y\". To break a multiplication trap, you have to use the opposite math tool: division! By dividing both sides by 4, the 4s cancel out, leaving poor 'y' all alone to show us the answer."
+    },
+    {
+        "text": "Which of the following numbers is a power of 2 that is greater than 60 but less than 100?",
+        "options": [
+            "64 because 2 multiplied by itself 6 times (2^6) equals exactly 64, which is between 60 and 100.",
+            "72 because it is an even number between 60 and 100.",
+            "81 because 9 times 9 is 81.",
+            "96 because it is highly divisible by 2."
+        ],
+        "answer": "64 because 2 multiplied by itself 6 times (2^6) equals exactly 64, which is between 60 and 100.",
+        "explanation": "A 'power of 2' means starting with 2 and continuously multiplying by 2 (2, 4, 8, 16, 32, 64, 128). The only number in that sequence that falls between 60 and 100 is 64."
+    },
+    {
+        "text": "Which of the following decimals is located strictly between 0.857 and 0.858?",
+        "options": [
+            "0.8575 because adding a 5 to the fourth decimal place places it exactly halfway between 0.8570 and 0.8580.",
+            "0.8581 because it has a 1 at the end.",
+            "0.8569 because 69 is less than 85.",
+            "0.8507 because the numbers are mixed around."
+        ],
+        "answer": "0.8575 because adding a 5 to the fourth decimal place places it exactly halfway between 0.8570 and 0.8580.",
+        "explanation": "To find a number between two closely packed decimals, just add a zero to the end of both! 0.857 becomes 0.8570 and 0.858 becomes 0.8580. Now it's easy to see that 0.8575 is right in the middle. "
+    },
+    {
+        "text": "Which of the following fractions is greater than 3/4 but less than 1?",
+        "options": [
+            "2/3 because 3 is less than 4.",
+            "4/5 because when converted to a decimal it is 0.80, which is larger than 0.75 (3/4) but less than 1.0.",
+            "1/2 because it is a very common fraction.",
+            "5/4 because 5 is bigger than 4."
+        ],
+        "answer": "4/5 because when converted to a decimal it is 0.80, which is larger than 0.75 (3/4) but less than 1.0.",
+        "explanation": "Converting fractions to decimals makes comparing them much easier. 3/4 is 0.75 (like 75 cents). 1 is 1.00 (a whole dollar). 4/5 is 0.80 (80 cents), which sits perfectly between 75 cents and a dollar."
+    },
+    {
+        "text": "What is the correct value of the expression 20 - 4 × 3 + 2?",
+        "options": [
+            "50 because you subtract 4 from 20 first, multiply by 3, then add 2.",
+            "10 because you must multiply 4 by 3 first to get 12, subtract that from 20 to get 8, then add 2.",
+            "0 because you multiply 4 and 3 to get 12, add 2 to get 14, and subtract from 20.",
+            "-4 because you add 3 and 2 first, multiply by 4, and subtract from 20."
+        ],
+        "answer": "10 because you must multiply 4 by 3 first to get 12, subtract that from 20 to get 8, then add 2.",
+        "explanation": "The order of operations (PEMDAS) dictates that multiplication and division must happen before addition and subtraction. Once you multiply (4 × 3 = 12), you just read left to right: 20 - 12 + 2 = 10."
+    },
+    {
+        "text": "If you evaluate the expression 4^3, which of the following describes the correct process and result?",
+        "options": [
+            "12 because you simply multiply the base 4 by the exponent 3.",
+            "64 because the exponent 3 tells you to multiply the base 4 by itself three times: 4 × 4 × 4.",
+            "81 because you multiply the exponent 3 by itself four times: 3 × 3 × 3 × 3.",
+            "16 because you just square the number 4."
+        ],
+        "answer": "64 because the exponent 3 tells you to multiply the base 4 by itself three times: 4 × 4 × 4.",
+        "explanation": "An exponent is not a multiplier; it is an instruction. The small 3 simply means 'write the number 4 three times and multiply them.' So, 4 × 4 = 16, and 16 × 4 = 64."
+    },
+    {
+        "text": "Which of the following best explains if there is a number between 2.45 and 2.46?",
+        "options": [
+            "No, because 46 is the immediate next whole number after 45.",
+            "Yes, for example 2.455, because decimals are infinite and you can always add another place value to find a midpoint.",
+            "No, because decimals only go up to two places in standard counting.",
+            "Yes, for example 2.47, because it is greater than 2.45."
+        ],
+        "answer": "Yes, for example 2.455, because decimals are infinite and you can always add another place value to find a midpoint.",
+        "explanation": "Decimals act like a zooming microscope. No matter how close two decimals seem, you can always add a zero to the end to 'zoom in' and find ten more tiny numbers hiding between them!"
+    },
+    {
+        "text": "What happens when you subtract 0.09 from 0.1?",
+        "options": [
+            "0.01 because 0.1 is equivalent to 0.10, and taking 9 away from 10 leaves 1.",
+            "0.91 because you bring down the 9 and subtract 0 from 1.",
+            "0.001 because you are subtracting in the thousandths place.",
+            "-0.08 because 9 is larger than 1."
+        ],
+        "answer": "0.01 because 0.1 is equivalent to 0.10, and taking 9 away from 10 leaves 1.",
+        "explanation": "When doing math with decimals, always line up the decimal points and fill in any empty spaces with zeros. Subtracting 0.09 from 0.10 makes it an easy problem: 10 minus 9 is 1."
+    },
+    {
+        "text": "Look at the pattern: 1st = (2^2 - 2), 2nd = (3^2 - 3), 3rd = (4^2 - 4). What will be the value of the 5th term?",
+        "options": [
+            "16 because the 5th base number is 5, and 5 squared minus 5 is 20.",
+            "20 because the 5th expression uses the number 6 (since the 1st is 2), and 6^2 - 6 = 30.",
+            "30 because the sequence of base numbers is shifted by one (2, 3, 4, 5, 6), making the 5th expression 6^2 - 6.",
+            "25 because you just square the 5th number."
+        ],
+        "answer": "30 because the sequence of base numbers is shifted by one (2, 3, 4, 5, 6), making the 5th expression 6^2 - 6.",
+        "explanation": "Notice the trick in the pattern: the base number being used is always one larger than the term's position. So, the 1st term uses a 2. The 3rd term uses a 4. This means the 5th term must use a 6. Doing the math: (6 × 6) - 6 = 36 - 6 = 30."
+    },
+    {
+        "text": "In a survey of 100 students, 60 like math, 50 like science, and 20 like both. How many students do NOT like either math or science?",
+        "options": [
+            "10 because you find the total who like at least one subject (60 + 50 - 20 = 90) and subtract that from the 100 total students.",
+            "20 because that is the number of students who like both.",
+            "30 because you subtract 50 from 80.",
+            "40 because you subtract 60 from 100."
+        ],
+        "answer": "10 because you find the total who like at least one subject (60 + 50 - 20 = 90) and subtract that from the 100 total students.",
+        "explanation": "To figure this out without double-counting, you add the pure Math fans (40), the pure Science fans (30), and the fans of both (20). That equals 90 kids who like at least one subject. Since there are 100 kids total, 10 must not like either! "
+    },
+    {
+        "text": "A graph shows an upward trend from left to right regarding study hours and test scores. What is the correct interpretation?",
+        "options": [
+            "As study hours increase, test scores decrease.",
+            "As study hours increase, test scores also increase because the line goes higher as it moves to the right.",
+            "Study hours have no effect on test scores.",
+            "As study hours decrease, test scores increase."
+        ],
+        "answer": "As study hours increase, test scores also increase because the line goes higher as it moves to the right.",
+        "explanation": "When a line on a graph moves up and to the right, it means both things being measured are getting bigger at the same time. This is called a positive correlation—more study time equals higher scores!"
+    },
+    {
+        "text": "In a class, 30 joined Math Club, 15 joined Science Club, and 5 joined both. How many joined Math Club ONLY?",
+        "options": [
+            "30 because the problem states 30 joined the Math Club.",
+            "25 because you must subtract the 5 students who are in both clubs from the total 30 Math Club members.",
+            "15 because that is the number of Science Club members.",
+            "10 because you subtract 5 from 15."
+        ],
+        "answer": "25 because you must subtract the 5 students who are in both clubs from the total 30 Math Club members.",
+        "explanation": "The '30' includes everyone who wrote their name on the Math Club sign-up sheet, even if they also signed the Science Club sheet. To find the kids who ONLY do Math, you have to kick out the 5 kids who are double-booked. 30 - 5 = 25."
+    },
+    {
+        "text": "If a line graph shows a company's sales going down steadily from January to June, what prediction can be made for July if the trend continues?",
+        "options": [
+            "Sales will spike up because a new month starts the cycle over.",
+            "Sales will be lower than June's sales because the continuous downward line suggests the decrease will keep going.",
+            "Sales will be exactly the same as January.",
+            "It cannot be determined because graphs cannot predict the future."
+        ],
+        "answer": "Sales will be lower than June's sales because the continuous downward line suggests the decrease will keep going.",
+        "explanation": "A 'trend' is a pattern. While we cannot predict the future with 100% certainty, math allows us to make a highly educated guess. If the line has been pointing down for 6 straight months, the safest mathematical prediction is that it will go down again."
+    },
+    {
+        "text": "A line passes through the points (0, 1) and (1, 3). Which of the following ordered pairs also lies on this line?",
+        "options": [
+            "(2, 4) because you just add 1 to the previous numbers.",
+            "(2, 5) because the slope shows the y-value goes up by 2 every time the x-value goes up by 1.",
+            "(3, 6) because you multiply by 2.",
+            "(3, 9) because you multiply by 3."
+        ],
+        "answer": "(2, 5) because the slope shows the y-value goes up by 2 every time the x-value goes up by 1.",
+        "explanation": "Look at the pattern of the points. When x goes from 0 to 1, y goes from 1 to 3 (an increase of 2). This means our 'slope' is climbing by 2. If we move x up by 1 again (from 1 to 2), y must go up by 2 again (from 3 to 5)."
+    },
+    {
+        "text": "A triangle is plotted on a coordinate plane with vertices at (0,0), (0,6), and (5,0). What is the area of the triangle?",
+        "options": [
+            "11 square units because you add 5 and 6.",
+            "15 square units because the base is 5, the height is 6, and multiplying them and dividing by 2 equals 15.",
+            "30 square units because 5 times 6 is 30.",
+            "60 square units because you guess a larger number."
+        ],
+        "answer": "15 square units because the base is 5, the height is 6, and multiplying them and dividing by 2 equals 15.",
+        "explanation": "To find the area of a triangle, you use the formula: Area = (Base × Height) ÷ 2. The base lies on the x-axis and is 5 units long. The height is on the y-axis and is 6 units long. 5 × 6 = 30. Half of 30 is 15. "
+    },
+    {
+        "text": "Point P is at (2, 2) and Point Q is at (2, 8). How long is the line segment connecting P and Q?",
+        "options": [
+            "4 units because you divide 8 by 2.",
+            "6 units because the x-values are the same, so you just find the difference between the y-values (8 - 2 = 6).",
+            "8 units because that is the largest number.",
+            "10 units because you add 8 and 2."
+        ],
+        "answer": "6 units because the x-values are the same, so you just find the difference between the y-values (8 - 2 = 6).",
+        "explanation": "Because both points share an x-value of 2, this line goes straight up and down on the graph! All you have to do is count the steps from 2 up to 8, which is exactly 6 steps."
+    },
+    {
+        "text": "If Point A is at -150 and Point B is at -50 on a number line, what number is exactly halfway between them?",
+        "options": [
+            "-200 because you add them together.",
+            "-100 because finding the average of -150 and -50 (-200 ÷ 2) gives you the exact midpoint.",
+            "0 because 0 is always in the middle.",
+            "100 because distances are positive."
+        ],
+        "answer": "-100 because finding the average of -150 and -50 (-200 ÷ 2) gives you the exact midpoint.",
+        "explanation": "To find the exact middle of two numbers, you just add them together and divide by 2! (-150) + (-50) = -200. Half of -200 is -100."
+    },
+    {
+        "text": "What are the coordinates of a point that is 4 units left of the y-axis and 3 units below the x-axis?",
+        "options": [
+            "(4, 3) because the numbers are 4 and 3.",
+            "(-4, 3) because left is negative.",
+            "(-4, -3) because moving left means a negative x-value, and moving down means a negative y-value.",
+            "(4, -3) because down is negative."
+        ],
+        "answer": "(-4, -3) because moving left means a negative x-value, and moving down means a negative y-value.",
+        "explanation": "The starting point on a graph is (0,0). The first number controls Left/Right; going Left makes it negative (-4). The second number controls Up/Down; going Down makes it negative (-3). So your address is (-4, -3)."
+    },
+    {
+        "text": "Point A is at (1, 2). If you translate (move) this point 4 units to the right and 3 units down, what is the new location?",
+        "options": [
+            "(5, 5) because you add 4 to x and add 3 to y.",
+            "(-3, 5) because moving right makes x negative.",
+            "(5, -1) because moving 4 right adds 4 to the x-value (1+4=5), and moving 3 down subtracts 3 from the y-value (2-3=-1).",
+            "(4, -3) because those are the translation numbers."
+        ],
+        "answer": "(5, -1) because moving 4 right adds 4 to the x-value (1+4=5), and moving 3 down subtracts 3 from the y-value (2-3=-1).",
+        "explanation": "Translation means sliding a point. Moving right increases your x-coordinate (1 + 4 = 5). Moving down decreases your y-coordinate (2 - 3 = -1). So, your new resting spot is (5, -1)."
+    },
+    {
+        "text": "A square has vertices at (0,0), (0,3), (3,3), and (x,y). What must be the coordinates of (x,y) to complete the square?",
+        "options": [
+            "(3,0) because it must align horizontally with (0,0) and vertically with (3,3) to close the 3x3 shape.",
+            "(0,-3) because you need to go down to make a square.",
+            "(3,6) because you multiply the coordinates by 2.",
+            "(-3,3) because squares must cross the y-axis."
+        ],
+        "answer": "(3,0) because it must align horizontally with (0,0) and vertically with (3,3) to close the 3x3 shape.",
+        "explanation": "A square has four straight sides of equal length. By plotting the first three corners on a grid, you can see the shape is 3 units wide and 3 units tall. The missing bottom-right corner must sit straight down from (3,3) and straight across from (0,0), placing it at (3,0)."
+    },
+    {
+        "text": "If a line passes through the origin (0,0) and the point (2,4), which of the following statements is true about its slope?",
+        "options": [
+            "The slope is 1/2 because you divide x by y.",
+            "The slope is 2 because for every 1 unit you move to the right (run), you move 2 units up (rise), meaning rise over run is 4/2.",
+            "The slope is 0 because it starts at the origin.",
+            "The slope is 4 because that is the highest y-value."
+        ],
+        "answer": "The slope is 2 because for every 1 unit you move to the right (run), you move 2 units up (rise), meaning rise over run is 4/2.",
+        "explanation": "Slope is calculated as the 'rise' (how much it goes up) divided by the 'run' (how much it goes sideways). From (0,0) to (2,4), the line rises by 4 and runs by 2. 4 divided by 2 is 2!"
+    },
+    {
+        "text": "[Refer to Figure 6] The exterior angle P of a triangle measures 145 degrees. Which of the following CANNOT be the measure of one of its opposite interior angles r and q?",
+        "options": [
+            "45 degrees because it is a small angle.",
+            "60 degrees because it adds up to 105.",
+            "85 degrees because 85 and 60 make 145.",
+            "150 degrees because the two interior angles must add up to equal the exterior angle (145), so neither angle can be larger than 145 alone."
+        ],
+        "answer": "150 degrees because the two interior angles must add up to equal the exterior angle (145), so neither angle can be larger than 145 alone.",
+        "explanation": "A rule in geometry states that an exterior angle is exactly equal to the sum of the two opposite inside angles. Therefore, it is impossible for just one of the inside pieces to be bigger than the total sum!"
+    },
+    {
+        "text": "A student has sticks measuring 3 cm, 4 cm, and 10 cm. Can they form a triangle?",
+        "options": [
+            "Yes, because any three lengths can form a triangle.",
+            "No, because the two shorter sticks placed end-to-end (3+4=7) are not long enough to reach across the longest stick (10), so they will not connect.",
+            "Yes, because 3, 4, and 10 are all whole numbers.",
+            "No, because a triangle must always have equal sides."
+        ],
+        "answer": "No, because the two shorter sticks placed end-to-end (3+4=7) are not long enough to reach across the longest stick (10), so they will not connect.",
+        "explanation": "This demonstrates the Triangle Inequality Theorem. For three lines to close together into a triangle, the two shorter lines added together MUST be longer than the longest line. Otherwise, they just fold flat! "
+    },
+    {
+        "text": "In a right-angled triangle, if one of the acute angles measures 35 degrees, what is the measure of the other acute angle?",
+        "options": [
+            "35 degrees because acute angles in a right triangle are always equal.",
+            "55 degrees because a triangle holds 180 degrees total, and 180 minus 90 (the right angle) minus 35 leaves 55.",
+            "145 degrees because 180 - 35 = 145.",
+            "45 degrees because it is a standard angle."
+        ],
+        "answer": "55 degrees because a triangle holds 180 degrees total, and 180 minus 90 (the right angle) minus 35 leaves 55.",
+        "explanation": "The word 'right-angled' gives away a free answer: one angle is 90 degrees! Since all three corners must equal 180 degrees, the two smaller (acute) angles must add up to the remaining 90 degrees. 90 - 35 = 55."
+    },
+    {
+        "text": "Triangle A has sides 3, 4, 5. Triangle B has sides 6, 8, 10. What can be said about these two triangles?",
+        "options": [
+            "They are completely different and unrelated.",
+            "Triangle B is a similar triangle to Triangle A because every single side was multiplied by the exact same scale factor (2) to create it.",
+            "They have the exact same area.",
+            "They cannot both be right triangles."
+        ],
+        "answer": "Triangle B is a similar triangle to Triangle A because every single side was multiplied by the exact same scale factor (2) to create it.",
+        "explanation": "If you take a shape and multiply all of its sides by the exact same number, you create a 'similar' shape. It is like zooming in on a picture on your phone; the shape stays exactly the same, it just gets bigger! "
+    },
+    {
+        "text": "If n represents a whole number, which expression represents the product of a number and two less than that number?",
+        "options": [
+            "n(2 - n) because the order of words doesn't matter.",
+            "n(n - 2) because 'a number' is n, 'two less' is (n-2), and 'product' means you multiply them together.",
+            "2n - 2 because you multiply n by 2.",
+            "n - 2n because you subtract."
+        ],
+        "answer": "n(n - 2) because 'a number' is n, 'two less' is (n-2), and 'product' means you multiply them together.",
+        "explanation": "Algebra is just translating English into Math. 'A number' becomes 'n'. 'Two less than that number' becomes '(n - 2)'. 'Product' tells us we need to smash them together with multiplication, giving us n(n - 2)."
+    },
+    {
+        "text": "What is the value of x² - 3x when x = 4?",
+        "options": [
+            "1 because 4 minus 3 is 1.",
+            "4 because replacing x with 4 gives you (4 × 4) - (3 × 4), which is 16 - 12.",
+            "10 because you add 16 and 12.",
+            "16 because 4 squared is 16."
+        ],
+        "answer": "4 because replacing x with 4 gives you (4 × 4) - (3 × 4), which is 16 - 12.",
+        "explanation": "To solve this, treat 'x' like a blank box and drop the number 4 into it. First, 4 squared (4 × 4) is 16. Second, 3 times 4 is 12. Finally, subtract: 16 - 12 = 4."
+    },
+    {
+        "text": "Which of the following algebraic expressions represents the product of a number and the number succeeding it?",
+        "options": [
+            "n + (n+1) because you are adding them.",
+            "n(n+1) because 'n' is the number, 'n+1' is the next consecutive number, and product means multiply.",
+            "n² + 1 because you square it.",
+            "2n + 1 because you multiply by 2."
+        ],
+        "answer": "n(n+1) because 'n' is the number, 'n+1' is the next consecutive number, and product means multiply.",
+        "explanation": "The word 'succeeding' means the very next whole number in line (like 5 and 6). In algebra, if your number is 'n', the next number is always 'n + 1'. Since 'product' means multiply, you bracket them together."
+    },
+    {
+        "text": "If 'x' represents a student's age now, which expression correctly represents the student's age 5 years ago?",
+        "options": [
+            "x + 5 because 'ago' means you are looking for a bigger number.",
+            "5x because you multiply their age by 5.",
+            "x - 5 because you subtract 5 from their current age to find how old they were in the past.",
+            "5 - x because you take their age away from 5."
+        ],
+        "answer": "x - 5 because you subtract 5 from their current age to find how old they were in the past.",
+        "explanation": "To go back in time mathematically, you have to subtract! If you are 15 right now (x = 15), your age 5 years ago was 15 - 5, which equals 10."
+    },
+    {
+        "text": "Why does the expression 2n represent an even number, assuming n is any whole number?",
+        "options": [
+            "Because 'n' is an abbreviation for 'even'.",
+            "Because multiplying ANY whole number by 2 guarantees the result can be divided perfectly in half, which is the definition of an even number.",
+            "Because adding 2 to any number makes it even.",
+            "It does not; 2n can sometimes be an odd number."
+        ],
+        "answer": "Because multiplying ANY whole number by 2 guarantees the result can be divided perfectly in half, which is the definition of an even number.",
+        "explanation": "An even number is simply any number that can be divided by 2 without a remainder. Therefore, taking ANY number (odd or even) and multiplying it by 2 forces it to become an even number!"
+    },
+    {
+        "text": "A taxi charges a flat rate of Php 40 plus Php 15 per kilometer traveled (k). Which expression shows the total fare?",
+        "options": [
+            "40k + 15 because the 40 is attached to the kilometers.",
+            "55k because you combine 40 and 15.",
+            "40 + 15k because the flat rate is paid once, and the Php 15 is multiplied by the number of changing kilometers (k).",
+            "k(40 + 15) because both are multiplied by distance."
+        ],
+        "answer": "40 + 15k because the flat rate is paid once, and the Php 15 is multiplied by the number of changing kilometers (k).",
+        "explanation": "You only pay the flat rate (40) one single time just for opening the taxi door. The part that grows and multiplies is the per-kilometer charge (15k). You add those two pieces together to get your total fare."
+    },
+    {
+        "text": "If n, n+1, and n+2 represent three consecutive integers, and n = 10, what are the numbers?",
+        "options": [
+            "10, 11, 12 because you substitute 10 into each expression: 10, 10+1, 10+2.",
+            "10, 20, 30 because you multiply by 1 and 2.",
+            "10, 9, 8 because consecutive means going backward.",
+            "1, 2, 3 because 'n' always equals 1."
+        ],
+        "answer": "10, 11, 12 because you substitute 10 into each expression: 10, 10+1, 10+2.",
+        "explanation": "'Consecutive' just means numbers counting in order. If the starting number 'n' is secretly 10, then the next number is 10+1 (11), and the one after that is 10+2 (12)."
+    },
+    {
+        "text": "What does the expression 3(x + 4) mean in relation to the distributive property?",
+        "options": [
+            "It means you only multiply 3 by x, resulting in 3x + 4.",
+            "It means you add 3, x, and 4 together.",
+            "It means you must multiply the outside 3 by BOTH pieces inside the parenthesis, resulting in 3x + 12.",
+            "It means you multiply x by 4 and then add 3."
+        ],
+        "answer": "It means you must multiply the outside 3 by BOTH pieces inside the parenthesis, resulting in 3x + 12.",
+        "explanation": "The distributive property is like a mail carrier delivering a package to every house on the block. The number outside the parenthesis (3) must be multiplied by every term inside. 3 times x is 3x, and 3 times 4 is 12!"
+    },
+    {
+        "text": "Given the equation 20 + a = b + 8. If a = 5, what must be the value of b?",
+        "options": [
+            "13 because you subtract 5 from 8.",
+            "17 because substituting 5 makes the left side equal 25, and 17 + 8 also equals 25.",
+            "25 because that is the sum of 20 and 5.",
+            "33 because you add everything together."
+        ],
+        "answer": "17 because substituting 5 makes the left side equal 25, and 17 + 8 also equals 25.",
+        "explanation": "Equations are like balance scales. If a = 5, the left side is 20 + 5, which weighs exactly 25. To make the right side balance and also weigh 25, 'b' must be exactly 17 (since 17 + 8 = 25)."
+    },
+    {
+        "text": "What is the value of y in the equation 3y - 4 = 11?",
+        "options": [
+            "3 because 11 minus 4 is 7.",
+            "4 because it is in the equation.",
+            "5 because you reverse the math: adding 4 to 11 makes 15, and dividing by 3 gives you 5.",
+            "15 because you add 11 and 4."
+        ],
+        "answer": "5 because you reverse the math: adding 4 to 11 makes 15, and dividing by 3 gives you 5.",
+        "explanation": "To free the 'y', you do operations in reverse. First, get rid of the '-4' by adding 4 to both sides (11 + 4 = 15). Now you have 3y = 15. Finally, divide by 3 to find out that y equals 5."
+    },
+    {
+        "text": "Given 15 + x = y + 5. If x = 2, what must be the value of y?",
+        "options": [
+            "10 because you subtract 5 from 15.",
+            "12 because the left side becomes 17, meaning the right side must also equal 17.",
+            "17 because that is the total of the left side.",
+            "20 because you add 15 and 5."
+        ],
+        "answer": "12 because the left side becomes 17, meaning the right side must also equal 17.",
+        "explanation": "First, drop the 2 into the x spot. 15 + 2 = 17. Now your equation says '17 = y + 5'. If you need the right side to total 17, the missing 'y' piece must be 12."
+    },
+    {
+        "text": "A bakery sells cupcakes at 6 for Php 150. Which expression shows the cost (C) of y cupcakes?",
+        "options": [
+            "C = 25y because you find the unit price (150 ÷ 6 = 25) and multiply it by the number of cupcakes (y).",
+            "C = 150y because 150 is the price.",
+            "C = 150/y because you divide the price.",
+            "C = 6y + 150 because you add the numbers together."
+        ],
+        "answer": "C = 25y because you find the unit price (150 ÷ 6 = 25) and multiply it by the number of cupcakes (y).",
+        "explanation": "Before you can write a formula, you have to find the 'unit price' (how much just one cupcake costs). 150 pesos divided by 6 cupcakes is 25 pesos each. Therefore, any number of cupcakes (y) will cost 25 times y."
+    },
+    {
+        "text": "Notebooks are priced at 4 for Php 120. Which equation finds the cost (C) for n notebooks?",
+        "options": [
+            "C = 120/4n because you divide all the numbers.",
+            "C = 30n because 120 divided by 4 gives a unit price of 30, which is multiplied by the number of notebooks (n).",
+            "C = 120n because 120 is the cost.",
+            "C = 4n + 120 because you combine the numbers."
+        ],
+        "answer": "C = 30n because 120 divided by 4 gives a unit price of 30, which is multiplied by the number of notebooks (n).",
+        "explanation": "Just like the cupcake problem, find the cost of a single notebook first. 120 divided by 4 means one notebook is Php 30. If you want 'n' notebooks, you multiply 30 by 'n'."
+    }
+    ];
+
+// ==========================================
+// 5. ANTI-CHEAT FUNCTIONS
+// ==========================================
+let violationCooldown = false;
+
+function reportViolation(studentName, category, action) {
+    const formData = new URLSearchParams();
+    formData.append("type", "VIOLATION");
+    formData.append("name", studentName); 
+    formData.append("category", category);
+    formData.append("action", action);
+
+    window.RMAData.reportViolation(formData)
+    .then(() => console.log("Violation recorded: " + action))
+    .catch(e => console.error("Violation Fetch Error:", e));
+}
+
+function showCustomAlert(msg) {
+    let alertBox = document.createElement("div");
+    alertBox.innerHTML = `<div style="position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#e74c3c; color:white; padding:15px 25px; border-radius:8px; z-index:9999; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.2); text-align:center;">${msg}</div>`;
+    document.body.appendChild(alertBox);
+    setTimeout(() => { if(alertBox) alertBox.remove(); }, 3000);
+}
+
+function handleViolation(reason) {
+    if (!SECURITY.examStarted || SECURITY.cheatDetected || window.isExamFinished || SECURITY.isWarningActive || violationCooldown) {
+        return; 
+    }
+
+    SECURITY.isWarningActive = true;
+    SECURITY.strikes += 1; 
+
+    if (SECURITY.strikes >= SECURITY.maxStrikes) {
+        reportCheat(reason + ` (Reached ${SECURITY.maxStrikes} strikes)`);
+        return;
+    } 
+    
+    const quizContent = document.getElementById('quizContent');
+    if (quizContent) quizContent.style.display = 'none';
+
+    const modal = document.createElement('div');
+    modal.id = "securityModalBox";
+    modal.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; z-index:999999;";
+
+    const box = document.createElement('div');
+    box.style.cssText = "background:white; padding:40px; border-radius:12px; text-align:center; max-width:450px; box-shadow:0 10px 30px rgba(255,0,0,0.3); font-family:sans-serif;";
+    
+    box.innerHTML = `
+        <h2 style="color:#c0392b; font-size:26px; margin-top:0;"> SECURITY WARNING ${SECURITY.strikes} of ${SECURITY.maxStrikes}</h2>
+        <p style="font-size:18px; color:#333; font-weight:bold;">Violation: ${reason}</p>
+        <p style="font-size:16px; color:#666;">Bawal lumabas ng fullscreen, mag-switch ng tab, o mag-minimize.</p>
+    `;
+
+    const btnContinue = document.createElement('button');
+    btnContinue.innerText = "I-click para bumalik sa Exam";
+    btnContinue.style.cssText = "margin-top:20px; padding:15px; width:100%; background:#27ae60; color:white; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;";
+
+    btnContinue.onclick = function() {
+        forceEnterFullscreen(); 
+        modal.remove(); 
+        if (quizContent) quizContent.style.display = 'block'; 
+        violationCooldown = true; 
+        setTimeout(() => { violationCooldown = false; }, 5000); 
+        SECURITY.isWarningActive = false;
+    };
+
+    const btnQuit = document.createElement('button');
+    btnQuit.innerText = "Isuko ang Exam (Quit)";
+    btnQuit.style.cssText = "margin-top:15px; padding:10px; width:100%; background:transparent; color:#c0392b; border:none; text-decoration:underline; font-size:14px; cursor:pointer;";
+    
+    btnQuit.onclick = function() {
+        modal.remove();
+        let studentName = document.getElementById("displayStudentName").innerText;
+        // ITINUGMA SA APPS SCRIPT: "VOLUNTARY EXIT AFTER WARNING"
+        reportViolation(studentName, "SPAM QUITTING", "VOLUNTARY EXIT AFTER WARNING");
+        reportCheat("Voluntary Exit after Warning");
+    };
+
+    box.appendChild(btnContinue);
+    box.appendChild(btnQuit);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+}
+
+function reportCheat(reason) {
+    if(SECURITY.cheatDetected) return;
+    SECURITY.cheatDetected = true;
+    sessionStorage.removeItem("g8_exam_ongoing");
+
+    let isBanned = false;
+    let banReasonMsg = "";
+
+    if (reason.includes("Voluntary Exit")) {
+        SECURITY.quits += 1;
+        gameState.student.name = ` QUIT (${SECURITY.quits}/3): ` + (gameState.student.name || "Unknown");
+        if (SECURITY.quits >= SECURITY.maxQuits) {
+            isBanned = true;
+            banReasonMsg = "Too many cancellations.";
+        }
+    } else {
+        gameState.student.name = " MULTI VIOLATIONS: " + (gameState.student.name || "Unknown");
+        isBanned = true;
+        banReasonMsg = "Multiple security violations.";
+    }
+
+    if (isBanned) SECURITY.banUntil = Date.now() + SECURITY.banDuration;
+
+    gameState.student.section = reason + " | " + (gameState.student.section || "N/A");
+    gameState.correctCount = 0; 
+
+    if (typeof stopRealTimer === 'function') stopRealTimer(); 
+    if (typeof questionTimerInterval !== 'undefined') clearInterval(questionTimerInterval);
+
+    ['loginContainer', 'quizContainer', 'instructionsContainer', 'loginOverlay', 'welcomeContainer'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el) el.style.display = 'none';
+    });
+
+    let resContainer = document.getElementById('resultContainer') || document.createElement('div');
+    if (!resContainer.id) {
+        resContainer.id = 'resultContainer';
+        document.body.appendChild(resContainer);
+    }
+    
+    resContainer.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999;";
+
+    let titleMessage = reason.includes("Voluntary Exit") ? " EXAM CANCELLED" : " EXAM INVALIDATED";
+    let descMessage = reason.includes("Voluntary Exit") ? "You have chosen to voluntarily exit the exam." : "Your attempt has been invalidated due to a security violation.";
+    let banAlertHTML = isBanned ? `<div style="background:#e74c3c; color:white; padding:12px; margin-top:15px; border-radius:8px; font-weight:bold; font-size:16px;"> YOU ARE BANNED FOR 3 DAYS<br><span style="font-size:14px; font-weight:normal;">Reason: ${banReasonMsg}</span></div>` : "";
+
+    resContainer.innerHTML = `
+        <div style="background: white; padding: 40px; border-radius: 15px; text-align: center; max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(255,0,0,0.4); border-top: 8px solid #c0392b; font-family: sans-serif;">
+            <h1 style="color: #c0392b; font-size: 30px; margin-top: 0; margin-bottom: 10px;">${titleMessage}</h1>
+            <p style="font-size: 18px; color: #333; margin-top: 15px; font-weight: bold;">${descMessage}</p>
+            ${banAlertHTML}
+            <div style="background: #fadbd8; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #f5b7b1;">
+                <p style="font-size: 16px; color: #c0392b; margin: 0; font-weight: bold;">Reason:<br> ${reason}</p>
+            </div>
+            <p style="font-size: 14px; color: #666; margin-top: 20px;">Your score has been recorded as 0%. Please contact your teacher immediately.</p>
+        </div>`;
+}
+
+function disableSecurityOnFinish() {
+    window.isExamFinished = true;
+    SECURITY.examStarted = false;
+    clearTimeout(idleTimeout); 
+    sessionStorage.removeItem("g8_exam_ongoing");
+    localStorage.removeItem("g8_exam_strikes");
+}
+
+// ==========================================
+// 6. EVENT LISTENERS (ANTI-CHEAT)
+// ==========================================
+window.onload = function() {
+    if (sessionStorage.getItem("g8_exam_ongoing") === "true") {
+        SECURITY.examStarted = true;
+        handleViolation("PAGE_REFRESHED");
+    }
+};
+
+document.addEventListener("visibilitychange", function() {
+    let studentNameDisplay = document.getElementById("displayStudentName");
+    let currentStudent = (studentNameDisplay && studentNameDisplay.innerText !== "Guest") ? studentNameDisplay.innerText : "UNKNOWN";
+
+    if (document.hidden && !window.isExamFinished && currentStudent !== "UNKNOWN" && !SECURITY.isWarningActive && !SECURITY.cheatDetected) {
+        reportViolation(currentStudent, "CHEATING", "Switched Tab / Minimized Browser");
+        handleViolation("TAB_SWITCH_OR_MINIMIZED"); 
+    }
+});
+
+window.addEventListener("blur", () => {
+    if (SECURITY.examStarted && !SECURITY.cheatDetected && !window.isExamFinished) handleViolation("LOST_WINDOW_FOCUS");
+});
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && SECURITY.examStarted && !SECURITY.cheatDetected && !window.isExamFinished) handleViolation("EXIT_FULLSCREEN");
+});
+
+window.addEventListener('beforeunload', function (e) {
+    let studentName = document.getElementById("displayStudentName").innerText;
+    if (studentName !== "Guest" && !window.isExamFinished) reportViolation(studentName, "SPAM QUITTING", "Browser Refresh/Close during exam");
+});
+
+document.addEventListener("contextmenu", e => {
+    if(SECURITY.examStarted && !window.isExamFinished) e.preventDefault();
+});
+
+document.addEventListener("keydown", (e) => {
+    if (!SECURITY.examStarted || SECURITY.cheatDetected || window.isExamFinished) return;
+    if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 103 || e.keyCode === 104)) || (e.ctrlKey && e.keyCode === 85)) {
+        e.preventDefault(); handleViolation("OPENED_DEVTOOLS"); return false;
+    }
+    if (e.key === "PrintScreen" || e.keyCode === 44) {
+        e.preventDefault(); navigator.clipboard.writeText(""); handleViolation("SCREENSHOT_ATTEMPT_PRTSCN"); return false;
+    }
+    if (e.metaKey && e.shiftKey && (e.key.toLowerCase() === 's' || e.key === '3' || e.key === '4' || e.key === '5')) {
+        e.preventDefault(); handleViolation("SCREENSHOT_ATTEMPT"); return false;
+    }
+});
+
+document.addEventListener("keyup", (e) => {
+    if (SECURITY.examStarted && !SECURITY.cheatDetected && !window.isExamFinished) {
+        if (e.key === "PrintScreen" || e.keyCode === 44) {
+            navigator.clipboard.writeText(""); handleViolation("SCREENSHOT_ATTEMPT_PRTSCN");
+        }
+    }
+});
+
+const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+activityEvents.forEach(event => document.addEventListener(event, resetIdleTimer, true));
+
+// ==========================================
+// 10. TIMERS
+// ==========================================
+function startRealTimer() {
+    gameStartTime = new Date(); 
+    let myTimer = document.getElementById("timerDisplay");
+    
+    if (myTimer) {
+        myTimer.style.display = "inline-block"; 
+    }
+
+    let seconds = 0;
+    clearInterval(timerInterval);
+    
+    timerInterval = setInterval(() => {
+        seconds++;
+        let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        let s = (seconds % 60).toString().padStart(2, '0');
+        if (myTimer) myTimer.innerText = ` ${m}:${s}`;
+    }, 1000);
+    
+    document.getElementById("loginOverlay").style.display = "none";
+}
+
+function stopRealTimer() {
+    clearInterval(timerInterval);
+    clearTimeout(idleTimeout);
+    gameEndTime = new Date(); 
+    document.getElementById("timerDisplay").style.display = "none"; 
+}
+
+function startQuestionTimer() {
+    clearInterval(questionTimerInterval); 
+    let timeRemaining = 30; 
+
+    const timerContainer = document.getElementById("questionTimerContainer");
+    const timeDisplay = document.getElementById("timeRemaining");
+
+    if (timerContainer) timerContainer.style.display = "block";
+    if (timeDisplay) timeDisplay.innerText = timeRemaining;
+
+    questionTimerInterval = setInterval(() => {
+        timeRemaining--;
+        if (timeDisplay) timeDisplay.innerText = timeRemaining;
+
+        if (timeRemaining <= 0) {
+            clearInterval(questionTimerInterval); 
+            showCustomAlert("Time's up! No points for this question.");
+            
+            const labels = document.querySelectorAll('.option-label');
+            labels.forEach(label => {
+                label.classList.add('disabled');
+                const cb = label.querySelector('input');
+                cb.disabled = true;
+            });
+
+            dom.explanationText.textContent = "Time ran out. Please proceed to the next question.";
+            dom.explanationBox.style.display = 'block';
+
+            const pointer = gameState.activeQuestions[gameState.currentQIndex];
+            const currentID = pointer.rawIndex + 1;
+            gameState.itemAnalysisRecords.push({ id: currentID, result: "M" });
+            gameState.userAnswers[currentID] = "M";
+
+            document.getElementById('soundWrong').play();
+
+            dom.checkBtn.classList.add('hidden');
+            dom.nextBtn.classList.remove('hidden');
+            dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
+        }
+    }, 1000);
+}
+
+function resetIdleTimer() {
+    if (!SECURITY.examStarted || SECURITY.cheatDetected || window.isExamFinished) {
+        clearTimeout(idleTimeout); return;
+    }
+    clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => {
+        handleViolation("IDLE_FOR_1_MINUTE_NO_ACTIVITY");
+        resetIdleTimer(); 
+    }, IDLE_TIME_LIMIT);
+}
+
+// ==========================================
+// 8. GAME INITIALIZATION & ENGINE
+// ==========================================
+function lockExam(name) {
+    window.isExamFinished = false;
+    SECURITY.examStarted = true;
+    SECURITY.cheatDetected = false;
+    SECURITY.strikes = 0; 
+    sessionStorage.setItem("g8_exam_ongoing", "true");
+    return true;
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    const now = Date.now();
+    
+    if (SECURITY.banUntil > now) {
+        let timeLeft = SECURITY.banUntil - now;
+        let days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        alert(`BANNED: Hindi ka muna makakapag-take ng exam.\nLimit Reached: Naka-3 Strikes o 3 Quits ka na.\nMaaari kang umulit pagkalipas ng: ${days} araw at ${hours} oras.`);
+        return; 
+    } else if (SECURITY.banUntil > 0 && SECURITY.banUntil <= now) {
+        SECURITY.banUntil = 0; 
+        SECURITY.quits = 0; 
+        SECURITY.strikes = 0;
+        localStorage.removeItem("g8_exam_strikes");
+    }
+
+    const lastName = document.getElementById('lastName').value.trim();
+    const firstName = document.getElementById('firstName').value.trim();
+    const mi = document.getElementById('midInitial').value.trim(); 
+    const section = document.getElementById('studentSection').value;
+    
+    if(lastName && firstName && section) {
+        gameState.student.lastName = lastName;
+        let middleInitialFormat = mi ? ` ${mi.charAt(0)}.` : "";
+        gameState.student.firstNameMI = (firstName + middleInitialFormat);
+        
+        const combinedName = `${gameState.student.lastName}, ${gameState.student.firstNameMI}`;
+        
+        lockExam(combinedName);
+        try { forceEnterFullscreen(); } catch(e) { console.log("Fullscreen bypass"); }
+
+        gameState.student.name = combinedName; 
+        gameState.student.section = section;
+        document.getElementById('displayStudentName').textContent = combinedName;
+        document.getElementById('displaySection').textContent = section;
+        
+        document.getElementById('loginOverlay').style.display = 'none'; 
+        
+        startRealTimer();
+        initGame();
+        resetIdleTimer();
+        
+    } else {
+        alert("Please enter your Last Name, First Name, and Select your Section");
+    }
+});
+
+function initGame() {
+    gameState.correctCount = 0;
+    gameState.scorePoints = 0;
+    dom.resultContent.classList.add('hidden');
+    dom.quizContent.classList.remove('hidden');
+
+    const FIXED_COUNT = Math.min(38, rawQuestions.length);
+    const RANDOM_COUNT = Math.min(12, rawQuestions.length - FIXED_COUNT);
+    
+    let fixedIndices = [];
+    let randomPoolIndices = [];
+    
+    for (let i = 0; i < rawQuestions.length; i++) {
+        if (i < FIXED_COUNT) fixedIndices.push(i);
+        else randomPoolIndices.push(i);
+    }
+    
+    shuffleArray(randomPoolIndices);
+    let selectedRandomIndices = randomPoolIndices.slice(0, RANDOM_COUNT);
+    let finalIndices = fixedIndices.concat(selectedRandomIndices);
+    
+    shuffleArray(finalIndices); // I-shuffle ang buong 60 items
+    gameState.activeQuestions = finalIndices.map(i => ({ rawIndex: i }));
+    gameState.currentQIndex = 0;
+    dom.qTotalDisp.textContent = gameState.activeQuestions.length;
+    
+    loadQuestion();
+    fetchLeaderboard();
+}
+
+function loadQuestion() {
+    const pointer = gameState.activeQuestions[gameState.currentQIndex];
+    const qData = rawQuestions[pointer.rawIndex];
+
+    dom.qNumber.textContent = `Question ${gameState.currentQIndex + 1}`;
+    dom.qIndexDisp.textContent = gameState.currentQIndex + 1;
+    dom.qText.textContent = qData.text.replace(/\[Refer to.*?\]/gi, '').trim();
+    dom.imgContainer.innerHTML = "";
+
+    const regex = /\[Refer to (.*?)\]/gi;
+    let match;
+    while ((match = regex.exec(qData.text)) !== null) {
+        const label = match[1].trim(); 
+        let fileName = label.replace(/\s+/g, '-'); 
+        const img = document.createElement('img');
+        img.src = `${fileName}.png`; 
+        img.alt = fileName;
+        img.style.cssText = "max-width:100%; display:block; margin:10px auto; border-radius:8px;";
+        img.onerror = function() { console.log("File not found: " + this.src); this.style.display = 'none'; };
+        dom.imgContainer.appendChild(img);
+    }
+    
+    const pct = Math.round(((gameState.currentQIndex) / gameState.activeQuestions.length) * 100);
+    dom.progressBar.style.width = pct + "%";
+    dom.qText.innerHTML = qData.text.replace(/\[Refer to.*?\]/gi, '').trim();
+
+    dom.optionsBox.innerHTML = "";
+    selectedOptions = []; 
+    
+    let opts = qData.options.map(o => ({ txt: o }));
+    shuffleArray(opts);
+    
+    opts.forEach(opt => {
+        const label = document.createElement('label');
+        label.className = "option-label";
+        const cb = document.createElement('input');
+        cb.type = "checkbox"; cb.value = opt.txt;
+        const span = document.createElement('span');
+        span.textContent = opt.txt;
+
+        cb.addEventListener('change', () => {
+            if (cb.checked) {
+                label.classList.add('selected');
+                if (!selectedOptions.includes(opt.txt)) selectedOptions.push(opt.txt);
+            } else {
+                label.classList.remove('selected');
+                selectedOptions = selectedOptions.filter(item => item !== opt.txt);
+            }
+            dom.checkBtn.disabled = selectedOptions.length === 0;
+        });
+
+        label.appendChild(cb); label.appendChild(span); dom.optionsBox.appendChild(label);
+    });
+
+    dom.explanationBox.style.display = 'none';
+    dom.checkBtn.disabled = true; 
+    dom.checkBtn.classList.remove('hidden');
+    dom.nextBtn.classList.add('hidden');
+    startQuestionTimer();
+}
+
+dom.checkBtn.addEventListener('click', () => {
+    if (selectedOptions.length === 0) return; 
+    clearInterval(questionTimerInterval);
+    
+    const pointer = gameState.activeQuestions[gameState.currentQIndex];
+    const qData = rawQuestions[pointer.rawIndex];
+    const currentID = pointer.rawIndex + 1; 
+    let isCorrect = false;
+
+    if (Array.isArray(qData.answer)) {
+        isCorrect = selectedOptions.some(selected => qData.answer.includes(selected));
+    } else {
+        if (selectedOptions.length === 1 && selectedOptions[0] === qData.answer) isCorrect = true;
+    }
+
+    if (!gameState.itemAnalysisRecords) gameState.itemAnalysisRecords = [];
+    gameState.itemAnalysisRecords.push({ id: currentID, result: isCorrect ? "T" : "M" });
+    if (!gameState.userAnswers) gameState.userAnswers = {};
+    gameState.userAnswers[currentID] = isCorrect ? "T" : "M"; 
+
+    if(isCorrect) {
+        document.getElementById('soundCorrect').play();
+        gameState.scorePoints += 10;
+        gameState.correctCount++;
+        dom.explanationText.textContent = qData.explanation;
+        dom.explanationBox.style.display = 'block';
+    } else {
+        document.getElementById('soundWrong').play();
+        dom.explanationBox.style.display = 'none'; 
+    }
+
+    const labels = document.querySelectorAll('.option-label');
+    labels.forEach(label => {
+        label.classList.add('disabled'); 
+        const cb = label.querySelector('input');
+        cb.disabled = true;
+
+        const optText = cb.value;
+        const isSelectedByUser = selectedOptions.includes(optText);
+        const isPartOfAnswer = Array.isArray(qData.answer) ? qData.answer.includes(optText) : qData.answer === optText;
+
+        if(isCorrect && isPartOfAnswer) label.classList.add('correct');
+        if(!isCorrect && isSelectedByUser) label.classList.add('wrong');
+    });
+
+    const pct = Math.round(((gameState.currentQIndex + 1) / gameState.activeQuestions.length) * 100);
+    dom.progressBar.style.width = pct + "%";
+    dom.checkBtn.classList.add('hidden');
+    dom.nextBtn.classList.remove('hidden');
+    dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
+});
+
+dom.nextBtn.addEventListener('click', () => {
+    if(gameState.currentQIndex < gameState.activeQuestions.length - 1) {
+        gameState.currentQIndex++;
+        loadQuestion();
+    } else {
+        endGame();
+    }
+});
+
+function calculateDuration() {
+    if (!gameStartTime || !gameEndTime) return "N/A";
+    const diffMs = gameEndTime - gameStartTime;
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+}
+
+function endGame() {
+    stopRealTimer();
+    clearInterval(questionTimerInterval); 
+    disableSecurityOnFinish(); 
+
+    dom.quizContent.classList.add('hidden');
+    dom.resultContent.classList.remove('hidden');
+
+    const resultGif = document.getElementById('resultGif');
+    const resTitle = document.getElementById('resultTitle');
+    const resMsg = document.getElementById('resultMessage');
+    const fcc = document.getElementById('finalCorrectCount');
+
+    if (SECURITY.cheatDetected) {
+        if(resTitle) { resTitle.textContent = " SECURITY ALERT!"; resTitle.style.color = "#e53e3e"; }
+        if(resMsg) resMsg.textContent = "Attempt invalidated due to security violation.";
+        dom.finalScore.textContent = "0%";
+        if(resultGif) { resultGif.style.display = "block"; resultGif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWZxamVuNDIzbXpla2YwYm11MXpzc2pteWY4cHQzd29iMDgyZ3poMyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/RIkBOHzQddK60QTvoN/giphy.gif"; }
+        dom.certBtn.classList.add('hidden');
+        dom.retryBtn.classList.remove('hidden');
+        dom.retryBtn.textContent = "I promise to be honest (Try Again)";
+        return; 
+    }
+
+    const finalPercent = Math.round((gameState.correctCount / gameState.activeQuestions.length) * 100);
+    dom.finalScore.textContent = finalPercent + "%";
+    if(fcc) fcc.textContent = gameState.correctCount + " / " + gameState.activeQuestions.length;
+
+    const winSound = document.getElementById('soundWin');
+    if (winSound) { winSound.currentTime = 0; winSound.play().catch(e => console.log(e)); }
+    if (typeof confetti !== 'undefined') triggerConfetti();
+
+    try { submitFinalData(); } catch (error) { console.error("Error submitting:", error); }
+
+    if(finalPercent === 100) {
+        dom.retryBtn.classList.add('hidden');
+        dom.certBtn.classList.remove('hidden'); 
+        if (resTitle) { resTitle.textContent = "PERFECT SCORE!"; resTitle.style.color = "var(--success)"; }
+        if (resMsg) resMsg.textContent = "Congratulations! You have mastered all questions.";
+        if (resultGif) { resultGif.src = "https://media.giphy.com/media/uPkTOtne4LPxg81RuO/giphy.gif"; resultGif.style.display = "block"; }
+    } else {
+        dom.certBtn.classList.add('hidden');
+        dom.retryBtn.classList.remove('hidden');
+        if (resTitle) { resTitle.textContent = "Quiz Completed!"; resTitle.style.color = "var(--primary)"; }
+        if (resMsg) resMsg.textContent = `You answered ${gameState.correctCount} out of ${gameState.activeQuestions.length} questions correctly.`;
+        if (resultGif) { resultGif.src = "https://media.giphy.com/media/rlJNhiRFxCGKM2cAWg/giphy.gif"; resultGif.style.display = "block"; }
+    }
+}
+
+// ==========================================
+// 9. UTILITIES & DATA SUBMISSION
+// ==========================================
+
+function getFigureUrl(label) {
+    const figures = { "Box 1": "Box-1.png", "eq1": "eq1.png", "addimg 1": "addimg-1.png", "Figure 1": "Figure-1.png", "Table 2": "Table-2.png", "Figure 3": "Figure-3.png", "Figure 4": "Figure-4.png", "addimg 2": "addimg-2.png", "Figure 5": "Figure-5.png", "Figure 6": "Figure-6.png", "Figure 7": "Figure-7.png", "Figure 8": "Figure-8.png", "Figure 9": "Figure-9.png", "Figure 10": "Figure-10.png" };
+    return figures[label] || null;
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function triggerConfetti() {
+    const duration = 5 * 1000;
+    const animationEnd = Date.now() + duration;
+    (function frame() {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) return; 
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, zIndex: 10000 });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, zIndex: 10000 });
+        requestAnimationFrame(frame);
+    }());
+}
+
+function formatTimeForSubmission(date) {
+    const d = date || gameStartTime;
+    if (!d) return "";
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const seconds = d.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+}
+
+function submitFinalData() {
+    let rmaString = [];
+    for (let i = 1; i <= 38; i++) {
+        let ans = gameState.userAnswers[i] || "0"; 
+        rmaString.push((ans === "T" || ans === "1" || ans === 1) ? "1" : "0");
+    }
+    const finalRmaData = rmaString.join("|"); 
+
+    const bankRecords = (gameState.itemAnalysisRecords || []).filter(r => r.id >= 39);
+    
+    // --- BAGONG LOGIC: TATANGGALIN ANG MGA DOBLE ---
+    let uniqueBankRecords = {}; 
+    
+    bankRecords.forEach(r => {
+        uniqueBankRecords[r.id] = r; 
+    });
+
+    const finalBankData = Object.values(uniqueBankRecords).map(r => {
+        let isCorrect = (r.result === 1 || r.result === "T" || r.result === true);
+        return r.id + ":" + (isCorrect ? "1" : "0"); 
+    }).join("|");
+    // ----------------------------------------------
+
+    const finalPercent = Math.round((gameState.correctCount / gameState.activeQuestions.length) * 100) || 0;
+    
+    // FORMDATA PREPARATION
+    const formData = new URLSearchParams();
+    
+    formData.append("type", "SCORE");
+    formData.append("lastName", gameState.student.lastName);
+    formData.append("firstNameMI", gameState.student.firstNameMI);
+    formData.append("section", gameState.student.section);
+    formData.append("score", finalPercent); 
+    formData.append("startTime", formatTimeForSubmission(gameStartTime)); 
+    formData.append("endTime", formatTimeForSubmission(gameEndTime));
+    formData.append("duration", calculateDuration());
+    formData.append("rma", finalRmaData); 
+    formData.append("bankData", finalBankData);
+    
+    // SEND TO GOOGLE APPS SCRIPT
+    window.RMAData.submit(formData)
+    .then(() => console.log("Exam Submitted Successfully!"))
+    .catch(e => console.error("Error submitting exam:", e));
+}
+
+function forceEnterFullscreen() {
+    let elem = document.documentElement; 
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => {
+            console.log(`Fullscreen request failed: ${err.message}`);
+        });
+    } else if (elem.webkitRequestFullscreen) { 
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { 
+        elem.msRequestFullscreen();
+    }
+}
+
+async function fetchLeaderboard() {
+    const lbBody = document.querySelector('#leaderboard tbody');
+    const statusText = document.getElementById('lb-status');
+    const section = gameState.student.section;
+
+    if (!lbBody) return;
+
+    // Don't fetch if no section selected yet
+    if (!section) {
+        lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">👉 Select your section to see leaderboard</td></tr>';
+        if (statusText) statusText.innerText = "PENDING";
+        return;
+    }
+
+    // Show loading state
+    lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">📊 Loading scores...</td></tr>';
+    if (statusText) statusText.innerText = "LOADING";
+
+    try {
+        const dataJson = await window.RMAData.getLeaderboard(section);
+        console.log("✅ Leaderboard data received:", dataJson);
+        console.log("📊 Data array length:", dataJson.data ? dataJson.data.length : "null");
+        console.log("🔍 First entry sample:", dataJson.data ? dataJson.data[0] : "no data");
+
+        if (!dataJson.data) {
+            console.warn("❌ No data field in response");
+            lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">📭 No scores yet for this section</td></tr>';
+            if (statusText) statusText.innerText = "EMPTY";
+            return;
+        }
+
+        lbBody.innerHTML = '';
+
+        if (statusText) {
+            statusText.innerText = dataJson.mode === "DAILY" ? "TODAY" : "ALL-TIME";
+        }
+
+        // TAMA ANG CHECK NA ITO, KUNG WALANG LAMAN, MAG-RETURN. KUNG MAY LAMAN, TUTULOY SA BABA.
+        if (!dataJson.data || dataJson.data.length === 0) {
+            console.warn("⚠️ Data array is empty");
+            lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">🏆 Be the first to score!</td></tr>';
+            return; 
+        }
+
+        const currentStudent = gameState.student.name || "";
+        
+        dataJson.data.forEach((entry, index) => {
+            // Log each entry for debugging
+            console.log(`Entry ${index}:`, entry);
+            console.log(`  - name field:`, entry.name);
+            console.log(`  - score field:`, entry.score);
+            console.log(`  - duration field:`, entry.duration);
+
+            // Check if name exists and is not empty
+            if (!entry.name || entry.name.trim() === "") {
+                console.warn(`❌ Entry ${index} has missing or empty name:`, entry);
+                return; // Skip this entry
+            }
+
+            const studentName = String(entry.name).trim();
+            const isCurrentUser = currentStudent && studentName.toLowerCase().includes(currentStudent.toLowerCase());
+            const highlightClass = isCurrentUser ? 'active-user' : '';
+            
+            let medal = "";
+            let rankClass = "";
+            const rank = entry.rank || (index + 1);
+            
+            if (rank === 1) {
+                medal = '🥇';
+                rankClass = 'rank-1';
+            } else if (rank === 2) {
+                medal = '🥈';
+                rankClass = 'rank-2';
+            } else if (rank === 3) {
+                medal = '🥉';
+                rankClass = 'rank-3';
+            }
+            
+            // Parse duration - handle various formats
+            let displayDuration = "N/A";
+            if (entry.duration) {
+                if (typeof entry.duration === 'string' && entry.duration.match(/^\d+m\s\d+s$/)) {
+                    displayDuration = entry.duration;
+                } else if (typeof entry.duration === 'number') {
+                    // I-CONVERT ANG MILLISECONDS (galing Google Sheets) TO MINUTES AND SECONDS
+                    const totalSeconds = Math.floor(entry.duration / 1000);
+                    const mins = Math.floor(totalSeconds / 60);
+                    const secs = totalSeconds % 60;
+                    displayDuration = `${mins}m ${secs < 10 ? '0' : ''}${secs}s`;
+                }
+            }
+            
+            const scoreDisplay = entry.score !== undefined ? `${entry.score}%` : "N/A";
+            
+            const row = `
+                <tr class="${highlightClass} ${rankClass}">
+                    <td style="text-align:center; font-weight:bold; width:8%;">${medal ? `<span class="medal">${medal}</span>` : rank}</td>
+                    <td style="width:45%; text-align:left;" class="${rank <= 3 ? 'rank-top-3-name' : ''}">${studentName}</td>
+                    <td style="text-align:center; color:var(--primary); font-weight:bold; width:25%;">${scoreDisplay}</td>
+                    <td style="text-align:center; width:22%;">${displayDuration}</td>
+                </tr>
+            `;
+            lbBody.insertAdjacentHTML('beforeend', row);
+        });
+
+        console.log("✨ Leaderboard rendered successfully");
+
+    } catch (err) {
+        console.error("❌ Leaderboard Error:", err);
+        console.error("Error details:", err.message);
+        lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#e104c3c;">⚠️ Cannot load leaderboard</td></tr>';
+        if (statusText) statusText.innerText = "ERROR";
+    }
+}
+
+window.showCertificate = function() {
+    document.getElementById('certName').textContent = gameState.student.name;
+    document.getElementById('certDate').textContent = new Date().toLocaleDateString();
+
+    const studentSec = gameState.student.section;
+    let teacher = "Mathematics Teacher"; 
+    
+    if (["Mendel", "Watson", "Acacia", "Almaciga"].includes(studentSec)) teacher = "Grace Joy B. Miole";
+    else if (["Narra", "Tindalo", "Yakal", "Eucalyptus", "Mahogany"].includes(studentSec)) teacher = "Nemia T. Miguel";
+    else if (["Lawaan", "Kamagong", "Lanete", "Apitong"].includes(studentSec)) teacher = "Sheryl T. Galvez";
+    else if (["Guijo", "Hemlock", "Ipil-Ipil"].includes(studentSec)) teacher = "Cherry Lyn S. Quising";      
+    else if (["Molave", "OHSP Bakawan"].includes(studentSec)) teacher = "Rainy Jane V. Abion";  
+
+    document.getElementById('teacherName').textContent = teacher;
+    document.getElementById('certificateContainer').style.display = 'flex';
+};
+
+window.closeCertificate = function() {
+    document.getElementById('certificateContainer').style.display = 'none';
+};
+
+function voluntaryExit() {
+    let studentName = document.getElementById("displayStudentName").innerText;
+    
+    if (studentName !== "Guest" && window.isExamFinished === false) {
+        reportViolation(studentName, "SPAM QUITTING", "Voluntary Exit (Clicked Logout while exam is ongoing)");
+        alert("Session ended and recorded as Quit.");
+        setTimeout(() => {
+            location.reload(); 
+        }, 1000); 
+    } else {
+        location.reload(); 
+    }
+}
+	// HUMBLE BRAG CONFETTI (NASA KALIWA NA)
+    function devConfetti() {
+        confetti({
+            particleCount: 40,      
+            spread: 50,             
+            origin: { x: 0.05, y: 0.95 }, 
+            colors: ['#4B0304', '#ffb300', '#f57f17'] /* Maroon, Yellow, Gold */
+        });
+        
+        let badge = document.getElementById("devBadge");
+        badge.style.transform = "scale(0.9)";
+        setTimeout(() => {
+            badge.style.transform = "scale(1)";
+        }, 150);
+    }
+
+</script>
+
+<div id="devBadge" class="developer-credit" onclick="devConfetti()">
+    &copy; MwNHS | System Developed by MIOLE, G.J. | 2026 </span>
+</div>
+
+</body>
+</html>

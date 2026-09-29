@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grade 7 RMA - Practice Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+  <style>
+    :root {
+        --primary: #1b5e20; /* Deep elegant forest green */
+        --accent: #43a047;  /* Fresh vibrant green */
+        --success: #2e7d32; /* Solid green for correct */
+        --danger: #d32f2f;  /* Red for wrong answers */
+        --gold: #ffb300;    /* Warm gold */
+        --bg-light: #f1f8e9; /* Soft greenish-white background */
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-light);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        box-sizing: border-box;
+    }
+
+    @media print {
+        body * { visibility: hidden; }
+        #certificateContainer, #certificateContainer * { visibility: visible; }
+        #certificateContainer {
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            background: white; z-index: 9999;
+            display: flex !important; align-items: center; justify-content: center;
+        }
+        .no-print { display: none !important; }
+    }
+
+    #certificateContainer {
+        display: none;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 5000;
+        overflow-y: auto;
+        align-items: center; justify-content: center;
+    }
+
+    .certificate-wrapper {
+        position: relative;
+        width: 800px; max-width: 95%;
+        margin: 20px auto;
+        text-align: center;
+        background: white;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border-radius: 4px;
+    }
+
+    @keyframes popIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .certificate-border { 
+        border: 12px solid var(--primary);
+        padding: 12px; 
+        background-color: var(--bg-light);
+    }
+    .certificate-inner { 
+        border: 4px solid var(--gold);
+        outline: 2px solid var(--gold);
+        outline-offset: 4px;
+        padding: 40px; 
+        background-color: white;
+    }
+    .cert-title { font-size: 2.8rem; color: var(--primary); margin-bottom: 10px; font-family: 'Times New Roman', serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;}
+    .cert-subtitle { font-size: 1.3rem; color: var(--accent); margin-bottom: 10px; font-family: sans-serif; font-weight: 700; letter-spacing: 2px;}
+    .cert-name { font-size: 2.2rem; font-weight: bold; border-bottom: 2px solid var(--primary); display: inline-block; padding: 0 30px 10px; margin: 20px 0; color: #113c15; }
+    .cert-score { font-size: 2.8rem; color: var(--success); font-weight: 900; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+    .cert-footer { margin-top: 40px; display: flex; justify-content: space-around; }
+    .sign-line { border-top: 2px solid #333; width: 220px; padding-top: 8px; font-size: 1.1rem; font-weight: bold; color: var(--primary); }
+
+    /* MODERNIZED LOGIN OVERLAY */
+    #loginOverlay {
+        position: fixed; 
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(17, 36, 18, 0.9); /* Deep green transparent background */
+        display: flex; justify-content: center; align-items: center; 
+        z-index: 9999; 
+    }
+    .login-box {
+        background: white; 
+        padding: 3rem 2.5rem; 
+        border-radius: 16px; /* Smoother corners */
+        width: 90%; max-width: 420px; 
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        border-top: 6px solid var(--primary);
+    }
+    .login-box h2 {
+        font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 25px;
+    }
+    .login-box input, .login-box select {
+        width: 100%; padding: 14px; font-size: 16px; margin-bottom: 16px; 
+        border: 2px solid #e0e0e0; border-radius: 8px; box-sizing: border-box;
+        transition: all 0.3s ease;
+        background-color: #fafafa;
+    }
+    .login-box input:focus, .login-box select:focus {
+        border-color: var(--accent);
+        background-color: white;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 160, 71, 0.2);
+    }
+
+    /* MAIN CONTAINER & CARDS */
+    .main-container {
+        display: flex; flex-wrap: wrap; max-width: 1200px;
+        margin: 30px auto; padding: 0 20px; gap: 25px; flex: 1;
+    }
+    .quiz-section { flex: 2; min-width: 300px; }
+    .sidebar { flex: 1; min-width: 250px; }
+    .card {
+        background: white; border-radius: 12px; padding: 30px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 20px;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .progress-container { background: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; margin-bottom: 10px; }
+    .progress-bar { background: linear-gradient(90deg, var(--accent), var(--success)); height: 100%; width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .question-text { font-size: 1.3rem; margin-bottom: 25px; line-height: 1.6; color: #2c3e50; }
+    
+    /* OPTIONS GRID AESTHETICS */
+    .options-grid { display: grid; gap: 12px; }
+    .option-label {
+        display: flex; align-items: center; gap: 15px; padding: 16px;
+        background: white; border: 2px solid #e0e0e0; border-radius: 10px;
+        cursor: pointer; font-size: 1.05rem; font-weight: bold; color: #444;
+        transition: all 0.2s ease; margin: 0;
+    }
+    /* Updated to Green Theme Highlights */
+    .option-label:hover { border-color: var(--accent); background: var(--bg-light); transform: translateY(-1px); }
+    .option-label.selected { background: #c8e6c9; border-color: var(--primary); color: var(--primary); }
+    .option-label.correct { background: #d4efdf; border-color: var(--success); color: var(--success); }
+    .option-label.wrong { background: #fadbd8; border-color: var(--danger); color: var(--danger); }
+    .option-label input[type="checkbox"] { transform: scale(1.4); cursor: pointer; margin: 0; accent-color: var(--primary); }
+    .option-label.disabled { pointer-events: none; opacity: 0.7; }
+
+    /* MODERN BUTTONS */
+    .btn {
+        background-color: var(--primary); color: #ffffff; 
+        padding: 12px 24px; border: none; border-radius: 30px; /* Pill-shape for 3D feel */
+        font-size: 1.05rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;
+        cursor: pointer; transition: all 0.1s ease; display: inline-block; text-align: center;
+        /* 3D Chunky Shadow (Dark Green) */
+        box-shadow: 0 6px 0 #0d3b13, 
+                    0 10px 15px rgba(0, 0, 0, 0.3);
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+    .btn:hover:not([disabled]) {
+        background-color: var(--accent);
+        transform: translateY(-2px); /* Umaangat ng konti pag tinapatan */
+        box-shadow: 0 8px 0 #115019, 
+                    0 12px 18px rgba(0, 0, 0, 0.3);
+    }
+    .btn:active:not([disabled]) {
+        transform: translateY(4px); /* Nabaon pababa! */
+        box-shadow: 0 2px 0 #0d3b13, 
+                    0 5px 8px rgba(0, 0, 0, 0.3);
+    }
+    .btn:disabled { 
+        opacity: 0.6; cursor: not-allowed; 
+        transform: translateY(4px); /* Nabaon na by default pag disabled */
+        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); 
+        background-color: #9e9e9e; 
+    }
+    
+    /* 3D Effect para sa GOLD Button */
+    .btn-gold { 
+        background: var(--gold) !important; color: #333 !important; 
+        box-shadow: 0 6px 0 #cc8f00, 0 10px 15px rgba(0,0,0,0.3) !important; 
+        text-shadow: 1px 1px 1px rgba(255,255,255,0.8) !important;
+    }
+    .btn-gold:hover:not([disabled]) { 
+        background: #ffc107 !important; 
+        box-shadow: 0 8px 0 #cc8f00, 0 12px 18px rgba(0,0,0,0.3) !important;
+    }
+    .btn-gold:active:not([disabled]) { 
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 #cc8f00, 0 5px 8px rgba(0,0,0,0.3) !important; 
+    }
+
+    /* 3D Effect para sa DANGER (Red) Button */
+    .btn-danger { 
+        background: var(--danger) !important; color: white !important; 
+        box-shadow: 0 6px 0 #9a0007, 0 10px 15px rgba(0,0,0,0.3) !important; 
+    }
+    .btn-danger:hover:not([disabled]) { 
+        box-shadow: 0 8px 0 #9a0007, 0 12px 18px rgba(0,0,0,0.3) !important; 
+    }
+    .btn-danger:active:not([disabled]) { 
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 #9a0007, 0 5px 8px rgba(0,0,0,0.3) !important; 
+    }
+    
+    .hidden { display: none !important; }
+    .explanation { background: #fdfae6; border-left: 5px solid var(--gold); padding: 18px; margin-top: 25px; display: none; border-radius: 0 8px 8px 0; color: #555; }
+    .img-placeholder { background: #f8f9fa; border: 2px dashed #bdc3c7; padding: 20px; text-align: center; margin: 10px 0; font-style: italic; border-radius: 8px; }
+    .question-img { max-width: 100%; height: auto; display: block; margin: 15px auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    
+    /* LEADERBOARD */
+    .leaderboard-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+    .leaderboard-table th, .leaderboard-table td { padding: 14px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.95rem; overflow: hidden; }
+    .leaderboard-table th { color: var(--primary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; border-bottom: 2px solid var(--primary); }
+    .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { text-align: center; width: 15%; }
+    .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { text-align: left; width: 45%; }
+    .leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3) { text-align: center; width: 20%; font-weight: bold; }
+    .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { text-align: center; width: 20%; color: #777; }
+    .active-user { background-color: var(--bg-light); border-radius: 8px; }
+    .active-user td { font-weight: bold; color: var(--primary); border-bottom: none; }
+    .rank-top-3-name { font-weight: 800; }
+    .medal { font-size: 1.4rem; margin-right: 6px; }
+	
+	/* DEVELOPER CREDIT BADGE (SUPER LIIT) */
+    .developer-credit {
+        position: fixed;
+        bottom: 10px; 
+        left: 10px; 
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--primary); 
+        padding: 3px 8px; 
+        border-radius: 12px;
+        font-size: 0.55rem; 
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        border: 1px solid var(--primary); 
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+
+    .developer-credit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        background: var(--primary);
+        color: white;
+        cursor: pointer;
+    }
+
+    .dev-signature {
+        font-family: 'Gill Sans', sans-serif;
+        font-size: 0.7rem; 
+        font-weight: normal;
+        letter-spacing: 0.5px;
+        margin-left: 2px;
+        color: #1b5e20; /* DARK GREEN */
+    }
+    
+    @media print {
+        .developer-credit { display: none !important; }
+    }
+	
+    </style>
+ </head>
+ <body data-grade="7">
+  <div id="loginOverlay" class="no-print">
+   <div class="login-box">
+    <h2 style="color: var(--primary);">RMA Student Login</h2>
+    <input type="text" id="lastName" placeholder="Enter LAST NAME (Apelyido)" oninput="this.value = this.value.toUpperCase()"> 
+    <input type="text" id="firstName" placeholder="Enter FIRST NAME (Pangalan)" oninput="this.value = this.value.toUpperCase()"> 
+    <input type="text" id="midInitial" placeholder="Enter MIDDLE INITIAL" oninput="this.value = this.value.toUpperCase()"> 
+    <select id="studentSection">
+        <option value="" disabled selected>Select Section</option> 
+        <option value="Aristotle">Grade 7 - Aristotle</option> 
+        <option value="Amber">Grade 7 - Amber</option> 
+        <option value="Amethyst">Grade 7 - Amethyst</option>
+        <option value="Aquamarine">Grade 7 - Aquamarine</option> 
+        <option value="Alexandrite">Grade 7 - Alexandrite</option> 
+        <option value="Beryl">Grade 7 - Beryl</option> 
+        <option value="Coral">Grade 7 - Coral</option> 
+        <option value="Diamond">Grade 7 - Diamond</option> 
+        <option value="Emerald">Grade 7 - Emerald</option>
+        <option value="Garnet">Grade 7 - Garnet</option> 
+        <option value="Jasper">Grade 7 - Jasper</option> 
+        <option value="Opal">Grade 7 - Opal</option> 
+        <option value="Peridot">Grade 7 - Peridot</option> 
+        <option value="Quartz">Grade 7 - Quartz</option> 
+        <option value="Ruby">Grade 7 - Ruby</option> 
+        <option value="Sapphire">Grade 7 - Sapphire</option> 
+        <option value="Topaz">Grade 7 - Topaz</option>
+    </select> 
+    <button class="btn" id="startBtn" style="width:100%; margin-top: 10px; padding: 14px;">Start Practice</button>
+   </div>
+  </div>
+
+<header class="no-print" style="background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding: 15px 30px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-bottom: 4px solid var(--gold);">
+   <div style="display: flex; align-items: center; gap: 20px;">
+    <img src="mwnhslogo.png" alt="MWNHS Logo" width="90" height="90" style="border-radius: 50%; background: white; padding: 4px; object-fit: contain; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" onerror="this.style.display='none';">
+    <div style="display: flex; flex-direction: column; text-align: left; gap: 5px;">
+     <h1 style="margin: 0; line-height: 1; font-size: 2.2rem; color: var(--gold); text-transform: uppercase; font-weight: 900; text-shadow: 1px 1px 2px rgba(0,0,0,0.4);">MOONWALK NATIONAL HIGH SCHOOL</h1>
+     <h2 style="margin: 0; line-height: 1; font-size: 1.6rem; color: #FFFFFF; font-weight: 700; letter-spacing: 1px;">RMA PRACTICE TEST</h2>
+     <h3 style="margin: 0; line-height: 1; font-size: 1.2rem; color: rgba(255,255,255,0.9); font-weight: 500;">S.Y. 2025-2026</h3>
+    </div>
+   </div>
+
+   <div class="user-info" style="text-align:right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+    <div id="displayStudentName" style="margin: 0; line-height: 1; font-weight: 900; color: var(--gold); font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+     Guest
+    </div>
+    <div id="displaySection" style="margin: 0; line-height: 1; opacity:0.95; font-weight: bold; color: #FFFFFF; font-size: 1.3rem;">
+     Grade 7
+    </div>
+    <div style="margin-top: 5px;">
+     <span id="timerDisplay" style="font-weight: 700; color: #FFFFFF; font-size: 1.2rem; background: rgba(0,0,0,0.25); padding: 6px 16px; border-radius: 20px; display: none; border: 1px solid rgba(255,255,255,0.2);"> 00:00 </span>
+    </div>
+   </div>
+</header>
+  
+  <div class="main-container no-print">
+   <div class="quiz-section">
+    <div id="questionTimerContainer" style="display: none; text-align: center; margin-bottom: 20px; background: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+     <span style="font-size: 1.1rem; font-weight: bold; color: #555;"> Time Left: </span> 
+     <span id="timeRemaining" style="font-weight: 900; color: var(--danger); font-size: 1.4rem; margin-left: 5px;">30</span><span style="color: var(--danger); font-weight: bold;">s</span>
+    </div>
+    <div class="card">
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+         <h3 id="qNumber" style="color:var(--primary); font-size: 1.4rem; font-weight: 900; margin: 0;">Question 1</h3>
+         <div style="font-size: 0.95rem; color: #7f8c8d; font-weight: bold; background: var(--bg-light); padding: 5px 12px; border-radius: 15px;">
+          <span id="qIndexDisp">1</span> / <span id="qTotalDisp">35</span>
+         </div>
+     </div>
+     <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+     </div>
+     
+     <div id="quizContent">
+      <div id="imgContainer"></div>
+      <div class="question-text" id="qText" style="font-weight: 600;">
+       Loading...
+      </div>
+      <div class="options-grid" id="optionsBox"></div>
+      <div class="explanation" id="explanationBox">
+       <strong>Explanation:</strong> <span id="explanationText"></span>
+      </div>
+      <div class="controls" style="margin-top: 30px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
+       <button class="btn" id="checkBtn" style="background-color: var(--accent);" disabled>Check Answer</button> 
+       <button class="btn hidden" id="nextBtn">Next Question</button>
+      </div>
+     </div>
+     
+     <div id="resultContent" class="hidden" style="text-align: center; padding: 20px;">
+      <h2 id="resultTitle" style="color: var(--primary); font-size: 2.2rem; font-weight: 900;">Practice Complete</h2>
+      <div style="font-size: 4.5rem; font-weight: 900; margin: 20px 0; color: var(--accent); text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+       <span id="finalScore">0</span>
+      </div>
+      <p id="resultMessage" style="font-size: 1.4rem; color: #555; font-weight: 500;">You answered <span id="finalCorrectCount" style="font-weight: bold; color: var(--primary);">0</span> questions correctly.</p>
+      <img id="resultGif" src="" alt="Result GIF" style="width: 250px; margin: 25px auto; display: none; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
+      <div id="actionButtons" style="margin-top: 35px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+       <button class="btn" id="retryBtn" onclick="initGame()" style="background-color: var(--accent);">Try Again</button> 
+       <button class="btn btn-gold hidden" id="certBtn" onclick="showCertificate()">View Certificate</button> 
+       <button class="btn btn-danger" onclick="voluntaryExit()">Logout Session</button>
+      </div>
+     </div>
+    </div>
+   </div>
+   
+   <div class="sidebar">
+    <div class="card">
+     <h3 id="leaderboard-title" style="color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 12px; font-weight: 900; margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+         Live Leaderboard 
+         <span id="lb-status" style="font-size: 0.75rem; background: var(--bg-light); padding: 4px 10px; border-radius: 12px; color: var(--primary); font-weight: bold;">LOADING</span>
+     </h3>
+     <table class="leaderboard-table" id="leaderboard">
+      <thead>
+       <tr>
+        <th>#</th>
+        <th>Student</th>
+        <th>Score</th>
+        <th>Time</th>
+       </tr>
+      </thead>
+      <tbody>
+      </tbody>
+     </table>
+    </div>
+   </div>
+  </div>
+
+  <div id="certificateContainer">
+   <div class="certificate-wrapper">
+    <div class="certificate-border">
+     <div class="certificate-inner">
+      <div class="cert-title">Certificate of Mastery</div>
+      <div class="cert-subtitle">RAPID MATHEMATICS ASSESSMENT</div>
+      <p class="cert-text" style="color: #555; margin-top: 20px;">This certifies that</p>
+      <div class="cert-name" id="certName">Student Name</div>
+      <p class="cert-text" style="color: #555; max-width: 80%; margin: 0 auto;">has successfully completed the Grade 7 RMA Practice Test with a PERFECT SCORE of</p>
+      <div class="cert-score">100%</div>
+      <p class="cert-text" style="color: #555;">on <span id="certDate" style="font-weight: bold;">Date</span></p>
+      <div class="cert-footer">
+       <div style="text-align: center;">
+        <div class="sign-line" id="teacherName"></div>
+        <div style="color: #666; font-size: 0.9rem; margin-top: 5px; font-weight: bold;">Mathematics Teacher</div>
+       </div>
+      </div>
+     </div>
+     <div class="no-print" style="margin-top: 25px; display: flex; justify-content: center; gap: 15px;">
+      <button class="btn" style="background-color: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none;" onclick="window.print()">Print Certificate</button> 
+      <button class="btn btn-danger" onclick="closeCertificate()">Close</button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <audio id="soundCorrect" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+  <audio id="soundWrong" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+  <audio id="soundWin" src="https://assets.mixkit.co/active_storage/sfx/510/510-preview.mp3"></audio>
+    <script src="../supabase-config.js"></script>
+    <script src="../rma-data.js"></script>
+    <script>
+// ==========================================
+// 1. CONFIGURATION & VARIABLES
+// ==========================================
+let isExamFinished = false; 
+let gameStartTime = null;
+let gameEndTime = null;
+let timerInterval = null;
+let idleTimeout = null; 
+let questionTimerInterval = null;
+let selectedOptions = [];
+
+const IDLE_TIME_LIMIT = 60000; // 60 seconds
+
+// ==========================================
+// 2. SECURITY CONFIGURATION
+// ==========================================
+const SECURITY = {
+    examStarted: false,
+    cheatDetected: false,
+    isWarningActive: false,
+    maxStrikes: 3,
+    maxQuits: 3,
+    banDuration: 3 * 24 * 60 * 60 * 1000,
+    
+    get strikes() { return parseInt(localStorage.getItem("g7_exam_strikes") || "0"); },
+    set strikes(val) { localStorage.setItem("g7_exam_strikes", val); },
+    
+    get quits() { return parseInt(localStorage.getItem("g7_exam_quits") || "0"); },
+    set quits(val) { localStorage.setItem("g7_exam_quits", val); },
+
+    get banUntil() { return parseInt(localStorage.getItem("g7_exam_ban_until") || "0"); },
+    set banUntil(val) { localStorage.setItem("g7_exam_ban_until", val); }
+};
+
+// ==========================================
+// 3. GAME STATE & DOM ELEMENTS
+// ==========================================
+const gameState = {
+    student: { name: "", section: "", lastName: "", firstNameMI: "" }, 
+    activeQuestions: [],
+    currentQIndex: 0,
+    correctCount: 0,
+    scorePoints: 0,
+    userAnswers: {},
+    itemAnalysisRecords: []
+};
+
+const dom = {
+    login: document.getElementById('loginOverlay'),
+    startBtn: document.getElementById('startBtn'),
+    qNumber: document.getElementById('qNumber'),
+    qIndexDisp: document.getElementById('qIndexDisp'),
+    qTotalDisp: document.getElementById('qTotalDisp'),
+    qText: document.getElementById('qText'),
+    imgContainer: document.getElementById('imgContainer'),
+    optionsBox: document.getElementById('optionsBox'),
+    checkBtn: document.getElementById('checkBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    progressBar: document.getElementById('progressBar'),
+    explanationBox: document.getElementById('explanationBox'),
+    explanationText: document.getElementById('explanationText'),
+    resultContent: document.getElementById('resultContent'),
+    quizContent: document.getElementById('quizContent'),
+    finalScore: document.getElementById('finalScore'),
+    finalCorrectCount: document.getElementById('finalCorrectCount'),
+    retryBtn: document.getElementById('retryBtn'),
+    certBtn: document.getElementById('certBtn')
+};
+
+// ==========================================
+// 4. DATA: QUESTIONS (COMPLETE 72 QUESTIONS)
+// ==========================================
+
+const getMathObjective = (itemId) => {
+    // 1. BANK QUESTIONS MAPPING (ID #22 to #72)
+    if (itemId >= 22 && itemId <= 34) return "NUMBER EXPRESSIONS";
+    if (itemId >= 35 && itemId <= 42) return "DATA";
+    if (itemId >= 43 && itemId <= 53) return "COORDINATES";
+    if (itemId >= 54 && itemId <= 62) return "TRIANGLES";
+    if (itemId >= 63 && itemId <= 72) return "CIRCLES";
+    
+    // 2. RMA QUESTIONS MAPPING (ID #1 to #21)
+    const rmaMap = {
+        1: "NUMBER EXPRESSIONS", 2: "NUMBER EXPRESSIONS", 3: "NUMBER EXPRESSIONS", 4: "NUMBER EXPRESSIONS", 5: "NUMBER EXPRESSIONS",
+        6: "NUMBER EXPRESSIONS", 7: "NUMBER EXPRESSIONS", 8: "DATA", 9: "DATA", 10: "DATA", 11: "DATA", 12: "DATA",
+        13: "DATA", 14: "COORDINATES", 15: "TRIANGLES", 16: "TRIANGLES", 17: "TRIANGLES", 18: "TRIANGLES",
+        19: "TRIANGLES", 20: "CIRCLES", 21: "CIRCLES"
+    }; // INAYOS: Curly brace '}' na ang ginamit pangsara dito
+
+    return rmaMap[itemId] || "UNKNOWN";
+};
+
+// RMA SECTION (Items 1-21)
+const rawQuestions = [
+    
+    // --- START OF 21 RMA ORIGINAL ITEMS (FIXED) ---
+     // --- START OF 21 RMA ORIGINAL ITEMS (FIXED) ---
+    {
+        text: "[Refer to Box 1] Your classmate said that each of the four expressions in Box 1 is equivalent to 1. Verify what your classmate said by computing the value for the number expression 4×4 - 5×3.",
+        options: ["0", "1", "2", "-1"],
+        answer: "1",
+        explanation: "Following the order of operations (PEMDAS/GEMDAS), multiply first: (4 × 4) = 16 and (5 × 3) = 15. Then subtract: 16 - 15 = 1."
+    },
+    {
+        text: "[Refer to Box 1] What must be the next number expression to 5×5 - 6×4 in Box 1?",
+        options: ["6×6 - 7×5", "6×5 - 7×4", "7×7 - 8×6", "5×6 - 6×7"],
+        answer: "6×6 - 7×5",
+        explanation: "The pattern increments each number by 1 for every consecutive expression: (n)×(n) - (n+1)×(n-1). Following 5, the next base number is 6."
+    },
+    {
+        text: "Which of the following shows that 1024 is a power of 2?",
+        options: ["It is divisible by 2.", "It can be written as 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2.", "It is a multiple of 4.", "It ends in an even number."],
+        answer: "It can be written as 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2.",
+        explanation: "A power of 2 means the number can be expressed exclusively as 2 multiplied by itself a certain number of times. 2¹⁰ = 1024."
+    },
+    {
+        text: "What is the exponential form of 1024?",
+        options: ["2⁸", "2⁹", "2¹⁰", "2¹²"],
+        answer: "2¹⁰",
+        explanation: "Multiplying 2 by itself 10 times gives 1024."
+    },
+    {
+        text: "Is there a number between 0.998 and 0.999?",
+        options: ["Yes, for example 0.9985", "Yes, for example 0.9995", "No, they are consecutive decimals", "Yes, for example 0.9975"],
+        answer: "Yes, for example 0.9985",
+        explanation: "Real numbers are infinitely dense. You can always find a number between two given decimals by adding another decimal place."
+    },
+    {
+        text: "What is the difference when you subtract 0.998 from 0.999?",
+        options: ["0.1", "0.01", "0.001", "0.0001"],
+        answer: "0.001",
+        explanation: "0.999 - 0.998 = 0.001. You are subtracting the thousandths place."
+    },
+    {
+        text: "Is there a fraction that is greater than 3/4 but less than 1?",
+        options: ["Yes, for example 4/5", "Yes, for example 2/3", "No, 3/4 is the highest fraction before 1", "Yes, for example 5/8"],
+        answer: "Yes, for example 4/5",
+        explanation: "3/4 is equivalent to 0.75. 4/5 is equivalent to 0.80, which is greater than 0.75 but less than 1."
+    },
+    {
+        text: "[Refer to Figure 1] Based on the graph in Figure 1, how many students had an overall academic grade below 84?",
+        options: ["3", "4", "5", "Cannot be determined without the exact plot points"],
+        answer: "5",
+        explanation: "By counting the specific data points that fall below the 84-grade mark/line on the y-axis, you find 5 students."
+    },
+    {
+        text: "[Refer to Figure 1] How do you determine students below 84?",
+        options: ["Counting the data points that fall below the horizontal line representing a grade of 84 on the y-axis.", "Counting the data points on the x-axis.", "Looking at the highest grade achieved.", "Averaging all the grades."],
+        answer: "Counting the data points that fall below the horizontal line representing a grade of 84 on the y-axis.",
+        explanation: "To find students with a grade below a certain threshold, you look at the vertical axis (grades) and count the points strictly below that value."
+    },
+    {
+        text: "[Refer to Figure 1] Which of the following can be a correct interpretation of the data presented in the graph in Figure 1?",
+        options: ["As the number of absences increases, the overall academic grade also increases.", "As the number of absences decreases, the overall academic grade increases.", "As the number of absences increases, the overall academic grade decreases.", "As the number of absences decreases, the overall academic grade also decreases."],
+        answer: "As the number of absences increases, the overall academic grade decreases.",
+        explanation: "Usually, scatter plots of absences vs. grades show a negative correlation/relationship: more absences lead to lower grades."
+    },
+    {
+        text: "[Refer to Table 2] Based on Table 2, how many students participated in the music activity?",
+        options: ["18", "31", "49", "60"],
+        answer: "49",
+        explanation: "You must add the number of students who participated exclusively in music to those who participated in both music and sports."
+    },
+    {
+        text: "[Refer to Table 2] Based on Table 2, how many students did not participate in any of the two activities?",
+        options: ["18", "19", "31", "42"],
+        answer: "19",
+        explanation: "This is the number located in the 'None' or 'Neither' category on a Venn diagram or two-way table."
+    },
+    {
+        text: "[Refer to Table 2] Which of the following is a question that can be answered using the information in Table 2?",
+        options: ["What is the favorite sport of the students?", "How many students participated in sports activity but not in music activity?", "What time did the music activity start?", "How many teachers organized the activities?"],
+        answer: "How many students participated in sports activity but not in music activity?",
+        explanation: "A two-way table for participation shows numbers of students per category, not qualitative data like time, favorite sports, or teacher count."
+    },
+    {
+        text: "[Refer to Figure 3] What is the position of point G in Figure 3?",
+        options: ["-100", "0", "200", "-200"],
+        answer: "0",
+        explanation: "G is located 100 units from the left of '100' and the line uses 100-unit interval."
+    },
+    {
+        text: "[Refer to Figure 4] In Figure 4, connecting the points A, B and C will form a triangle, called triangle ABC. What is the area of triangle ABC?",
+        options: ["4 square units", "8 square units", "12 square units", "16 square units"],
+        answer: "12 square units",
+        explanation: "Base AC = 6 units. Vertical Height from Base to Point B = 4 units. Area = 1/2 * 6 * 4 = 12 square units."
+    },
+    {
+        text: "[Refer to Figure 4] Suppose point A represents your house, point B represents your school and point C represents the barangay hall. Which is the shorter walk from your house, going to the school or to the barangay hall?",
+        options: ["Going to the school", "Going to the barangay hall", "They are the same distance", "Cannot be determined"],
+        answer: "Going to the school",
+        explanation: "Find each distance using distance formula: A to C = 6 units; A to B = 5.66 units."
+    },
+    {
+        text: "[Refer to Figure 4] Suppose point A represents your house, point B represents your school and point C represents the barangay hall. How will you determine each distance?",
+        options: ["Using coordinate distance", "Using area", "Using slope only", "Estimation"],
+        answer: "Using coordinate distance",
+        explanation: "Distance formula applies."
+    },
+    {
+        text: "[Refer to Figure 6] In Figure 6, if the measure of angle R is 60 degrees (that is, r = 60) and the measure of the exterior angle at Q is 130, what is true about the values of p and q? Choose two correct statements. (NOTE: The exterior angle of a triangle forms a 180-degree angle with the adjacent interior angle.)",
+        options: ["The sum of p and q is 130.", "p and q can have several values.", "The value of p is 70 and the value of q is 50.", "The value of p is 50 and the value of q is 70.", "The value of r plus p is 130."],
+        answer: ["The value of p is 70 and the value of q is 50.", "The value of r plus p is 130."], // Kung ang app mo ay hindi pa sumusuporta ng dalawang tamang sagot (array), paki-adjust ito sa iisang text answer lamang na tumutukoy sa main correct option.
+        explanation: "Interior q + exterior Q = 180, so q = 180 - 130 = 50. Then p = 180 - (60 + 50) = 70. ; r = 60, p = 70, q = 50 ; r + p = 130 -> 60 + 70 = 130"
+    },
+    {
+        text: "[Refer to Figure 7] What are the lengths of the other two sides of the triangular dog house?",
+        options: ["The other two sides are 1.5 meters each.", "The other two sides are 2 meters and 3 meters.", "The other two sides are 3 meters each.", "The other two sides are 4 meters and 6 meters."],
+        answer: "The other two sides are 1.5 meters each.",
+        explanation: "By applying the ratio from similar figures, if you have one scaled side, you multiply the known sides of the original by the scale factor. How: ratio of the sides = 3:3:2 from longest to shortest. Let x = 2 longer sides and shortest side = 1 meter; x meters : x meters : 1 meter = 3:3:2 -> scale factor of known measure and ratio = shortest side/2 = 1/2 or 0.5 -> 2 longer sides = (3 meters)(0.5) = 1.5 meters ; To check ratio if still correct divide all sides to scale factor (0.5) -> 1.5m/0.5 : 1.5m/0.5 : 1m/0.5 = 3 : 3 : 2"
+    },
+    {
+        text: "[Refer to Figure 8] What is the area of the sidewalk in square meters surrounding the pool? (Use pi = 3.14)",
+        options: ["11.5π", "21π", "34.54", "36.14"],
+        answer: "34.54",
+        explanation: "The pool diameter is 10 (r = 5). The sidewalk adds 1m uniformly (R = 6). Area = Area(outer) - Area(inner) = π(6²) - π(5²) = 36π - 25π = 11π = 11(3.14) = 34.54 square meters"
+    },
+    {
+        text: "[Refer to Figure 10] The wheel in Figure 10 is rolled exactly 5 times. Which of the following shows how you can compute the distance travelled by the wheel?",
+        options: ["5 × π × 60", "5 × π × 30²", "5 × 60", "5 × π × 30"],
+        answer: "5 × π × 60",
+        explanation: "Distance traveled is Rotations × Circumference. Circumference = π × diameter. The is diameter is 60. So, 5 × (π × 60)."
+    },
+
+    // --- START OF BANK QUESTIONS (RANDOM POOL) ---
+    {
+	text: "Which of the following expressions is equivalent to 10?",
+	options: ["2 × 3 + 4", "5 × 5 - 1", "4 + 2 × 5", "All of the above"],
+	answer: "2 × 3 + 4",
+	explanation: "Apply order of operations. Multiply first: 2×3=6. Then add 4. 6+4=10."
+	},
+	{
+	text: "Evaluate the mathematical expression: 4 × 4 - 2 × 5",
+	options: ["2", "6", "10", "22"],
+	answer: "6",
+	explanation: "Multiply first: 4×4=16 and 2×5=10. Then subtract: 16−10=6."
+	},
+	{
+	text: "If 2³ = 8, what is the value of 2⁴?",
+	options: ["10", "12", "16", "32"],
+	answer: "16",
+	explanation: "2⁴ means 2×2×2×2. That equals 16."
+	},
+	{
+	text: "Which number is a power of 2 between 10 and 20?",
+	options: ["12", "14", "16", "18"],
+	answer: "16",
+	explanation: "The powers of 2 are 2,4,8,16,32… Only 16 lies between 10 and 20."
+	},
+	{
+	text: "Evaluate: 6 × 3 + 2",
+	options: ["18", "20", "16", "14"],
+	answer: "20",
+	explanation: "Multiply first: 6×3=18. Then add 2. Result is 20."
+	},
+	{
+        text: "Evaluate the mathematical expression: 5 × 5 - 3 × 6",
+        options: [
+            "7, because you multiply first (5×5=25 and 3×6=18), then subtract (25-18=7).", 
+            "12, because you subtract 5-3 first, then multiply.", 
+            "32, because you add the answers instead of subtracting.", 
+            "-7, because 18-25 is negative."
+        ],
+        answer: "7, because you multiply first (5×5=25 and 3×6=18), then subtract (25-18=7).",
+        explanation: "Following PEMDAS, multiplication must be done before subtraction."
+    },
+    {
+        text: "What must be the next number expression to 7×7 - 8×6 based on the pattern?",
+        options: [
+            "8×8 - 9×7, because the first number increments by 1 and the others follow the pattern.", 
+            "6×6 - 7×5, because the numbers are decreasing.", 
+            "7×8 - 8×9, because you swap the order of the numbers.", 
+            "9×9 - 10×8, because you skip a number."
+        ],
+        answer: "8×8 - 9×7, because the first number increments by 1 and the others follow the pattern.",
+        explanation: "The pattern n×n - (n+1)×(n-1) increases the base number 'n' by 1 each time."
+    },
+    {
+        text: "Which of the following shows that 64 is a power of 2?",
+        options: [
+            "It can be written exclusively as 2×2×2×2×2×2 (which is 2⁶).", 
+            "It ends with the number 4, which is an even number.", 
+            "It is perfectly divisible by 2.", 
+            "It is a multiple of 8 (8×8=64)."
+        ],
+        answer: "It can be written exclusively as 2×2×2×2×2×2 (which is 2⁶).",
+        explanation: "A power of 2 means the number is formed by multiplying 2 by itself a certain number of times."
+    },
+    {
+        text: "Is there a decimal number strictly between 0.45 and 0.46?",
+        options: [
+            "Yes, for example 0.455, because you can always add another decimal place.", 
+            "No, because 45 and 46 are consecutive numbers.", 
+            "Yes, for example 0.47, because it is the next number.", 
+            "No, because decimals end at the hundredths place."
+        ],
+        answer: "Yes, for example 0.455, because you can always add another decimal place.",
+        explanation: "Decimals are infinitely dense; adding a zero (0.450 and 0.460) makes it easy to find numbers like 0.455 between them."
+    },
+    {
+        text: "Which of the following fractions is greater than 1/2 but less than 1?",
+        options: [
+            "3/4, because its decimal equivalent is 0.75, which is between 0.50 and 1.0.", 
+            "1/4, because 0.25 is smaller than 0.50.", 
+            "2/2, because it is exactly equal to 1.", 
+            "1/3, because 0.33 is greater than 1/2."
+        ],
+        answer: "3/4, because its decimal equivalent is 0.75, which is between 0.50 and 1.0.",
+        explanation: "Converting fractions to decimals (1/2 = 0.50, 3/4 = 0.75) makes it easy to compare sizes."
+    },
+	{
+        text: "Evaluate the mathematical expression: 10 - 2 × 4",
+        options: [
+            "2, because you multiply 2×4 first (which is 8), then subtract from 10.", 
+            "32, because you subtract 10-2 first, then multiply by 4.", 
+            "18, by adding the numbers instead of subtracting.", 
+            "16, by multiplying all the numbers together."
+        ],
+        answer: "2, because you multiply 2×4 first (which is 8), then subtract from 10.",
+        explanation: "Following PEMDAS, multiplication always comes before subtraction."
+    },
+    {
+        text: "If 2⁴ = 16, what is the value of 2⁵?",
+        options: [
+            "32, because it is 2⁴ multiplied by 2 one more time (16 × 2 = 32).", 
+            "20, because you just add 4 to 16.", 
+            "64, because you multiply 16 × 4.", 
+            "18, by simply adding 2 to 16."
+        ],
+        answer: "32, because it is 2⁴ multiplied by 2 one more time (16 × 2 = 32).",
+        explanation: "An exponent means multiplying by the base. To go from 2⁴ to 2⁵, just multiply by 2 again."
+    },
+    {
+        text: "Which of the following decimals is located strictly between 0.89 and 0.90?",
+        options: [
+            "0.895, because adding a zero (0.890 and 0.900) shows that 0.895 is right in the middle.", 
+            "0.91, because it comes immediately after 90.", 
+            "0.88, because it comes immediately before 89.", 
+            "0.809, because you put a zero in the middle."
+        ],
+        answer: "0.895, because adding a zero (0.890 and 0.900) shows that 0.895 is right in the middle.",
+        explanation: "Decimals can always be extended. 0.89 is the same as 0.890, making it easy to find numbers like 0.895."
+    },
+	{
+	text: "A graph shows that as video game hours increase, test scores decrease. What correlation is this?",
+	options: ["Positive", "Negative", "None", "Constant"],
+	answer: "Negative",
+	explanation: "When one variable increases while the other decreases, the relationship is negative correlation."
+	},
+	{
+	text: "In a class of 40 students, 20 like Math, 15 like Science, and 5 like both. How many like Math only?",
+	options: ["5", "10", "15", "20"],
+	answer: "15",
+	explanation: "Students who like Math only = 20 − 5 = 15."
+	},
+	{
+        text: "A graph shows that as practice time increases, the number of mistakes made by a student decreases. What does this mean?",
+        options: [
+            "There is a negative correlation, because one goes up while the other goes down.", 
+            "There is a positive correlation, because both values are increasing.", 
+            "There is no correlation, because practice doesn't affect mistakes.", 
+            "It is a constant correlation, because the mistakes stay the same."
+        ],
+        answer: "There is a negative correlation, because one goes up while the other goes down.",
+        explanation: "When variables move in opposite directions (up vs down), it's called a negative correlation."
+    },
+    {
+        text: "In a class, there are 20 kids in the Art Club, 15 in Music, and 5 in BOTH, how many kids are in the Art Club ONLY?",
+        options: [
+            "15, by subtracting the 5 kids who do both from the 20 total Art kids.", 
+            "20, because that is the number written next to Art.", 
+            "25, by adding the 20 Art kids and the 5 who do both.", 
+            "10, by subtracting the 5 from Music instead."
+        ],
+        answer: "15, by subtracting the 5 kids who do both from the 20 total Art kids.",
+        explanation: "The total category includes intersections. You must subtract the 'both' to find the 'only' category."
+    },
+    {
+        text: "Out of 50 students surveyed, 40 participate in sports or clubs. How do you find the number of students who do NEITHER?",
+        options: [
+            "Subtract 40 from the total 50, which gives 10 students in neither.", 
+            "Add 40 and 50 together to get 90.", 
+            "Divide 50 by 2, because there are two choices.", 
+            "You cannot determine the answer without knowing the specific sports."
+        ],
+        answer: "Subtract 40 from the total 50, which gives 10 students in neither.",
+        explanation: "The 'neither' category is what remains after subtracting all participants from the total population."
+    },
+	{
+        text: "A graph shows that as students read more books, their vocabulary scores go up. What kind of correlation is this?",
+        options: [
+            "Positive correlation, because both values are increasing at the same time.", 
+            "Negative correlation, because one goes up while the other goes down.", 
+            "No correlation, because books and vocabulary are unrelated.", 
+            "Constant correlation, because the scores stay the exact same."
+        ],
+        answer: "Positive correlation, because both values are increasing at the same time.",
+        explanation: "When two sets of data move in the same direction (both up or both down), it is a positive correlation."
+    },
+    {
+        text: "In a group of 30 kids, 15 like Apples, 10 like Bananas, and 5 like BOTH. How many kids like NEITHER?",
+        options: [
+            "10, because 20 kids in total like at least one fruit (10 only A + 5 only B + 5 both), so 30 - 20 = 10.", 
+            "5, by simply subtracting the kids who like both.", 
+            "20, because that is the total of kids who like fruits.", 
+            "15, by dividing the total number of kids by 2."
+        ],
+        answer: "10, because 20 kids in total like at least one fruit (10 only A + 5 only B + 5 both), so 30 - 20 = 10.",
+        explanation: "To find 'neither', subtract the total number of unique participants from the total population."
+    },
+    {
+        text: "A two-way table shows 20 boys and 30 girls. If 12 boys play chess, how do you find the number of boys who DO NOT play chess?",
+        options: [
+            "Subtract 12 from the total 20 boys, which gives 8 boys.", 
+            "Subtract 12 from the total 30 girls, which gives 18.", 
+            "Add 20 and 12 together to get 32.", 
+            "Divide 20 by 12."
+        ],
+        answer: "Subtract 12 from the total 20 boys, which gives 8 boys.",
+        explanation: "In a table, the total for a category equals the sum of its parts. Total Boys (20) - Chess Boys (12) = Non-Chess Boys (8)."
+    },
+	{
+	text: "Point A is at -10 and Point B is at 5. What is the distance?",
+	options: ["5", "10", "15", "20"],
+	answer: "15",
+	explanation: "Distance = absolute difference. |5 − (−10)| = 15."
+	},
+	{
+	text: "Point P (2,1) and Q (2,6). Length of PQ?",
+	options: ["3", "4", "5", "7"],
+	answer: "5",
+	explanation: "Same x-coordinate so subtract y values: 6 − 1 = 5."
+	},
+	{
+	text: "Triangle with vertices (0,0), (0,4), (3,0). Area?",
+	options: ["6", "7", "12", "14"],
+	answer: "6",
+	explanation: "Base=3 and height=4. Area = ½ × 3 × 4 = 6."
+	},
+	{
+        text: "If a number line has intervals of 10, what is the position of a point that is 2 units to the left of 0?",
+        options: [
+            "-20, because 2 steps to the left at intervals of 10 equals -20.", 
+            "-2, because you just moved 2 steps left.", 
+            "20, because distance is always positive.", 
+            "0, because you haven't reached 100 yet."
+        ],
+        answer: "-20, because 2 steps to the left at intervals of 10 equals -20.",
+        explanation: "On a number line, movement to the left is negative. 2 steps × 10 units per step = -20."
+    },
+    {
+        text: "A triangle on a grid has a flat base of 5 units and a straight vertical height of 4 units. What is its area?",
+        options: [
+            "10 square units, because you multiply base × height (20) and divide by 2.", 
+            "20 square units, by simply multiplying 5 × 4.", 
+            "9 square units, by adding the base and the height.", 
+            "4.5 square units, by adding them and dividing by 2."
+        ],
+        answer: "10 square units, because you multiply base × height (20) and divide by 2.",
+        explanation: "The formula for the area of a triangle is A = 1/2 × base × height."
+    },
+    {
+        text: "What is the distance between Point A(2, 3) and Point B(2, 9) on a coordinate plane?",
+        options: [
+            "6 units, by subtracting the y-coordinates (9 - 3) since the x-coordinates are the same.", 
+            "12 units, by adding the y-coordinates together.", 
+            "4 units, by adding the x-coordinates together.", 
+            "11 units, by subtracting the x from the y."
+        ],
+        answer: "6 units, by subtracting the y-coordinates (9 - 3) since the x-coordinates are the same.",
+        explanation: "For points on the same vertical line, distance is just the absolute difference between their y-values."
+    },
+    {
+        text: "To mathematically prove which is the shorter walk between two locations on a grid map, what should you do?",
+        options: [
+            "Calculate the coordinate distance between the points using the distance formula.", 
+            "Guess based on which points look closer to each other on the paper.", 
+            "Add the x and y coordinates of both points together.", 
+            "Calculate the total area of the map."
+        ],
+        answer: "Calculate the coordinate distance between the points using the distance formula.",
+        explanation: "The distance formula provides the exact straight-line measurement between any two coordinate points."
+    },
+    {
+        text: "If your house is at origin (0,0) and the store is at (0, 5), where is the store located?",
+        options: [
+            "5 units strictly upward along the vertical y-axis.", 
+            "5 units strictly to the right along the horizontal x-axis.", 
+            "5 units diagonal from the house.", 
+            "5 units downward from the origin."
+        ],
+        answer: "5 units strictly upward along the vertical y-axis.",
+        explanation: "The coordinate (0, 5) means 0 horizontal movement and 5 positive vertical movement (upwards)."
+    },
+	{
+        text: "Point A is at -8 and Point B is at 3 on a number line. What is the total distance between them?",
+        options: [
+            "11 units, because you add the absolute distances (8 steps to zero + 3 steps).", 
+            "5 units, by subtracting 3 from 8.", 
+            "10 units, by rounding off the numbers.", 
+            "24 units, by multiplying them."
+        ],
+        answer: "11 units, because you add the absolute distances (8 steps to zero + 3 steps).",
+        explanation: "Distance is always positive. From -8 to 0 is 8 units, and from 0 to 3 is 3 units. 8 + 3 = 11."
+    },
+    {
+        text: "What is the distance between the points (4, 1) and (4, 7) on a coordinate grid?",
+        options: [
+            "6 units, by subtracting the y-coordinates (7 - 1) since the x-coordinates are the same.", 
+            "11 units, by adding 4 and 7 together.", 
+            "8 units, by adding the x-coordinates.", 
+            "3 units, by subtracting 4 from 7."
+        ],
+        answer: "6 units, by subtracting the y-coordinates (7 - 1) since the x-coordinates are the same.",
+        explanation: "When points align vertically (same x), simply find the difference between their y heights."
+    },
+    {
+        text: "What number is exactly halfway between -20 and 0 on a number line?",
+        options: [
+            "-10, because it is the exact midpoint or average of -20 and 0.", 
+            "-5, because it is half of 10.", 
+            "10, because midpoints are always positive.", 
+            "-15, because it is close to -20."
+        ],
+        answer: "-10, because it is the exact midpoint or average of -20 and 0.",
+        explanation: "The midpoint is found by adding the two numbers and dividing by 2. (-20 + 0) / 2 = -10."
+    },
+	{
+	text: "Triangle angles are 40° and 60°. What is the third angle?",
+	options: ["80°", "90°", "100°", "180°"],
+	answer: "80°",
+	explanation: "Sum of angles in a triangle is 180°. 180 − (40 + 60) = 80."
+	},
+	{
+        text: "If the exterior angle of a triangle is 150°, what is the sum of its two opposite interior angles?",
+        options: [
+            "150°, because the exterior angle always equals the sum of the two opposite interior angles.", 
+            "180°, because all triangles add up to 180°.", 
+            "30°, because they must form a straight line with the exterior angle.", 
+            "300°, by multiplying 150 by 2."
+        ],
+        answer: "150°, because the exterior angle always equals the sum of the two opposite interior angles.",
+        explanation: "The Exterior Angle Theorem states that an exterior angle equals the sum of the two remote (opposite) interior angles."
+    },
+    {
+        text: "If the exterior angle of a triangle is 130° and one of its opposite interior angles is 40°, what is the other opposite angle?",
+        options: [
+            "90°, because 130° - 40° = 90°.", 
+            "40°, because opposite interior angles must be equal.", 
+            "130°, because it copies the exterior angle.", 
+            "50°, because 180° - 130° = 50°."
+        ],
+        answer: "90°, because 130° - 40° = 90°.",
+        explanation: "Since Exterior (130) = Interior1 (40) + Interior2 (x), you subtract 40 from 130 to find the missing angle."
+    },
+    {
+        text: "A dog house has a triangular roof with sides in a ratio of 2:3:3. If the shortest side is scaled up to 4 meters, how long are the other two sides?",
+        options: [
+            "6 meters each, because the scale factor is 2 (from 2 to 4), so you multiply 3 by 2.", 
+            "5 meters each, by adding 2 to the ratio.", 
+            "8 meters each, by multiplying 4 by 2.", 
+            "3 meters each, because the ratio stays the same."
+        ],
+        answer: "6 meters each, because the scale factor is 2 (from 2 to 4), so you multiply 3 by 2.",
+        explanation: "Scaling up a ratio means finding the multiplier. Shortest side went from 2 to 4 (multiplier = 2). 3 × 2 = 6."
+    },
+    {
+        text: "Two interior angles of a triangle are 60° and 70°. What is the measure of the third angle?",
+        options: [
+            "50°, because the total sum must be exactly 180° (180 - 60 - 70 = 50).", 
+            "60°, to make it an equilateral triangle.", 
+            "130°, by adding the first two angles together.", 
+            "90°, because all triangles need a right angle."
+        ],
+        answer: "50°, because the total sum must be exactly 180° (180 - 60 - 70 = 50).",
+        explanation: "The sum of all interior angles inside any flat triangle is always 180 degrees."
+    },
+    {
+        text: "Two triangles are similar. The first has a base of 3 and the second has a base of 12. What is the scale factor?",
+        options: [
+            "4, because 12 divided by 3 is 4.", 
+            "9, because 12 minus 3 is 9.", 
+            "15, by adding the two bases together.", 
+            "36, by multiplying the two bases."
+        ],
+        answer: "4, because 12 divided by 3 is 4.",
+        explanation: "The scale factor is the number you multiply the original side by to get the new side (3 × 4 = 12)."
+    },
+	{
+        text: "The exterior angle of a triangle is 110°. If one opposite interior angle is 60°, what is the other opposite interior angle?",
+        options: [
+            "50°, because the exterior angle (110°) equals the sum of the two opposite interior angles (60° + 50°).", 
+            "70°, because you subtract 110° from 180°.", 
+            "170°, by adding 110° and 60°.", 
+            "60°, because the two interior angles must be identical."
+        ],
+        answer: "50°, because the exterior angle (110°) equals the sum of the two opposite interior angles (60° + 50°).",
+        explanation: "Exterior Angle Theorem: The outside angle is equal to the two opposite inside angles added together."
+    },
+    {
+        text: "A triangle plotted on a grid has a flat base of 8 units and a height of 3 units. What is its area?",
+        options: [
+            "12 square units, because the formula is (base × height) divided by 2. (8×3)/2 = 12.", 
+            "24 square units, by multiplying base and height only.", 
+            "11 square units, by adding 8 and 3.", 
+            "5 square units, by subtracting 3 from 8."
+        ],
+        answer: "12 square units, because the formula is (base × height) divided by 2. (8×3)/2 = 12.",
+        explanation: "Area of a triangle = ½ × base × height."
+    },
+    {
+        text: "A triangular garden has sides in a ratio of 1:2:2. If the shortest side is 5 meters, how long are the other two sides?",
+        options: [
+            "10 meters each, because the scale factor is 5 (1×5=5), so you multiply 2 by 5.", 
+            "7 meters each, by adding 2 to the 5 meters.", 
+            "2.5 meters each, by dividing 5 by 2.", 
+            "15 meters each, by adding all ratio numbers together."
+        ],
+        answer: "10 meters each, because the scale factor is 5 (1×5=5), so you multiply 2 by 5.",
+        explanation: "Since the ratio '1' represents 5 meters, every part of the ratio is multiplied by 5."
+    },
+	{
+	text: "A circular pool radius 3 m with 1 m deck around it. Deck area?",
+	options: ["7π", "9π", "16π", "25π"],
+	answer: "7π",
+	explanation: "Outer radius=4. Outer area=16π. Inner area=9π. Difference = 7π."
+	},
+	{
+	text: "2 full rotations equal how many degrees?",
+	options: ["180", "360", "540", "720"],
+	answer: "720",
+	explanation: "One rotation is 360°. 2 × 360 = 720°."
+	},
+	{
+        text: "A circular garden has a radius of 4m and is surrounded by a 1m wide concrete path. How do you find the area of the concrete path?",
+        options: [
+            "Subtract the garden's area from the total outer area: Area(outer) - Area(inner).", 
+            "Add the area of the garden to the area of the path.", 
+            "Find the circumference of the inner garden.", 
+            "Multiply the garden's radius by the path's width."
+        ],
+        answer: "Subtract the garden's area from the total outer area: Area(outer) - Area(inner).",
+        explanation: "To find the area of a ring (annulus), you calculate the area of the big circle and subtract the area of the small circle inside it."
+    },
+    {
+        text: "A pool has a radius of 2m. A 1m deck surrounds it (making the total outer radius 3m). What is the deck's area?",
+        options: [
+            "5π, because the outer area (9π) minus the inner pool area (4π) is 5π.", 
+            "3π, by adding 1 and 2 and attaching π.", 
+            "9π, because you just take the area of the outer circle.", 
+            "1π, because the deck is only 1m wide."
+        ],
+        answer: "5π, because the outer area (9π) minus the inner pool area (4π) is 5π.",
+        explanation: "Area of big circle: π(3)² = 9π. Area of pool: π(2)² = 4π. Difference: 9π - 4π = 5π."
+    },
+    {
+        text: "A wheel rolls perfectly straight for exactly 10 rotations. How do you calculate the total distance it traveled?",
+        options: [
+            "Multiply 10 by the circumference of the wheel.", 
+            "Multiply 10 by the area of the wheel.", 
+            "Multiply 10 by the diameter of the wheel.", 
+            "Multiply 10 by the radius of the wheel."
+        ],
+        answer: "Multiply 10 by the circumference of the wheel.",
+        explanation: "One full rotation of a wheel covers a distance exactly equal to its outer edge, which is its circumference."
+    },
+    {
+        text: "A bicycle tire has a circumference of 3 meters. If it makes 4 full revolutions, how far does the bicycle go?",
+        options: [
+            "12 meters, because 3 meters × 4 revolutions = 12.", 
+            "7 meters, by adding 3 and 4 together.", 
+            "9 meters, by squaring the circumference.", 
+            "1 meter, by subtracting the numbers."
+        ],
+        answer: "12 meters, because 3 meters × 4 revolutions = 12.",
+        explanation: "Distance = Circumference × Number of Revolutions. (3m × 4 = 12m)."
+    },
+    {
+        text: "If you know a wheel's diameter is 50 cm, how do you find the distance of one full rotation?",
+        options: [
+            "Multiply 50 by π, because Circumference = π × diameter.", 
+            "Divide 50 by 2, because you need to use the radius.", 
+            "Square 50 and multiply by π to get the area.", 
+            "Multiply 50 by 360, because a circle has 360 degrees."
+        ],
+        answer: "Multiply 50 by π, because Circumference = π × diameter.",
+        explanation: "The distance of one rotation is the circumference, and the formula using diameter is simply C = πd."
+    },
+	{
+        text: "A circular fountain with a 3m radius has a 2m wide path around it (making the total outer radius 5m). What is the area of the path?",
+        options: [
+            "16π, because the outer area (25π) minus the inner fountain area (9π) equals 16π.", 
+            "4π, because you just square the 2m width.", 
+            "25π, because you only look at the total outer radius.", 
+            "6π, by multiplying 3 and 2."
+        ],
+        answer: "16π, because the outer area (25π) minus the inner fountain area (9π) equals 16π.",
+        explanation: "To find a ring's area, find the area of the large circle (π×5²) and subtract the small circle (π×3²)."
+    },
+    {
+        text: "A spinner on a board game makes exactly 3 full rotations. How many degrees did it spin?",
+        options: [
+            "1080°, because one full rotation is 360°, and 360° × 3 = 1080°.", 
+            "720°, which is only 2 rotations.", 
+            "360°, because a circle can only have 360 degrees total.", 
+            "180°, because that is the angle of a straight line."
+        ],
+        answer: "1080°, because one full rotation is 360°, and 360° × 3 = 1080°.",
+        explanation: "A full circle has 360 degrees. Multiply 360 by the number of rotations."
+    },
+    {
+        text: "A wheel with a circumference of 4 meters rolls exactly 5 times. How far did it travel?",
+        options: [
+            "20 meters, because Distance = Circumference × Number of Rotations (4 × 5 = 20).", 
+            "9 meters, by adding 4 and 5.", 
+            "16 meters, by squaring the circumference.", 
+            "25 meters, by squaring the number of rotations."
+        ],
+        answer: "20 meters, because Distance = Circumference × Number of Rotations (4 × 5 = 20).",
+        explanation: "Every time a wheel completes a rotation, it travels exactly the length of its circumference."
+    }
+    ];
+
+// ==========================================
+// 5. ANTI-CHEAT FUNCTIONS
+// ==========================================
+let violationCooldown = false;
+
+function reportViolation(studentName, category, action) {
+    const formData = new URLSearchParams();
+    formData.append("type", "VIOLATION");
+    formData.append("name", studentName); 
+    formData.append("category", category);
+    formData.append("action", action);
+
+    window.RMAData.reportViolation(formData)
+    .then(() => console.log("Violation recorded: " + action))
+    .catch(e => console.error("Violation Fetch Error:", e));
+}
+
+function showCustomAlert(msg) {
+    let alertBox = document.createElement("div");
+    alertBox.innerHTML = `<div style="position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#e74c3c; color:white; padding:15px 25px; border-radius:8px; z-index:9999; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.2); text-align:center;">${msg}</div>`;
+    document.body.appendChild(alertBox);
+    setTimeout(() => { if(alertBox) alertBox.remove(); }, 3000);
+}
+
+function handleViolation(reason) {
+    if (!SECURITY.examStarted || SECURITY.cheatDetected || window.isExamFinished || SECURITY.isWarningActive || violationCooldown) {
+        return; 
+    }
+
+    SECURITY.isWarningActive = true;
+    SECURITY.strikes += 1; 
+
+    if (SECURITY.strikes >= SECURITY.maxStrikes) {
+        reportCheat(reason + ` (Reached ${SECURITY.maxStrikes} strikes)`);
+        return;
+    } 
+    
+    const quizContent = document.getElementById('quizContent');
+    if (quizContent) quizContent.style.display = 'none';
+
+    const modal = document.createElement('div');
+    modal.id = "securityModalBox";
+    modal.style.cssText = "position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; z-index:999999;";
+
+    const box = document.createElement('div');
+    box.style.cssText = "background:white; padding:40px; border-radius:12px; text-align:center; max-width:450px; box-shadow:0 10px 30px rgba(255,0,0,0.3); font-family:sans-serif;";
+    
+    box.innerHTML = `
+        <h2 style="color:#c0392b; font-size:26px; margin-top:0;"> SECURITY WARNING ${SECURITY.strikes} of ${SECURITY.maxStrikes}</h2>
+        <p style="font-size:18px; color:#333; font-weight:bold;">Violation: ${reason}</p>
+        <p style="font-size:16px; color:#666;">Bawal lumabas ng fullscreen, mag-switch ng tab, o mag-minimize.</p>
+    `;
+
+    const btnContinue = document.createElement('button');
+    btnContinue.innerText = "I-click para bumalik sa Exam";
+    btnContinue.style.cssText = "margin-top:20px; padding:15px; width:100%; background:#27ae60; color:white; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer;";
+
+    btnContinue.onclick = function() {
+        forceEnterFullscreen(); 
+        modal.remove(); 
+        if (quizContent) quizContent.style.display = 'block'; 
+        violationCooldown = true; 
+        setTimeout(() => { violationCooldown = false; }, 5000); 
+        SECURITY.isWarningActive = false;
+    };
+
+    const btnQuit = document.createElement('button');
+    btnQuit.innerText = "Isuko ang Exam (Quit)";
+    btnQuit.style.cssText = "margin-top:15px; padding:10px; width:100%; background:transparent; color:#c0392b; border:none; text-decoration:underline; font-size:14px; cursor:pointer;";
+    
+    btnQuit.onclick = function() {
+        modal.remove();
+        let studentName = document.getElementById("displayStudentName").innerText;
+        // ITINUGMA SA APPS SCRIPT: "VOLUNTARY EXIT AFTER WARNING"
+        reportViolation(studentName, "SPAM QUITTING", "VOLUNTARY EXIT AFTER WARNING");
+        reportCheat("Voluntary Exit after Warning");
+    };
+
+    box.appendChild(btnContinue);
+    box.appendChild(btnQuit);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+}
+
+function reportCheat(reason) {
+    if(SECURITY.cheatDetected) return;
+    SECURITY.cheatDetected = true;
+    sessionStorage.removeItem("g7_exam_ongoing");
+
+    let isBanned = false;
+    let banReasonMsg = "";
+
+    if (reason.includes("Voluntary Exit")) {
+        SECURITY.quits += 1;
+        gameState.student.name = ` QUIT (${SECURITY.quits}/3): ` + (gameState.student.name || "Unknown");
+        if (SECURITY.quits >= SECURITY.maxQuits) {
+            isBanned = true;
+            banReasonMsg = "Too many cancellations.";
+        }
+    } else {
+        gameState.student.name = " MULTI VIOLATIONS: " + (gameState.student.name || "Unknown");
+        isBanned = true;
+        banReasonMsg = "Multiple security violations.";
+    }
+
+    if (isBanned) SECURITY.banUntil = Date.now() + SECURITY.banDuration;
+
+    gameState.student.section = reason + " | " + (gameState.student.section || "N/A");
+    gameState.correctCount = 0; 
+
+    if (typeof stopRealTimer === 'function') stopRealTimer(); 
+    if (typeof questionTimerInterval !== 'undefined') clearInterval(questionTimerInterval);
+
+    ['loginContainer', 'quizContainer', 'instructionsContainer', 'loginOverlay', 'welcomeContainer'].forEach(id => {
+        let el = document.getElementById(id);
+        if(el) el.style.display = 'none';
+    });
+
+    let resContainer = document.getElementById('resultContainer') || document.createElement('div');
+    if (!resContainer.id) {
+        resContainer.id = 'resultContainer';
+        document.body.appendChild(resContainer);
+    }
+    
+    resContainer.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 9999999;";
+
+    let titleMessage = reason.includes("Voluntary Exit") ? " EXAM CANCELLED" : " EXAM INVALIDATED";
+    let descMessage = reason.includes("Voluntary Exit") ? "You have chosen to voluntarily exit the exam." : "Your attempt has been invalidated due to a security violation.";
+    let banAlertHTML = isBanned ? `<div style="background:#e74c3c; color:white; padding:12px; margin-top:15px; border-radius:8px; font-weight:bold; font-size:16px;"> YOU ARE BANNED FOR 3 DAYS<br><span style="font-size:14px; font-weight:normal;">Reason: ${banReasonMsg}</span></div>` : "";
+
+    resContainer.innerHTML = `
+        <div style="background: white; padding: 40px; border-radius: 15px; text-align: center; max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(255,0,0,0.4); border-top: 8px solid #c0392b; font-family: sans-serif;">
+            <h1 style="color: #c0392b; font-size: 30px; margin-top: 0; margin-bottom: 10px;">${titleMessage}</h1>
+            <p style="font-size: 18px; color: #333; margin-top: 15px; font-weight: bold;">${descMessage}</p>
+            ${banAlertHTML}
+            <div style="background: #fadbd8; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #f5b7b1;">
+                <p style="font-size: 16px; color: #c0392b; margin: 0; font-weight: bold;">Reason:<br> ${reason}</p>
+            </div>
+            <p style="font-size: 14px; color: #666; margin-top: 20px;">Your score has been recorded as 0%. Please contact your teacher immediately.</p>
+        </div>`;
+}
+
+function disableSecurityOnFinish() {
+    window.isExamFinished = true;
+    SECURITY.examStarted = false;
+    clearTimeout(idleTimeout); 
+    sessionStorage.removeItem("g7_exam_ongoing");
+    localStorage.removeItem("g10_exam_strikes");
+}
+
+// ==========================================
+// 6. EVENT LISTENERS (ANTI-CHEAT)
+// ==========================================
+window.onload = function() {
+    if (sessionStorage.getItem("g7_exam_ongoing") === "true") {
+        SECURITY.examStarted = true;
+        handleViolation("PAGE_REFRESHED");
+    }
+};
+
+document.addEventListener("visibilitychange", function() {
+    let studentNameDisplay = document.getElementById("displayStudentName");
+    let currentStudent = (studentNameDisplay && studentNameDisplay.innerText !== "Guest") ? studentNameDisplay.innerText : "UNKNOWN";
+
+    if (document.hidden && !window.isExamFinished && currentStudent !== "UNKNOWN" && !SECURITY.isWarningActive && !SECURITY.cheatDetected) {
+        reportViolation(currentStudent, "CHEATING", "Switched Tab / Minimized Browser");
+        handleViolation("TAB_SWITCH_OR_MINIMIZED"); 
+    }
+});
+
+window.addEventListener("blur", () => {
+    if (SECURITY.examStarted && !SECURITY.cheatDetected && !window.isExamFinished) handleViolation("LOST_WINDOW_FOCUS");
+});
+
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && SECURITY.examStarted && !SECURITY.cheatDetected && !window.isExamFinished) handleViolation("EXIT_FULLSCREEN");
+});
+
+window.addEventListener('beforeunload', function (e) {
+    let studentName = document.getElementById("displayStudentName").innerText;
+    if (studentName !== "Guest" && !window.isExamFinished) reportViolation(studentName, "SPAM QUITTING", "Browser Refresh/Close during exam");
+});
+
+document.addEventListener("contextmenu", e => {
+    if(SECURITY.examStarted && !window.isExamFinished) e.preventDefault();
+});
+
+document.addEventListener("keydown", (e) => {
+    if (!SECURITY.examStarted || SECURITY.cheatDetected || window.isExamFinished) return;
+    if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 103 || e.keyCode === 104)) || (e.ctrlKey && e.keyCode === 85)) {
+        e.preventDefault(); handleViolation("OPENED_DEVTOOLS"); return false;
+    }
+    if (e.key === "PrintScreen" || e.keyCode === 44) {
+        e.preventDefault(); navigator.clipboard.writeText(""); handleViolation("SCREENSHOT_ATTEMPT_PRTSCN"); return false;
+    }
+    if (e.metaKey && e.shiftKey && (e.key.toLowerCase() === 's' || e.key === '3' || e.key === '4' || e.key === '5')) {
+        e.preventDefault(); handleViolation("SCREENSHOT_ATTEMPT"); return false;
+    }
+});
+
+document.addEventListener("keyup", (e) => {
+    if (SECURITY.examStarted && !SECURITY.cheatDetected && !window.isExamFinished) {
+        if (e.key === "PrintScreen" || e.keyCode === 44) {
+            navigator.clipboard.writeText(""); handleViolation("SCREENSHOT_ATTEMPT_PRTSCN");
+        }
+    }
+});
+
+const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+activityEvents.forEach(event => document.addEventListener(event, resetIdleTimer, true));
+
+// ==========================================
+// 10. TIMERS
+// ==========================================
+function startRealTimer() {
+    gameStartTime = new Date(); 
+    let myTimer = document.getElementById("timerDisplay");
+    
+    if (myTimer) {
+        myTimer.style.display = "inline-block"; 
+    }
+
+    let seconds = 0;
+    clearInterval(timerInterval);
+    
+    timerInterval = setInterval(() => {
+        seconds++;
+        let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        let s = (seconds % 60).toString().padStart(2, '0');
+        if (myTimer) myTimer.innerText = ` ${m}:${s}`;
+    }, 1000);
+    
+    document.getElementById("loginOverlay").style.display = "none";
+}
+
+function stopRealTimer() {
+    clearInterval(timerInterval);
+    clearTimeout(idleTimeout);
+    gameEndTime = new Date(); 
+    document.getElementById("timerDisplay").style.display = "none"; 
+}
+
+function startQuestionTimer() {
+    clearInterval(questionTimerInterval); 
+    let timeRemaining = 30; 
+
+    const timerContainer = document.getElementById("questionTimerContainer");
+    const timeDisplay = document.getElementById("timeRemaining");
+
+    if (timerContainer) timerContainer.style.display = "block";
+    if (timeDisplay) timeDisplay.innerText = timeRemaining;
+
+    questionTimerInterval = setInterval(() => {
+        timeRemaining--;
+        if (timeDisplay) timeDisplay.innerText = timeRemaining;
+
+        if (timeRemaining <= 0) {
+            clearInterval(questionTimerInterval); 
+            showCustomAlert("Time's up! No points for this question.");
+            
+            const labels = document.querySelectorAll('.option-label');
+            labels.forEach(label => {
+                label.classList.add('disabled');
+                const cb = label.querySelector('input');
+                cb.disabled = true;
+            });
+
+            dom.explanationText.textContent = "Time ran out. Please proceed to the next question.";
+            dom.explanationBox.style.display = 'block';
+
+            const pointer = gameState.activeQuestions[gameState.currentQIndex];
+            const currentID = pointer.rawIndex + 1;
+            gameState.itemAnalysisRecords.push({ id: currentID, result: "M" });
+            gameState.userAnswers[currentID] = "M";
+
+            document.getElementById('soundWrong').play();
+
+            dom.checkBtn.classList.add('hidden');
+            dom.nextBtn.classList.remove('hidden');
+            dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
+        }
+    }, 1000);
+}
+
+function resetIdleTimer() {
+    if (!SECURITY.examStarted || SECURITY.cheatDetected || window.isExamFinished) {
+        clearTimeout(idleTimeout); return;
+    }
+    clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => {
+        handleViolation("IDLE_FOR_1_MINUTE_NO_ACTIVITY");
+        resetIdleTimer(); 
+    }, IDLE_TIME_LIMIT);
+}
+
+// ==========================================
+// 8. GAME INITIALIZATION & ENGINE
+// ==========================================
+function lockExam(name) {
+    window.isExamFinished = false;
+    SECURITY.examStarted = true;
+    SECURITY.cheatDetected = false;
+    SECURITY.strikes = 0; 
+    sessionStorage.setItem("g7_exam_ongoing", "true");
+    return true;
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    const now = Date.now();
+    
+    if (SECURITY.banUntil > now) {
+        let timeLeft = SECURITY.banUntil - now;
+        let days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        alert(`BANNED: Hindi ka muna makakapag-take ng exam.\nLimit Reached: Naka-3 Strikes o 3 Quits ka na.\nMaaari kang umulit pagkalipas ng: ${days} araw at ${hours} oras.`);
+        return; 
+    } else if (SECURITY.banUntil > 0 && SECURITY.banUntil <= now) {
+        SECURITY.banUntil = 0; 
+        SECURITY.quits = 0; 
+        SECURITY.strikes = 0;
+        localStorage.removeItem("g10_exam_strikes");
+    }
+
+    const lastName = document.getElementById('lastName').value.trim();
+    const firstName = document.getElementById('firstName').value.trim();
+    const mi = document.getElementById('midInitial').value.trim(); 
+    const section = document.getElementById('studentSection').value;
+    
+    if(lastName && firstName && section) {
+        gameState.student.lastName = lastName;
+        let middleInitialFormat = mi ? ` ${mi.charAt(0)}.` : "";
+        gameState.student.firstNameMI = (firstName + middleInitialFormat);
+        
+        const combinedName = `${gameState.student.lastName}, ${gameState.student.firstNameMI}`;
+        
+        lockExam(combinedName);
+        try { forceEnterFullscreen(); } catch(e) { console.log("Fullscreen bypass"); }
+
+        gameState.student.name = combinedName; 
+        gameState.student.section = section;
+        document.getElementById('displayStudentName').textContent = combinedName;
+        document.getElementById('displaySection').textContent = section;
+        
+        document.getElementById('loginOverlay').style.display = 'none'; 
+        
+        startRealTimer();
+        initGame();
+        resetIdleTimer();
+        
+    } else {
+        alert("Please enter your Last Name, First Name, and Select your Section");
+    }
+});
+
+	function initGame() {
+		gameState.correctCount = 0;
+		gameState.scorePoints = 0;
+		dom.resultContent.classList.add('hidden');
+		dom.quizContent.classList.remove('hidden');
+
+		// GRADE 7: 21 RMA Items, 14 Random Bank Items = 35 Total
+		const FIXED_COUNT = Math.min(21, rawQuestions.length);
+		const RANDOM_COUNT = Math.min(14, rawQuestions.length - FIXED_COUNT);
+		
+		let fixedIndices = [];
+		let randomPoolIndices = [];
+		
+		for (let i = 0; i < rawQuestions.length; i++) {
+			if (i < FIXED_COUNT) fixedIndices.push(i);
+			else randomPoolIndices.push(i);
+		}
+		
+		shuffleArray(randomPoolIndices);
+		let selectedRandomIndices = randomPoolIndices.slice(0, RANDOM_COUNT);
+		let finalIndices = fixedIndices.concat(selectedRandomIndices);
+		
+		shuffleArray(finalIndices); // I-shuffle ang buong 35 items
+		gameState.activeQuestions = finalIndices.map(i => ({ rawIndex: i }));
+		gameState.currentQIndex = 0;
+		dom.qTotalDisp.textContent = gameState.activeQuestions.length;
+		
+		loadQuestion();
+		fetchLeaderboard();
+	}
+
+function loadQuestion() {
+    const pointer = gameState.activeQuestions[gameState.currentQIndex];
+    const qData = rawQuestions[pointer.rawIndex];
+
+    dom.qNumber.textContent = `Question ${gameState.currentQIndex + 1}`;
+    dom.qIndexDisp.textContent = gameState.currentQIndex + 1;
+    dom.qText.textContent = qData.text.replace(/\[Refer to.*?\]/gi, '').trim();
+    dom.imgContainer.innerHTML = "";
+
+    const regex = /\[Refer to (.*?)\]/gi;
+    let match;
+    while ((match = regex.exec(qData.text)) !== null) {
+        const label = match[1].trim(); 
+        let fileName = label.replace(/\s+/g, '-'); 
+        const img = document.createElement('img');
+        img.src = `${fileName}.png`; 
+        img.alt = fileName;
+        img.style.cssText = "max-width:100%; display:block; margin:10px auto; border-radius:8px;";
+        img.onerror = function() { console.log("File not found: " + this.src); this.style.display = 'none'; };
+        dom.imgContainer.appendChild(img);
+    }
+    
+    const pct = Math.round(((gameState.currentQIndex) / gameState.activeQuestions.length) * 100);
+    dom.progressBar.style.width = pct + "%";
+    dom.qText.innerHTML = qData.text.replace(/\[Refer to.*?\]/gi, '').trim();
+
+    dom.optionsBox.innerHTML = "";
+    selectedOptions = []; 
+    
+    let opts = qData.options.map(o => ({ txt: o }));
+    shuffleArray(opts);
+    
+    opts.forEach(opt => {
+        const label = document.createElement('label');
+        label.className = "option-label";
+        const cb = document.createElement('input');
+        cb.type = "checkbox"; cb.value = opt.txt;
+        const span = document.createElement('span');
+        span.textContent = opt.txt;
+
+        cb.addEventListener('change', () => {
+            if (cb.checked) {
+                label.classList.add('selected');
+                if (!selectedOptions.includes(opt.txt)) selectedOptions.push(opt.txt);
+            } else {
+                label.classList.remove('selected');
+                selectedOptions = selectedOptions.filter(item => item !== opt.txt);
+            }
+            dom.checkBtn.disabled = selectedOptions.length === 0;
+        });
+
+        label.appendChild(cb); label.appendChild(span); dom.optionsBox.appendChild(label);
+    });
+
+    dom.explanationBox.style.display = 'none';
+    dom.checkBtn.disabled = true; 
+    dom.checkBtn.classList.remove('hidden');
+    dom.nextBtn.classList.add('hidden');
+    startQuestionTimer();
+}
+
+dom.checkBtn.addEventListener('click', () => {
+    if (selectedOptions.length === 0) return; 
+    clearInterval(questionTimerInterval);
+    
+    const pointer = gameState.activeQuestions[gameState.currentQIndex];
+    const qData = rawQuestions[pointer.rawIndex];
+    const currentID = pointer.rawIndex + 1; 
+    let isCorrect = false;
+
+    if (Array.isArray(qData.answer)) {
+        isCorrect = selectedOptions.some(selected => qData.answer.includes(selected));
+    } else {
+        if (selectedOptions.length === 1 && selectedOptions[0] === qData.answer) isCorrect = true;
+    }
+
+    if (!gameState.itemAnalysisRecords) gameState.itemAnalysisRecords = [];
+    gameState.itemAnalysisRecords.push({ id: currentID, result: isCorrect ? "T" : "M" });
+    if (!gameState.userAnswers) gameState.userAnswers = {};
+    gameState.userAnswers[currentID] = isCorrect ? "T" : "M"; 
+
+    if(isCorrect) {
+        document.getElementById('soundCorrect').play();
+        gameState.scorePoints += 10;
+        gameState.correctCount++;
+        dom.explanationText.textContent = qData.explanation;
+        dom.explanationBox.style.display = 'block';
+    } else {
+        document.getElementById('soundWrong').play();
+        dom.explanationBox.style.display = 'none'; 
+    }
+
+    const labels = document.querySelectorAll('.option-label');
+    labels.forEach(label => {
+        label.classList.add('disabled'); 
+        const cb = label.querySelector('input');
+        cb.disabled = true;
+
+        const optText = cb.value;
+        const isSelectedByUser = selectedOptions.includes(optText);
+        const isPartOfAnswer = Array.isArray(qData.answer) ? qData.answer.includes(optText) : qData.answer === optText;
+
+        if(isCorrect && isPartOfAnswer) label.classList.add('correct');
+        if(!isCorrect && isSelectedByUser) label.classList.add('wrong');
+    });
+
+    const pct = Math.round(((gameState.currentQIndex + 1) / gameState.activeQuestions.length) * 100);
+    dom.progressBar.style.width = pct + "%";
+    dom.checkBtn.classList.add('hidden');
+    dom.nextBtn.classList.remove('hidden');
+    dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
+});
+
+dom.nextBtn.addEventListener('click', () => {
+    if(gameState.currentQIndex < gameState.activeQuestions.length - 1) {
+        gameState.currentQIndex++;
+        loadQuestion();
+    } else {
+        endGame();
+    }
+});
+
+function calculateDuration() {
+    if (!gameStartTime || !gameEndTime) return "N/A";
+    const diffMs = gameEndTime - gameStartTime;
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+}
+
+function endGame() {
+    stopRealTimer();
+    clearInterval(questionTimerInterval); 
+    disableSecurityOnFinish(); 
+
+    dom.quizContent.classList.add('hidden');
+    dom.resultContent.classList.remove('hidden');
+
+    const resultGif = document.getElementById('resultGif');
+    const resTitle = document.getElementById('resultTitle');
+    const resMsg = document.getElementById('resultMessage');
+    const fcc = document.getElementById('finalCorrectCount');
+
+    if (SECURITY.cheatDetected) {
+        if(resTitle) { resTitle.textContent = " SECURITY ALERT!"; resTitle.style.color = "#e53e3e"; }
+        if(resMsg) resMsg.textContent = "Attempt invalidated due to security violation.";
+        dom.finalScore.textContent = "0%";
+        if(resultGif) { resultGif.style.display = "block"; resultGif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWZxamVuNDIzbXpla2YwYm11MXpzc2pteWY4cHQzd29iMDgyZ3poMyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/RIkBOHzQddK60QTvoN/giphy.gif"; }
+        dom.certBtn.classList.add('hidden');
+        dom.retryBtn.classList.remove('hidden');
+        dom.retryBtn.textContent = "I promise to be honest (Try Again)";
+        return; 
+    }
+
+    const finalPercent = Math.round((gameState.correctCount / gameState.activeQuestions.length) * 100);
+    dom.finalScore.textContent = finalPercent + "%";
+    if(fcc) fcc.textContent = gameState.correctCount + " / " + gameState.activeQuestions.length;
+
+    const winSound = document.getElementById('soundWin');
+    if (winSound) { winSound.currentTime = 0; winSound.play().catch(e => console.log(e)); }
+    if (typeof confetti !== 'undefined') triggerConfetti();
+
+    try { submitFinalData(); } catch (error) { console.error("Error submitting:", error); }
+
+    if(finalPercent === 100) {
+        dom.retryBtn.classList.add('hidden');
+        dom.certBtn.classList.remove('hidden'); 
+        if (resTitle) { resTitle.textContent = "PERFECT SCORE!"; resTitle.style.color = "var(--success)"; }
+        if (resMsg) resMsg.textContent = "Congratulations! You have mastered all questions.";
+        if (resultGif) { resultGif.src = "https://media.giphy.com/media/uPkTOtne4LPxg81RuO/giphy.gif"; resultGif.style.display = "block"; }
+    } else {
+        dom.certBtn.classList.add('hidden');
+        dom.retryBtn.classList.remove('hidden');
+        if (resTitle) { resTitle.textContent = "Quiz Completed!"; resTitle.style.color = "var(--primary)"; }
+        if (resMsg) resMsg.textContent = `You answered ${gameState.correctCount} out of ${gameState.activeQuestions.length} questions correctly.`;
+        if (resultGif) { resultGif.src = "https://media.giphy.com/media/rlJNhiRFxCGKM2cAWg/giphy.gif"; resultGif.style.display = "block"; }
+    }
+}
+
+// ==========================================
+// 9. UTILITIES & DATA SUBMISSION
+// ==========================================
+
+function getFigureUrl(label) {
+    const figures = { "Box 1": "Box-1.png", "eq1": "eq1.png", "addimg 1": "addimg-1.png", "Figure 1": "Figure-1.png", "Table 2": "Table-2.png", "Figure 3": "Figure-3.png", "Figure 4": "Figure-4.png", "addimg 2": "addimg-2.png", "Figure 5": "Figure-5.png", "Figure 6": "Figure-6.png", "Figure 7": "Figure-7.png", "Figure 8": "Figure-8.png", "Figure 9": "Figure-9.png", "Figure 10": "Figure-10.png" };
+    return figures[label] || null;
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function triggerConfetti() {
+    const duration = 5 * 1000;
+    const animationEnd = Date.now() + duration;
+    (function frame() {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) return; 
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, zIndex: 10000 });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, zIndex: 10000 });
+        requestAnimationFrame(frame);
+    }());
+}
+
+function formatTimeForSubmission(date) {
+    const d = date || gameStartTime;
+    if (!d) return "";
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const seconds = d.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+}
+
+function submitFinalData() {
+    let rmaString = [];
+    for (let i = 1; i <= 21; i++) {
+        let ans = gameState.userAnswers[i] || "0"; 
+        rmaString.push((ans === "T" || ans === "1" || ans === 1) ? "1" : "0");
+    }
+    const finalRmaData = rmaString.join("|"); 
+
+    const bankRecords = (gameState.itemAnalysisRecords || []).filter(r => r.id >= 22);
+    
+    // --- BAGONG LOGIC: TATANGGALIN ANG MGA DOBLE ---
+    let uniqueBankRecords = {}; 
+    
+    bankRecords.forEach(r => {
+        uniqueBankRecords[r.id] = r; 
+    });
+
+    const finalBankData = Object.values(uniqueBankRecords).map(r => {
+        let isCorrect = (r.result === 1 || r.result === "T" || r.result === true);
+        return r.id + ":" + (isCorrect ? "1" : "0"); 
+    }).join("|");
+    // ----------------------------------------------
+
+    const finalPercent = Math.round((gameState.correctCount / gameState.activeQuestions.length) * 100) || 0;
+    
+    // FORMDATA PREPARATION
+    const formData = new URLSearchParams();
+    
+    formData.append("type", "SCORE");
+    formData.append("lastName", gameState.student.lastName);
+    formData.append("firstNameMI", gameState.student.firstNameMI);
+    formData.append("section", gameState.student.section);
+    formData.append("score", finalPercent); 
+    formData.append("startTime", formatTimeForSubmission(gameStartTime)); 
+    formData.append("endTime", formatTimeForSubmission(gameEndTime));
+    formData.append("duration", calculateDuration());
+    formData.append("rma", finalRmaData); 
+    formData.append("bankData", finalBankData);
+    
+    // SEND TO GOOGLE APPS SCRIPT
+    window.RMAData.submit(formData)
+    .then(() => console.log("Exam Submitted Successfully!"))
+    .catch(e => console.error("Error submitting exam:", e));
+}
+
+function forceEnterFullscreen() {
+    let elem = document.documentElement; 
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => {
+            console.log(`Fullscreen request failed: ${err.message}`);
+        });
+    } else if (elem.webkitRequestFullscreen) { 
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { 
+        elem.msRequestFullscreen();
+    }
+}
+
+async function fetchLeaderboard() {
+    const lbBody = document.querySelector('#leaderboard tbody');
+    const statusText = document.getElementById('lb-status');
+    const section = gameState.student.section;
+
+    if (!lbBody) return;
+
+    // Don't fetch if no section selected yet
+    if (!section) {
+        lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">👉 Select your section to see leaderboard</td></tr>';
+        if (statusText) statusText.innerText = "PENDING";
+        return;
+    }
+
+    // Show loading state
+    lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">📊 Loading scores...</td></tr>';
+    if (statusText) statusText.innerText = "LOADING";
+
+    try {
+        const dataJson = await window.RMAData.getLeaderboard(section);
+        console.log("✅ Leaderboard data received:", dataJson);
+        console.log("📊 Data array length:", dataJson.data ? dataJson.data.length : "null");
+        console.log("🔍 First entry sample:", dataJson.data ? dataJson.data[0] : "no data");
+
+        if (!dataJson.success || !dataJson.data) {
+            console.warn("❌ No success or data field in response");
+            lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">📭 No scores yet for this section</td></tr>';
+            if (statusText) statusText.innerText = "EMPTY";
+            return;
+        }
+
+        lbBody.innerHTML = '';
+
+        if (statusText) {
+            statusText.innerText = dataJson.mode === "DAILY" ? "TODAY" : "ALL-TIME";
+        }
+
+        if (!dataJson.data || dataJson.data.length === 0) {
+            console.warn("⚠️ Data array is empty");
+            lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#999;">🏆 Be the first to score!</td></tr>';
+            return;
+        }
+
+        const currentStudent = gameState.student.name || "";
+        
+        dataJson.data.forEach((entry, index) => {
+            // Log each entry for debugging
+            console.log(`Entry ${index}:`, entry);
+            console.log(`  - name field:`, entry.name);
+            console.log(`  - score field:`, entry.score);
+            console.log(`  - duration field:`, entry.duration);
+
+            // Check if name exists and is not empty
+            if (!entry.name || entry.name.trim() === "") {
+                console.warn(`❌ Entry ${index} has missing or empty name:`, entry);
+                return; // Skip this entry
+            }
+
+            const studentName = String(entry.name).trim();
+            const isCurrentUser = currentStudent && studentName.toLowerCase().includes(currentStudent.toLowerCase());
+            const highlightClass = isCurrentUser ? 'active-user' : '';
+            
+            let medal = "";
+            let rankClass = "";
+            const rank = entry.rank || (index + 1);
+            
+            if (rank === 1) {
+                medal = '🥇';
+                rankClass = 'rank-1';
+            } else if (rank === 2) {
+                medal = '🥈';
+                rankClass = 'rank-2';
+            } else if (rank === 3) {
+                medal = '🥉';
+                rankClass = 'rank-3';
+            }
+            
+            // Parse duration - handle various formats
+            let displayDuration = "N/A";
+            if (entry.duration) {
+                if (typeof entry.duration === 'string' && entry.duration.match(/^\d+m\s\d+s$/)) {
+                    displayDuration = entry.duration;
+                } else if (typeof entry.duration === 'number') {
+                    const mins = Math.floor(entry.duration / 60);
+                    const secs = entry.duration % 60;
+                    displayDuration = `${mins}m ${secs}s`;
+                } else {
+                    displayDuration = String(entry.duration).trim() || "N/A";
+                }
+            }
+            
+            const scoreDisplay = entry.score ? `${entry.score}%` : "N/A";
+            
+            const row = `
+                <tr class="${highlightClass} ${rankClass}">
+                    <td style="text-align:center; font-weight:bold; width:8%;">${medal ? `<span class="medal">${medal}</span>` : rank}</td>
+                    <td style="width:45%; text-align:left;" class="${rank <= 3 ? 'rank-top-3-name' : ''}">${studentName}</td>
+                    <td style="text-align:center; color:var(--primary); font-weight:bold; width:25%;">${scoreDisplay}</td>
+                    <td style="text-align:center; width:22%;">${displayDuration}</td>
+                </tr>
+            `;
+            lbBody.insertAdjacentHTML('beforeend', row);
+        });
+
+        console.log("✨ Leaderboard rendered successfully");
+
+    } catch (err) {
+        console.error("❌ Leaderboard Error:", err);
+        console.error("Error details:", err.message);
+        lbBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#e104c3c;">⚠️ Cannot load leaderboard</td></tr>';
+        if (statusText) statusText.innerText = "ERROR";
+    }
+}
+
+window.showCertificate = function() {
+    document.getElementById('certName').textContent = gameState.student.name;
+    document.getElementById('certDate').textContent = new Date().toLocaleDateString();
+
+    const studentSec = gameState.student.section;
+    let teacher = "Mathematics Teacher"; 
+    
+    if (["Diamond", "Beryl", "Amethyst", "Coral", "Sapphire"].includes(studentSec)) {
+        teacher = "Adelaida P. Andrada";
+    } else if (["Ruby", "Aquamarine", "Emerald"].includes(studentSec)) {
+        teacher = "Karen L. Tapec";
+    } else if (["Opal", "Jasper", "Garnet", "Peridot", "Alexandrite"].includes(studentSec)) {
+        teacher = "Gelie A. Campanilla";
+    } else if (["Quartz", "Aristotle", "Amber", "Topaz"].includes(studentSec)) {
+        teacher = "RJ Christopher G. Cruz";
+    }
+
+    document.getElementById('teacherName').textContent = teacher;
+    document.getElementById('certificateContainer').style.display = 'flex';
+};
+
+window.closeCertificate = function() {
+    document.getElementById('certificateContainer').style.display = 'none';
+};
+
+function voluntaryExit() {
+    let studentName = document.getElementById("displayStudentName").innerText;
+    
+    if (studentName !== "Guest" && window.isExamFinished === false) {
+        reportViolation(studentName, "SPAM QUITTING", "Voluntary Exit (Clicked Logout while exam is ongoing)");
+        alert("Session ended and recorded as Quit.");
+        setTimeout(() => {
+            location.reload(); 
+        }, 1000); 
+    } else {
+        location.reload(); 
+    }
+}
+
+// GREEN CONFETTI 
+    function devConfetti() {
+        confetti({
+            particleCount: 40,      
+            spread: 50,             
+            origin: { x: 0.05, y: 0.95 }, 
+            colors: ['#1b5e20', '#c8e6c9', '#ffb300'] // Dark Green, Light Green, Gold
+        });
+        
+        let badge = document.getElementById("devBadge");
+        badge.style.transform = "scale(0.9)";
+        setTimeout(() => {
+            badge.style.transform = "scale(1)";
+        }, 150);
+    }
+
+</script>
+
+<div id="devBadge" class="developer-credit" onclick="devConfetti()">
+    &copy; MwNHS | System Developed by MIOLE, G.J. | 2026 </span>
+</div>
+
+</body>
+</html>
