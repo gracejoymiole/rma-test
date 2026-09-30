@@ -269,7 +269,7 @@
 
 <header class="no-print" style="background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding: 15px 30px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-bottom: 4px solid var(--gold);">
    <div style="display: flex; align-items: center; gap: 20px;">
-    <img src="mwnhslogo.png" alt="MWNHS Logo" width="90" height="90" style="border-radius: 50%; background: white; padding: 4px; object-fit: contain; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" onerror="this.style.display='none';">
+    <img src="../assets/mwnhslogo.png" alt="MWNHS Logo" width="90" height="90" style="border-radius: 50%; background: white; padding: 4px; object-fit: contain; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" onerror="this.style.display='none';">
     <div style="display: flex; flex-direction: column; text-align: left; gap: 5px;">
      <h1 style="margin: 0; line-height: 1; font-size: 2.2rem; color: var(--gold); text-transform: uppercase; font-weight: 900; text-shadow: 1px 1px 2px rgba(0,0,0,0.4);">MOONWALK NATIONAL HIGH SCHOOL</h1>
      <h2 style="margin: 0; line-height: 1; font-size: 1.6rem; color: #FFFFFF; font-weight: 700; letter-spacing: 1px;">RMA PRACTICE TEST</h2>
@@ -1686,7 +1686,7 @@ function endGame() {
 // ==========================================
 
 function getFigureUrl(label) {
-    const figures = { "Box 1": "Box-1.png", "eq1": "eq1.png", "addimg 1": "addimg-1.png", "Figure 1": "Figure-1.png", "Table 2": "Table-2.png", "Figure 3": "Figure-3.png", "Figure 4": "Figure-4.png", "addimg 2": "addimg-2.png", "Figure 5": "Figure-5.png", "Figure 6": "Figure-6.png", "Figure 7": "Figure-7.png", "Figure 8": "Figure-8.png", "Figure 9": "Figure-9.png", "Figure 10": "Figure-10.png" };
+    const figures = { "Box 1": "../assets/Box-1.png", "addimg 1": "../assets/addimg-1.png", "Figure 1": "../assets/Figure-1.png", "Table 2": "../assets/Table-2.png", "Figure 3": "../assets/Figure-3.png", "Figure 4": "../assets/Figure-4.png", "addimg 2": "../assets/addimg-2.png", "Figure 5": "../assets/Figure-5.png", "Figure 6": "../assets/Figure-6.png", "Figure 7": "../assets/Figure-7.png", "Figure 8": "../assets/Figure-8.png", "Figure 9": "../assets/Figure-9.png", "Figure 10": "../assets/Figure-10.png" };
     return figures[label] || null;
 }
 

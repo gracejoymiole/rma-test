@@ -152,8 +152,7 @@ Teacher first name | Unang Pangalan ng Guro
 
 ### Step 2: Log in as Teacher
 - Use the shared teacher account:
-  - **Username**: `teacher123`
-  - **Password**: `moonwalk1234`
+- **Account**: none ships with the project. Run `supabase/teacher-bootstrap.sql` with `rma_bootstrap_teacher_password` set to create the first one. It forces a password change on first login.
 - You should be logged in without requiring password change (as per your database update)
 
 ### Step 3: Navigate to Question Map
@@ -210,7 +209,7 @@ Teacher first name | Unang Pangalan ng Guro
 
 ## WHAT'S WORKING NOW
 
-✅ Teacher can log in with `teacher123` / `moonwalk1234`
+✅ Teacher can log in with the account created by the bootstrap script
 ✅ Teacher dashboard filters by grade and section
 ✅ Teacher can switch to Question Map tab
 ✅ Question Map shows all Grade 10 questions (5 RMA + 50 aligned)
@@ -283,7 +282,7 @@ QUESTION_BANK = {
 
 **Please test the implementation locally by:**
 1. Opening `teacher.html` in a browser
-2. Logging in with `teacher123` / `moonwalk1234`
+2. Logging in with the bootstrapped account
 3. Clicking the "📚 Question Map" tab
 4. Viewing the questions and trying the filters
 

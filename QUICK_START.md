@@ -17,8 +17,7 @@ php -S localhost:8000
 Then open: http://localhost:8000/teacher.html
 
 ### 2. Login
-- **Username:** `teacher123`
-- **Password:** `moonwalk1234`
+- **Account**: none ships with the project. Run `supabase/teacher-bootstrap.sql` with `rma_bootstrap_teacher_password` set to create one.
 
 ### 3. Test the new features
 

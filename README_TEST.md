@@ -37,8 +37,7 @@ Test the implementation of the Question Map panel and related features before co
 1. Navigate to: `C:\\Users\\Administrator\\OneDrive - Department of Education\\Desktop\\MWNHS 2025-2026\\WEBSITES_APPS\\RMA FILES\\`
 2. Double-click `teacher.html`
 3. Log in with:
-   - Username: `teacher123`
-   - Password: `moonwalk1234`
+- Account: none ships with the project. Run the bootstrap script to create the account you will test with.
 
 ### Option B: Use Live Server (VS Code)
 1. Open VS Code
@@ -55,7 +54,7 @@ Test the implementation of the Question Map panel and related features before co
 
 ## 📊 TEST CHECKLIST
 
-- [ ] Can log in with `teacher123` / `moonwalk1234`
+- [ ] Can log in with the bootstrapped account
 - [ ] Dashboard loads successfully
 - [ ] Can see grade filter dropdown
 - [ ] Can see section filter dropdown

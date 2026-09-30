@@ -1,25 +1,73 @@
-# RMA PATHWAYS
+# RMA Pathways
 
-Static grade-selection portal, four RMA assessments, student account onboarding, and a teacher mastery portal.
+Assessment and teacher-reporting platform for the Mathematics Department of
+MWNHS, covering the Read, Make, and Assess (RMA) instruments for Grades 7-10.
 
-## Supabase setup
+## Layout
 
-1. Open the [Supabase SQL Editor](https://supabase.com/dashboard/project/ogcrbrfzsjjizsubzdpg/sql/new).
-2. Run [`supabase/schema.sql`](supabase/schema.sql). It adds student registration/login RPCs, hashed passwords, expiring sessions, authenticated score submissions, teacher-only reporting, and teacher-name suggestions.
-3. Run the local, git-ignored `supabase/teacher-bootstrap.sql` once to create the requested initial teacher account. Use the initial credentials supplied for this setup to sign in at `/teacher.html`; the portal requires an immediate password change (minimum 12 characters). Keep the bootstrap SQL private and never commit it.
-4. The browser uses the project's publishable key from [`supabase-config.js`](supabase-config.js). This key is public by design; never add a service-role or secret key to this site.
-5. Students sign up once per grade/section/name, receive a generated student ID and one-time generated password, and use those credentials on later visits. Repeated account creation for the same normalized grade, section, surname, first name, and middle initial is rejected; spelling variations cannot be reliably identified as the same person without a school roster or teacher approval workflow. Password recovery is not yet available, so students must safely keep their generated credentials. At `/teacher.html`, teachers choose a grade to view section completion/average-score charts, highest/lowest item mastery for the grade and each section, and per-student status; the section filter narrows question details and the student list.
+```
+index.html                 landing page, links to each grade
+teacher.html               teacher portal (requires a teacher account)
+assets/                    shared images used by every grade page
+FINAL GRADE 7 RMA/         Grade 7 assessment
+RMA G8 V2/                 Grade 8
+RMA G9 V1/                 Grade 9
+RMA G10 V1/                Grade 10
+supabase/                  schema.sql and teacher-bootstrap.sql (not served)
+tests/                     assertion suites
+```
 
-Student onboarding accepts a typed uppercase section, teacher title (Mr./Ms.), teacher surname, and teacher first name. Name suggestions use previously entered first names. Certificates use the section and teacher recorded on the authenticated student account. Student mastery records and teacher access are sensitive school data; restrict portal access and confirm school privacy requirements before using real student information. The student-facing leaderboard remains public as in the prior site (new account names are represented by student IDs there).
+The four grade folders hold only their question HTML. Figures and the school
+logo live once in `assets/` and are referenced as `../assets/<name>.png`.
 
-Supabase's browser publishable key cannot create database tables or policies. An authorized project administrator must run both SQL setup steps before account creation, score saving, and teacher reporting work. The static grade chooser and assessment pages can still be viewed before setup.
+## Running locally
 
-## Vercel
+```powershell
+npm run serve     # http://localhost:5500
+```
 
-Deploy this folder as a static site with this folder as the project root and no build command. The root `index.html` is the entry page. The four grade pages keep their existing folders and local image assets.
+Any static server works; there is no build step. The included script refuses to
+serve `supabase/`, which holds the schema and the bootstrap script.
 
-## GitHub
+## Tests
 
-Repository: <https://github.com/gracejoymiole/rma-test>
+```powershell
+npm test          # all suites, 289 assertions
+npm run check     # syntax-check the shipped scripts
+```
 
-The source is in <https://github.com/gracejoymiole/rma-test> on branch `main`. The current production deployment is <https://rma-pathways.vercel.app>.
+Suites read the real shipped files, so they fail if product code drifts.
+
+## Supabase
+
+1. Apply `supabase/schema.sql` in the SQL editor. It is idempotent and safe to
+   re-run; it ends with `notify pgrst, 'reload schema'`.
+2. Create the first teacher account:
+
+   ```sql
+   set rma_bootstrap_teacher_password = 'choose-a-strong-password';
+   \i supabase/teacher-bootstrap.sql
+   ```
+
+   The script forces `must_change_password = true`, so the account prompts for a
+   new password on first login.
+
+Never commit a working password. Earlier revisions of `teacher-bootstrap.sql`
+shipped one in plaintext; it remains readable in git history and must be
+rotated.
+
+### Data access model
+
+There is no direct table access from the browser. All six tables have RLS
+enabled and are revoked from `anon`; access goes through `security definer`
+functions that pin `search_path` and validate a session token first.
+
+`rma_leaderboard_top(p_token, p_limit)` is the one function reachable by
+`anon`, because a student may view the leaderboard before the portal is
+unlocked. It derives grade and section from the caller's session, so the scope
+cannot be widened by the caller. Do not replace it with a view or a
+caller-supplied scope.
+
+Passwords are bcrypt (`extensions.crypt`); session tokens are stored as SHA-256
+digests. Tokens live in `sessionStorage` and expire after 12 hours for students
+and 8 for teachers.

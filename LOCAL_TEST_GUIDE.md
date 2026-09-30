@@ -7,8 +7,7 @@
 - Open in Chrome/Firefox/Edge browser
 
 ### Step 2: Log In
-- **Username:** `teacher123`
-- **Password:** `moonwalk1234`
+- **Account:** none ships with the project. Create one with `supabase/teacher-bootstrap.sql`, then sign in and complete the forced password change.
 - Click "Sign in"
 - You should see the teacher dashboard
 
@@ -137,9 +136,12 @@ To test the student registration:
 3. Wait 1-2 seconds for suggestions to load
 
 ### If login fails:
-1. Verify username: `teacher123`
-2. Verify password: `moonwalk1234`
-3. Check if database was updated with: `UPDATE public.rma_teacher_accounts SET must_change_password = false WHERE username = 'teacher123';`
+1. Verify the username matches the account you created with the bootstrap script
+2. Verify you completed the forced password change on first login
+3. Confirm the account exists: `select username, must_change_password from public.rma_teacher_accounts;`
+
+### If login still fails:
+Apply `supabase/schema.sql` in the SQL editor. `rma_teacher_login` returns 404 until the function exists.
 
 ---
 
