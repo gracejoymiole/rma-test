@@ -3135,14 +3135,21 @@
     return scoreBands;
   }
 
-  function statusFor(score, attemptNumber = null) {
+  // A learner record has three distinct states. "No result" must never be
+  // confused with "scored badly", and an attempt the student did not finish is
+  // different again from one that was never started.
+  function statusFor(score, attemptNumber = null, isComplete = null) {
     if (score === null || score === undefined) {
       if (attemptNumber && attemptNumber > 0) {
-        return { label: "Incomplete", className: "status-incomplete", band: null };
+        return { label: "Incomplete", className: "status-incomplete", band: null, state: "incomplete" };
       }
-      return { label: "Not yet taken", className: "status-not-taken", band: null };
+      return { label: "Not yet taken", className: "status-not-taken", band: null, state: "not-taken" };
     }
-    
+
+    if (isComplete === false) {
+      return { label: "Incomplete", className: "status-incomplete", band: null, state: "incomplete" };
+    }
+
     const scoreNum = Number(score);
     const band = scoreBands.find(b => scoreNum >= b.min_score && scoreNum <= b.max_score);
     
@@ -3150,11 +3157,12 @@
       return { 
         label: band.label, 
         className: `status-${band.band_name}`, 
-        band: band
+        band: band,
+        state: "complete"
       };
     }
     
-    return { label: "Unknown", className: "status-pending", band: null };
+    return { label: "Unknown", className: "status-pending", band: null, state: "complete" };
   }
 
   function getBandColor(bandName) {
@@ -3172,24 +3180,30 @@
       : rows.filter(r => Number(r.grade) === grade);
     
     const total = filteredRows.length;
-    const completed = filteredRows.filter(r => r.score !== null && r.score !== undefined).length;
-    const notTaken = filteredRows.filter(r => r.score === null || r.score === undefined).length;
+    const hasScore = (r) => r.score !== null && r.score !== undefined;
+    const completed = filteredRows.filter(r => hasScore(r) && r.is_complete !== false).length;
+    const incomplete = filteredRows.filter(r => hasScore(r) && r.is_complete === false).length;
+    const notTaken = filteredRows.filter(r => !hasScore(r)).length;
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
     
+    const nameOf = (r) => r.student_name || `${r.last_name}, ${r.first_name}`;
     const notTakenList = filteredRows
-      .filter(r => r.score === null || r.score === undefined)
-      .map(r => ({
-        student_code: r.student_code,
-        student_name: r.student_name || `${r.last_name}, ${r.first_name}`,
-        section: r.section
-      }));
+      .filter(r => !hasScore(r))
+      .map(r => ({ student_code: r.student_code, student_name: nameOf(r), section: r.section }));
+    
+    const incompleteList = filteredRows
+      .filter(r => hasScore(r) && r.is_complete === false)
+      .map(r => ({ student_code: r.student_code, student_name: nameOf(r), section: r.section,
+        attempt_number: r.attempt_number, created_at: r.created_at }));
     
     return {
       total,
       completed,
+      incomplete,
       notTaken,
       completionRate,
-      notTakenList
+      notTakenList,
+      incompleteList
     };
   }
 
@@ -3204,7 +3218,7 @@
     });
     
     filteredRows.forEach(row => {
-      const status = statusFor(row.score, row.attempt_number);
+      const status = statusFor(row.score, row.attempt_number, row.is_complete);
       if (status.band) {
         counts[status.band.band_name] = (counts[status.band.band_name] || 0) + 1;
       }
@@ -3212,28 +3226,35 @@
     
     return counts;
   }
-
+  
   function getPriorityLearners(rows, grade, section) {
     const filteredRows = section 
       ? rows.filter(r => Number(r.grade) === grade && r.section === section)
       : rows.filter(r => Number(r.grade) === grade);
     
+    // Anything below "proficient" needs attention, and an unfinished attempt
+    // needs attention regardless of the score it managed to record.
     const needsSupport = filteredRows
       .filter(r => {
-        const status = statusFor(r.score, r.attempt_number);
-        return status.band && ['needs_support', 'emerging'].includes(status.band.band_name);
+        const status = statusFor(r.score, r.attempt_number, r.is_complete);
+        return status.state === "incomplete"
+          || (status.band && ['needs_support', 'emerging'].includes(status.band.band_name));
       })
       .map(r => ({
         student_id: r.student_id,
         student_code: r.student_code,
         student_name: r.student_name || `${r.last_name}, ${r.first_name}`,
         score: r.score,
-        status: statusFor(r.score, r.attempt_number),
+        status: statusFor(r.score, r.attempt_number, r.is_complete),
         section: r.section,
         created_at: r.created_at,
         attempt_number: r.attempt_number
       }))
       .sort((a, b) => {
+        // Incomplete attempts first: they are the ones a teacher can act on today.
+        if (a.status.state !== b.status.state) {
+          return a.status.state === "incomplete" ? -1 : 1;
+        }
         if (a.score !== b.score) {
           return (a.score || 0) - (b.score || 0);
         }
@@ -3292,6 +3313,21 @@
           <span>${stats.completed} / ${stats.total} completed (${stats.completionRate}%)</span>
         </div>
       </div>
+      <div class="completion-breakdown">
+        <span class="status status-mastered">✅ Completed ${stats.completed}</span>
+        <span class="status status-incomplete">⚠️ Incomplete ${stats.incomplete}</span>
+        <span class="status status-not-taken">⏳ Not yet taken ${stats.notTaken}</span>
+      </div>
+      ${stats.incompleteList.length > 0 ? `
+        <div class="not-taken-list">
+          <h4>Incomplete — started but not finished (${stats.incompleteList.length})</h4>
+          <ul>
+            ${stats.incompleteList.map(student => `
+              <li>${escapeHtml(student.student_name)} <span class="student-code-small">${escapeHtml(student.student_code)}</span> <span class="student-section-small">${escapeHtml(student.section)}</span>${student.attempt_number ? ` <span class="student-section-small">attempt ${escapeHtml(student.attempt_number)}</span>` : ''}</li>
+            `).join('')}
+          </ul>
+        </div>
+      ` : ''}
       ${stats.notTakenList.length > 0 ? `
         <div class="not-taken-list">
           <h4>Not Yet Taken (${stats.notTakenList.length})</h4>
@@ -3322,11 +3358,15 @@
       </div>
       <div class="metric">
         <b>${stats.completed}</b>
-        <span>Completed</span>
+        <span>✅ Completed</span>
+      </div>
+      <div class="metric">
+        <b>${stats.incomplete}</b>
+        <span>⚠️ Incomplete</span>
       </div>
       <div class="metric">
         <b>${stats.notTaken}</b>
-        <span>Not Yet Taken</span>
+        <span>⏳ Not Yet Taken</span>
       </div>
       <div class="metric">
         <b>${stats.completionRate}%</b>
@@ -3392,7 +3432,7 @@
     ).join("") : '<tr><td colspan="5">No item-level results have been submitted for this report scope.</td></tr>';
     
     document.getElementById("studentRows").innerHTML = allMembers.map((row) => {
-      const state = statusFor(row.score, row.attempt_number);
+      const state = statusFor(row.score, row.attempt_number, row.is_complete);
       const score = row.score === null || row.score === undefined ? "—" : `${Number(row.score)}%`;
       const attempt = row.created_at ? new Date(row.created_at).toLocaleString() : "—";
       return `<tr>
@@ -3490,12 +3530,6 @@
       await loadScoreBands();
       
       rows = await rpc("rma_teacher_dashboard", { p_token: token });
-      
-      rows.forEach(row => {
-        if (row.attempt_number === undefined || row.attempt_number === null) {
-          row.attempt_number = 1;
-        }
-      });
       
       const grades = unique(rows.map((row) => String(row.grade))).sort((a, b) => Number(a) - Number(b));
       gradeFilter.innerHTML = '<option value="">Choose a grade level</option>' + 

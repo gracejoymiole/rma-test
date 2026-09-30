@@ -255,16 +255,21 @@ begin
     raise exception 'Change the initial teacher password before opening student records.' using errcode = '42501';
   end if;
   return coalesce((
-    select jsonb_agg(jsonb_build_object('grade', st.grade, 'section', st.section,
+    select jsonb_agg(jsonb_build_object('student_id', st.id, 'grade', st.grade, 'section', st.section,
       'student_code', st.student_code, 'student_name', concat(st.last_name, ', ', st.first_name,
         case when st.middle_initial = '' then '' else ' ' || st.middle_initial || '.' end),
       'teacher_name', concat_ws(' ', st.teacher_title,
         st.teacher_first_name, st.teacher_last_name), 'score', latest.score, 'duration', latest.duration,
-      'rma_data', latest.rma_data, 'bank_data', latest.bank_data, 'created_at', latest.created_at)
+      'rma_data', latest.rma_data, 'bank_data', latest.bank_data, 'created_at', latest.created_at,
+      'attempt_number', coalesce(latest.attempt_number, 0), 'is_complete', latest.is_complete,
+      'attempts', coalesce(tally.attempts, 0))
       order by st.grade, st.section, st.last_name, st.first_name)
     from public.rma_students st
-    left join lateral (select sc.score, sc.duration, sc.rma_data, sc.bank_data, sc.created_at
+    left join lateral (select sc.score, sc.duration, sc.rma_data, sc.bank_data, sc.created_at,
+        sc.attempt_number, sc.is_complete
       from public.rma_scores sc where sc.student_id = st.id order by sc.created_at desc limit 1) latest on true
+    left join lateral (select count(*)::int as attempts
+      from public.rma_scores sc where sc.student_id = st.id) tally on true
   ), '[]'::jsonb);
 end;
 $$;
