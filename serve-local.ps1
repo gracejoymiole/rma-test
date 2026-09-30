@@ -52,6 +52,21 @@ while ($listener.IsListening) {
         $path = Join-Path $path 'index.html'
     }
 
+    # Never serve the supabase/ directory: schema.sql and teacher-bootstrap.sql
+    # are not web assets, and teacher-bootstrap.sql contains a setup credential.
+    $blocked = @('supabase')
+    $segments = $rel.Split([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) |
+        Where-Object { $_ -and $_ -ne '..' }
+    if ($segments | Where-Object { $blocked -contains $_.ToLowerInvariant() }) {
+        $res.StatusCode = 403
+        $b = [Text.Encoding]::UTF8.GetBytes("403 Forbidden")
+        $res.ContentType = 'text/plain'
+        $res.ContentLength64 = $b.Length
+        $res.OutputStream.Write($b, 0, $b.Length)
+        $res.Close()
+        continue
+    }
+
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         $res.StatusCode = 404
         $b = [Text.Encoding]::UTF8.GetBytes("404 Not Found: $rel")

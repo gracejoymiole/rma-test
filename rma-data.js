@@ -132,20 +132,19 @@
       });
     },
 
-    async getLeaderboard(section) {
-      const query = new URLSearchParams({
-        select: "name,score,duration,duration_seconds",
-        grade: `eq.${grade}`,
-        section: `eq.${section}`,
-        order: "score.desc,duration_seconds.asc,created_at.asc",
-        limit: "10"
-      });
-      const response = await request(`rma_leaderboard?${query.toString()}`);
-      const rows = await response.json();
+    // Scores come from a session-scoped definer function rather than the old
+    // rma_leaderboard view, which let any anonymous caller read the whole
+    // results table through PostgREST, names included. The function derives the
+    // grade and section from the session, so the scope sent here is ignored.
+    async getLeaderboard() {
+      const token = window.RMAAuth?.session?.token;
+      if (!token) return { success: false, mode: "ALL-TIME", data: [] };
+      const rows = await rpc("rma_leaderboard_top", { p_token: token, p_limit: 10 });
+      const list = Array.isArray(rows) ? rows : [];
       return {
         success: true,
         mode: "ALL-TIME",
-        data: rows.map((row, index) => ({ ...row, rank: index + 1 }))
+        data: list.map((row, index) => ({ ...row, rank: Number(row.rank ?? index + 1) }))
       };
     },
 

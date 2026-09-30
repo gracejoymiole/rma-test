@@ -1795,7 +1795,7 @@ async function fetchLeaderboard() {
     if (statusText) statusText.innerText = "LOADING";
 
     try {
-        const dataJson = await window.RMAData.getLeaderboard(section);
+        const dataJson = await window.RMAData.getLeaderboard();
         console.log("✅ Leaderboard data received:", dataJson);
         console.log("📊 Data array length:", dataJson.data ? dataJson.data.length : "null");
         console.log("🔍 First entry sample:", dataJson.data ? dataJson.data[0] : "no data");

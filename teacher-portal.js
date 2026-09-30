@@ -3400,7 +3400,7 @@
             </div>
             <div class="student-score">
               <span class="score-value">${learner.score === null || learner.score === undefined ? '—' : learner.score} / 30</span>
-              <span class="status-badge ${learner.status.className}">${escapeHtml(learner.status.label)}</span>
+              <span class="status-badge ${escapeHtml(learner.status.className)}">${escapeHtml(learner.status.label)}</span>
             </div>
             <div class="student-meta">
               <span>Last: ${learner.created_at ? new Date(learner.created_at).toLocaleDateString() : '—'}</span>
@@ -3438,7 +3438,7 @@
     
     container.innerHTML = `
       <div class="completion-header">
-        <h3>Grade ${currentGrade} - ${currentSection || 'All Sections'}</h3>
+        <h3>Grade ${escapeHtml(currentGrade)} - ${escapeHtml(currentSection || 'All Sections')}</h3>
         <div class="completion-bar-container">
           <div class="completion-bar">
             <div class="completion-fill" style="width: ${stats.completionRate}%"></div>
@@ -3518,8 +3518,8 @@
               if (!band || count === 0) return '';
               return `
                 <div class="level-item">
-                  <span class="level-icon" style="color: ${band.color}">${band.icon}</span>
-                  <span>${band.label}: <strong>${count}</strong></span>
+                  <span class="level-icon" style="color: ${escapeHtml(band.color)}">${escapeHtml(band.icon)}</span>
+                  <span>${escapeHtml(band.label)}: <strong>${count}</strong></span>
                 </div>
               `;
             }).join('')}
@@ -3815,6 +3815,11 @@
     return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
   }
 
+  // Section names come from student-entered data, so keep them safe for a filename.
+  function sanitizeFilenamePart(value) {
+    return String(value ?? "").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 40) || "Section";
+  }
+
   function downloadFile(filename, mime, content) {
     const blob = new Blob(["\ufeff", content], { type: mime });
     const url = URL.createObjectURL(blob);
@@ -3846,7 +3851,7 @@
   </Worksheet>
 </Workbook>`;
 
-    const scope = currentSection ? `Grade${currentGrade}-${currentSection}` : `Grade${currentGrade}-AllSections`;
+    const scope = currentSection ? `Grade${currentGrade}-${sanitizeFilenamePart(currentSection)}` : `Grade${currentGrade}-AllSections`;
     downloadFile(`RMA-Pathways-${scope}.xls`, "application/vnd.ms-excel;charset=utf-8", xml);
     setMessage(dashboardMessage, `Exported ${data.length} learner record${data.length === 1 ? "" : "s"} for ${scope.replace(/-/g, " ")}.`, false);
   }

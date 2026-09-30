@@ -1,1 +1,7 @@
-supabase/teacher-bootstrap.sql
+supabase/
+node_modules/
+.vercel/
+.DS_Store
+server.log
+server.err
+*.local

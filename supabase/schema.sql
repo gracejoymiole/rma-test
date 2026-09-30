@@ -359,12 +359,59 @@ grant execute on function public.rma_teacher_dashboard(text) to anon, authentica
 grant execute on function public.rma_teacher_profile(text) to anon, authenticated;
 grant execute on function public.rma_set_attempt_complete(text, text, boolean) to anon, authenticated;
 
--- Keep the student-facing leaderboard limited to familiar fields; teacher mastery is available only via the teacher RPC.
-create or replace view public.rma_leaderboard as
-  select grade, section, coalesce(student_code, concat_ws(' ', nullif(first_name_mi, ''), last_name)) as name,
-    score, duration, duration_seconds, created_at from public.rma_scores;
-revoke all on public.rma_leaderboard from public;
-grant select on public.rma_leaderboard to anon, authenticated;
+-- The leaderboard shows learner names, and rma_scores has no row-level security, so it
+-- must never be readable as a table. The old rma_leaderboard view was granted to anon,
+-- which made every student's name and score world-readable through PostgREST: any caller
+-- could pass their own grade/section/select/limit and read the entire results set.
+-- Reading now goes through this definer function, which takes the caller's session and
+-- ignores any scope they ask for, so a student can only ever see their own section.
+drop view if exists public.rma_leaderboard cascade;
+
+create or replace function public.rma_leaderboard_top(p_token text, p_limit integer default 10)
+returns table (
+  rank bigint,
+  name text,
+  score integer,
+  duration text,
+  duration_seconds integer,
+  created_at timestamptz
+) language plpgsql stable security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_student public.rma_students%rowtype;
+  v_limit integer := greatest(1, least(coalesce(p_limit, 10), 100));
+begin
+  if coalesce(p_token, '') = '' or not exists (
+       select 1 from public.rma_auth_sessions se
+        where se.token_hash = encode(extensions.digest(p_token, 'sha256'), 'hex')
+          and se.role = 'student' and se.expires_at > now()
+    ) then
+    raise exception 'Student session required.' using errcode = '28000';
+  end if;
+
+  select s.* into v_student
+    from public.rma_auth_sessions se
+    join public.rma_students s on s.id = se.student_id
+   where se.token_hash = encode(extensions.digest(p_token, 'sha256'), 'hex')
+     and se.role = 'student' and se.expires_at > now();
+
+  return query
+  select row_number() over (order by sc.score desc, sc.duration_seconds asc nulls last, sc.created_at asc),
+         coalesce(nullif(sc.student_code, ''),
+                  concat_ws(' ', nullif(sv.first_name, ''), sv.last_name)),
+         sc.score, sc.duration, sc.duration_seconds, sc.created_at
+    from public.rma_scores sc
+    left join public.rma_students sv on sv.id = sc.student_id
+   where sc.grade = v_student.grade
+     and lower(trim(sc.section)) = lower(trim(v_student.section))
+   order by sc.score desc, sc.duration_seconds asc nulls last, sc.created_at asc
+   limit v_limit;
+end;
+$$;
+
+revoke all on function public.rma_leaderboard_top(text, integer) from public;
+grant execute on function public.rma_leaderboard_top(text, integer) to anon, authenticated;
 
 notify pgrst, 'reload schema';
 
@@ -418,30 +465,11 @@ $$;
 
 grant execute on function public.rma_get_score_bands() to anon, authenticated;
 
--- RPC to get section comparison
-create or replace function public.rma_section_comparison(p_grade smallint)
-returns jsonb language plpgsql security definer
-set search_path = public, extensions, pg_temp
-as $$
-declare v_result jsonb;
-begin
-  select jsonb_agg(
-    jsonb_build_object(
-      'section', st.section,
-      'total_students', count(distinct st.id),
-      'completed', count(distinct sc.id),
-      'completion_rate', round(count(distinct sc.id) * 100.0 / nullif(count(distinct st.id), 0), 1),
-      'avg_score', round(avg(sc.score), 1)
-    )
-  ) into v_result
-  from public.rma_students st
-  left join public.rma_scores sc on sc.student_id = st.id and sc.grade = p_grade
-  where st.grade = p_grade
-  group by st.section
-  order by st.section;
-  
-  return coalesce(v_result, '[]'::jsonb);
-end;
-$$;
-
-grant execute on function public.rma_section_comparison(smallint) to anon, authenticated;
+-- Removed: rma_section_comparison(p_grade smallint).
+-- It aggregated rma_students and rma_scores into per-section counts and averages
+-- and was granted to anon, so anyone could enumerate enrolment and mean scores for
+-- every section in a grade. No client code called it, so it was attack surface with
+-- no benefit. Teachers get the same picture from rma_teacher_dashboard(p_token),
+-- which requires a session. Drop it in case an older deploy created it.
+revoke all on function public.rma_section_comparison(smallint) from public, anon, authenticated;
+drop function if exists public.rma_section_comparison(smallint);
