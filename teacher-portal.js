@@ -3264,21 +3264,109 @@
     return needsSupport;
   }
 
-  function renderPriorityLearners(priorityLearners) {
+  // ============================================
+  // WHO NEEDS HELP? - band filter
+  // A teacher should be able to click a band and immediately see only the
+  // learners in it, rather than reading a list and filtering it mentally.
+  // ============================================
+
+  let priorityBandFilter = null;
+  let priorityCache = { learners: [], stats: null, levels: null };
+
+  function priorityMatchesBand(learner, key) {
+    if (!key || key === "all") return true;
+    if (key === "incomplete") return learner.status.state === "incomplete";
+    return Boolean(learner.status.band) && learner.status.band.band_name === key;
+  }
+
+  function renderPriorityFilter(levels, stats) {
+    const container = document.getElementById("priorityFilterContainer");
+    if (!container) return;
+
+    const chips = [{ key: "all", label: "All learners", icon: "👥", count: stats.total }];
+    scoreBands.forEach((band) => {
+      chips.push({ key: band.band_name, label: band.label, icon: band.icon, count: (levels && levels[band.band_name]) || 0, color: band.color });
+    });
+    chips.push({ key: "incomplete", label: "Incomplete", icon: "⚠️", count: stats.incomplete });
+    chips.push({ key: "not-taken", label: "Not yet taken", icon: "⏳", count: stats.notTaken });
+
+    container.innerHTML = chips.map((chip) => `
+      <button type="button" class="band-chip ${priorityBandFilter === chip.key || (!priorityBandFilter && chip.key === "all") ? "active" : ""}"
+        data-band="${escapeHtml(chip.key)}" aria-pressed="${priorityBandFilter === chip.key || (!priorityBandFilter && chip.key === "all")}"
+        ${chip.color ? `style="--chip-color:${chip.color}"` : ""}>
+        <span class="band-chip-icon" aria-hidden="true">${chip.icon}</span>
+        <span class="band-chip-label">${escapeHtml(chip.label)}</span>
+        <span class="band-chip-count">${chip.count}</span>
+      </button>`).join("");
+  }
+
+  function setPriorityBandFilter(key) {
+    priorityBandFilter = priorityBandFilter === key ? null : key;
+    renderPriorityFilter(priorityCache.levels, priorityCache.stats);
+    renderPriorityLearners(priorityCache.learners, priorityCache.stats);
+  }
+
+  function renderPriorityPanel(priorityLearners, stats, levels) {
+    priorityCache = { learners: priorityLearners, stats, levels };
+    renderPriorityFilter(levels, stats);
+    renderPriorityLearners(priorityLearners, stats);
+  }
+
+  function renderPriorityLearners(priorityLearners, stats) {
     const container = document.getElementById("priorityLearnersContainer");
     if (!container) return;
-    
-    if (priorityLearners.length === 0) {
-      container.innerHTML = '<p class="report-note">No students currently need intensive support. Well done!</p>';
+
+    const key = priorityBandFilter;
+    const activeLabel = key && key !== "all"
+      ? (key === "incomplete" ? "Incomplete"
+        : key === "not-taken" ? "Not yet taken"
+        : (scoreBands.find((b) => b.band_name === key) || {}).label || key)
+      : null;
+
+    if (key === "not-taken") {
+      const list = (stats && stats.notTakenList) || [];
+      container.innerHTML = `
+        <div class="priority-stats">
+          <span class="priority-count">${list.length} learner${list.length === 1 ? "" : "s"} — ${escapeHtml(activeLabel)}</span>
+          <button type="button" class="priority-clear" onclick="setPriorityBandFilter('not-taken')">Show all</button>
+        </div>
+        <div class="priority-list">
+          ${list.length ? list.map((student) => `
+            <div class="student-card-priority">
+              <div class="student-header">
+                <h4>${escapeHtml(student.student_name)}</h4>
+                <span class="student-code">${escapeHtml(student.student_code)}</span>
+                <span class="student-section">${escapeHtml(student.section)}</span>
+              </div>
+              <div class="student-score">
+                <span class="score-value">—</span>
+                <span class="status-badge status-not-taken">Not yet taken</span>
+              </div>
+            </div>`).join('') : '<p class="report-note">Every learner in this scope has taken the assessment.</p>'}
+        </div>`;
       return;
     }
-    
+
+    const visible = priorityLearners.filter((learner) => priorityMatchesBand(learner, key));
+
+    if (visible.length === 0) {
+      container.innerHTML = `
+        <div class="priority-stats">
+          <span class="priority-count">No learners in ${escapeHtml(activeLabel || "this scope")}</span>
+        </div>
+        <p class="report-note">${priorityLearners.length === 0
+          ? "No students currently need intensive support. Well done!"
+          : "Nobody in this group needs remediation. Choose another band above."}</p>`;
+      return;
+    }
+
     container.innerHTML = `
       <div class="priority-stats">
-        <span class="priority-count">${priorityLearners.length} students need support</span>
+        <span class="priority-count">${visible.length} learner${visible.length === 1 ? "" : "s"}${activeLabel ? ` — ${escapeHtml(activeLabel)}` : " need support"}</span>
+        ${activeLabel ? `<button type="button" class="priority-clear" onclick="setPriorityBandFilter('all')">Show all ${priorityLearners.length}</button>` : ''}
       </div>
       <div class="priority-list">
-        ${priorityLearners.map(learner => `
+        ${visible.map(learner => `
           <div class="student-card-priority">
             <div class="student-header">
               <h4>${escapeHtml(learner.student_name)}</h4>
@@ -3286,7 +3374,7 @@
               <span class="student-section">${escapeHtml(learner.section)}</span>
             </div>
             <div class="student-score">
-              <span class="score-value">${learner.score || '—'} / 30</span>
+              <span class="score-value">${learner.score === null || learner.score === undefined ? '—' : learner.score} / 30</span>
               <span class="status-badge ${learner.status.className}">${escapeHtml(learner.status.label)}</span>
             </div>
             <div class="student-meta">
@@ -3395,7 +3483,7 @@
         <div class="highlight">
           <span>🎯 Priority Learners</span>
           <strong>${priorityLearners.length} need support</strong>
-          <small>Click to view details</small>
+          <small>Filter by band in the “Who Needs Help?” card</small>
         </div>
       `;
     }
@@ -3446,7 +3534,7 @@
     }).join("") || '<tr><td colspan="6">No students are registered for this report scope.</td></tr>';
     
     renderCompletionStatus(stats);
-    renderPriorityLearners(priorityLearners);
+    renderPriorityPanel(priorityLearners, stats, levels);
   }
 
   function getBandColorForRate(rate) {
@@ -3587,6 +3675,7 @@
   gradeFilter.addEventListener("change", () => {
     const grade = Number(gradeFilter.value);
     currentGrade = grade;
+    priorityBandFilter = null;
     if (!grade) {
       sectionFilter.innerHTML = '<option value="">Select a grade first</option>';
       sectionFilter.disabled = true;
@@ -3606,7 +3695,13 @@
 
   sectionFilter.addEventListener("change", () => {
     currentSection = sectionFilter.value === "*" ? null : sectionFilter.value;
+    priorityBandFilter = null;
     renderDashboardOverview();
+  });
+
+  document.getElementById("priorityFilterContainer").addEventListener("click", (event) => {
+    const chip = event.target.closest(".band-chip");
+    if (chip) setPriorityBandFilter(chip.dataset.band);
   });
 
   document.getElementById("teacherLogout").addEventListener("click", () => {
@@ -3628,6 +3723,7 @@
   window.toggleFeedback = toggleFeedback;
   window.renderMasterMap = renderMasterMap;
   window.resetMasterMapFilters = resetMasterMapFilters;
+  window.setPriorityBandFilter = setPriorityBandFilter;
   
   // Do not silently reuse a stored teacher token: shared devices require a fresh sign-in.
 })();

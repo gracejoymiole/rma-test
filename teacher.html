@@ -45,6 +45,21 @@
     .error { padding:10px; border-radius:8px; background:#fff0ee; color:#7a1818; } .success { padding:10px; border-radius:8px; background:#edf9f0; color:#155b30; }
     .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .completion-breakdown { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 4px; }
+    .band-chips { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+    .band-chip {
+      display:flex; align-items:center; gap:7px; padding:8px 12px; cursor:pointer;
+      border:1px solid #ddd5cf; border-radius:999px; background:#fff; color:var(--ink);
+      font:inherit; font-size:.83rem; font-weight:700; transition:border-color .15s ease, background .15s ease;
+    }
+    .band-chip:hover { border-color:var(--gold); }
+    .band-chip.active { color:#fff; background:var(--chip-color,var(--wine)); border-color:transparent; }
+    .band-chip.active .band-chip-count { background:rgba(255,255,255,.22); color:#fff; }
+    .band-chip-icon { font-size:.95rem; line-height:1; }
+    .band-chip-count {
+      min-width:24px; padding:1px 7px; border-radius:999px; text-align:center;
+      background:#f1ece7; color:var(--muted); font-variant-numeric:tabular-nums; font-size:.78rem;
+    }
+    .priority-clear { padding:4px 10px; border:1px solid #ddd5cf; border-radius:999px; background:#fff; color:var(--wine); font:700 .75rem inherit; cursor:pointer; }
     [hidden] { display:none !important; }
     
     /* Question Mapping Panel Styles */
@@ -369,7 +384,8 @@
           <!-- PHASE 1: Who Needs Help Card -->
           <section class="card" id="priorityLearnersCard" style="margin-bottom:16px">
             <h2 class="report-heading">Who Needs Help?</h2>
-            <p class="report-note">Students requiring immediate attention and intervention.</p>
+            <p class="report-note">Students requiring immediate attention and intervention. Pick a group to narrow the list.</p>
+            <div id="priorityFilterContainer" class="band-chips" role="group" aria-label="Filter learners by performance band"></div>
             <div id="priorityLearnersContainer"></div>
           </section>
           
