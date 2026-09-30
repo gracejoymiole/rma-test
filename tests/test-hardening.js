@@ -25,9 +25,27 @@ check('leaderboard moved to a definer function', /create or replace function pub
 check('leaderboard function is security definer', /rma_leaderboard_top\(p_token text, p_limit integer default 10\)\s*returns table[\s\S]{0,400}?security definer/.test(schema));
 check('leaderboard pins search_path', /rma_leaderboard_top[\s\S]*?set search_path = public, extensions, pg_temp/.test(schema));
 check('leaderboard requires a live student session', /raise exception 'Student session required\.'[\s\S]{0,200}?28000/.test(schema));
-check('leaderboard derives scope from the session', /sc\.grade = v_student\.grade[\s\S]{0,120}?lower\(trim\(sc\.section\)\) = lower\(trim\(v_student\.section\)\)/.test(schema));
+check('leaderboard derives scope from the session', /sc\.grade = v_student\.grade[\s\S]{0,120}?lower\(btrim\(sc\.section\)\) = lower\(btrim\(v_student\.section\)\)/.test(schema));
 check('leaderboard takes no caller-supplied grade', !/rma_leaderboard_top\(p_token text, p_limit integer default 10\)[\s\S]{0,300}?p_grade/.test(schema));
 check('leaderboard has no plain select on the results table', !/grant select on public\.rma_leaderboard/.test(schema));
+
+// --- leaderboard label must never be blank ---
+// rma_scores.student_id is `on delete set null`, so joining rma_students for the
+// name loses every score from a deleted or unregistered student. The grade pages
+// skip entries with a blank name, so that silently emptied the leaderboard.
+const lbBody = schema.slice(schema.indexOf('create or replace function public.rma_leaderboard_top'),
+  schema.indexOf('revoke all on function public.rma_leaderboard_top'));
+check('leaderboard does not join rma_students for the name', !/left join public\.rma_students/.test(lbBody) && !/join public\.rma_students sv/.test(lbBody));
+check('leaderboard name reads rma_scores.first_name_mi', /sc\.first_name_mi/.test(lbBody));
+check('leaderboard name reads rma_scores.last_name', /sc\.last_name/.test(lbBody));
+check('leaderboard prefers student_code when present', /coalesce\(nullif\(btrim\(sc\.student_code\), ''\)/.test(lbBody));
+check('leaderboard falls back to a full name, never empty', /nullif\(btrim\(concat_ws\(' ', nullif\(btrim\(sc\.first_name_mi\), ''\), sc\.last_name\)\), ''\)/.test(lbBody));
+check('both name columns are NOT NULL on rma_scores',
+  /last_name text not null check/.test(schema) && /first_name_mi text not null check/.test(schema));
+gradePages.forEach((p, i) => {
+  check(`grade page ${i + 1} skips blank names, so the RPC must never return one`,
+    /!entry\.name\s*\|\|\s*entry\.name\.trim\(\)\s*===\s*""/.test(p));
+});
 check('client no longer queries the view directly', !/from\("rma_leaderboard"\)|rma_leaderboard\?/.test(data));
 check('client passes the session token', /rpc\("rma_leaderboard_top", \{ p_token: token, p_limit: 10 \}\)/.test(data));
 check('client no longer accepts a section arg', /async getLeaderboard\(\)/.test(data) && !/getLeaderboard\(section\)/.test(data));
@@ -111,3 +129,4 @@ console.log(out.join('\n'));
 const fails = out.filter((r) => r.startsWith('FAIL')).length;
 console.log(fails ? `\n${fails} FAILED` : '\nALL CHECKS PASSED');
 console.log(`${out.length - fails}/${out.length} passed`);
+if (fails) process.exit(1);

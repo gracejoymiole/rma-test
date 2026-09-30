@@ -108,4 +108,5 @@ globalThis.state = api.state;
 
   console.log(out.join('\n'));
   console.log(out.some((r) => r.startsWith('FAIL')) ? '\nSOME CHECKS FAILED' : '\nALL CHECKS PASSED');
+  if (out.some((r) => r.startsWith('FAIL'))) process.exit(1);
 })();

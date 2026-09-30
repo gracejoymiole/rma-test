@@ -87,3 +87,4 @@ check('topic breakdown lists 7 topics', counts.length === 7, counts.join(' | '))
 
 console.log(results.join('\n'));
 console.log(results.some((r) => r.startsWith('FAIL')) ? '\nSOME CHECKS FAILED' : '\nALL CHECKS PASSED');
+if (results.some((r) => r.startsWith('FAIL'))) process.exit(1);

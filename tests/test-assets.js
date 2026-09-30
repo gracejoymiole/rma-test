@@ -75,3 +75,4 @@ console.log(out.join('\n'));
 const fails = out.filter((r) => r.startsWith('FAIL')).length;
 console.log(fails ? `\n${fails} FAILED` : '\nALL CHECKS PASSED');
 console.log(`${out.length - fails}/${out.length} passed`);
+if (fails) process.exit(1);

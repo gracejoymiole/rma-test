@@ -231,4 +231,5 @@ check('print escapes a hostile name', !globalThis.__printed.includes('<script>al
   console.log(out.join('\n'));
   console.log(out.some((r) => r.startsWith('FAIL')) ? '\nSOME CHECKS FAILED' : '\nALL CHECKS PASSED');
   console.log(`${out.filter((r) => r.startsWith('PASS')).length}/${out.length} passed`);
+  if (out.some((r) => r.startsWith('FAIL'))) process.exit(1);
 })();

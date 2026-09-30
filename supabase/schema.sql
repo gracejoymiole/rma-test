@@ -396,15 +396,20 @@ begin
    where se.token_hash = encode(extensions.digest(p_token, 'sha256'), 'hex')
      and se.role = 'student' and se.expires_at > now();
 
+  -- Name comes from rma_scores, not rma_students: student_id is `on delete set
+  -- null`, so any score from a deleted or unregistered student has no joined
+  -- row. Reading the names through that join yields an empty string, and the
+  -- grade pages skip entries with a blank name, which silently drops those
+  -- scores off the leaderboard. first_name_mi and last_name are both NOT NULL
+  -- on rma_scores, so the label is always populated.
   return query
   select row_number() over (order by sc.score desc, sc.duration_seconds asc nulls last, sc.created_at asc),
-         coalesce(nullif(sc.student_code, ''),
-                  concat_ws(' ', nullif(sv.first_name, ''), sv.last_name)),
+         coalesce(nullif(btrim(sc.student_code), ''),
+                  nullif(btrim(concat_ws(' ', nullif(btrim(sc.first_name_mi), ''), sc.last_name)), '')),
          sc.score, sc.duration, sc.duration_seconds, sc.created_at
     from public.rma_scores sc
-    left join public.rma_students sv on sv.id = sc.student_id
    where sc.grade = v_student.grade
-     and lower(trim(sc.section)) = lower(trim(v_student.section))
+     and lower(btrim(sc.section)) = lower(btrim(v_student.section))
    order by sc.score desc, sc.duration_seconds asc nulls last, sc.created_at asc
    limit v_limit;
 end;

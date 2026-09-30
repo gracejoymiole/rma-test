@@ -96,3 +96,4 @@ check('all statusFor calls pass 3 args', callSites.every((c) => (c.match(/,/g) |
 
 console.log(out.join('\n'));
 console.log(out.some((r) => r.startsWith('FAIL')) ? '\nSOME CHECKS FAILED' : '\nALL CHECKS PASSED');
+if (out.some((r) => r.startsWith('FAIL'))) process.exit(1);

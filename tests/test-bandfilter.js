@@ -112,3 +112,4 @@ check('renderPriorityPanel receives levels', /renderPriorityPanel\(priorityLearn
 
 console.log(out.join('\n'));
 console.log(out.some((r) => r.startsWith('FAIL')) ? '\nSOME CHECKS FAILED' : '\nALL CHECKS PASSED');
+if (out.some((r) => r.startsWith('FAIL'))) process.exit(1);
