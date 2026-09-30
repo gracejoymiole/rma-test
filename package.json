@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node tests/run-all.js",
     "serve": "powershell -ExecutionPolicy Bypass -File ./serve-local.ps1 -Port 5500",
-    "check": "node --check teacher-portal.js && node --check rma-auth.js && node --check rma-data.js && node --check rma-master-map.js && node --check supabase-config.js"
+    "check": "node --check teacher-portal.js && node --check rma-auth.js && node --check rma-data.js && node --check rma-master-map.js && node --check supabase-config.js",
+    "verify": "npm run check && npm test"
   },
   "engines": {
     "node": ">=18"

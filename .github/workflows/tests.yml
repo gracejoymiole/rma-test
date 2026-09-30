@@ -1,0 +1,27 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Syntax-check every shipped script before the assertion suites run, so a
+      # parse error is reported as such rather than as a confusing suite failure.
+      - name: Syntax check
+        run: npm run check
+
+      - name: Assertions
+        # 303 assertions across 8 suites, including test-assets.js, which fails
+        # the build if any image a page references is missing or duplicated.
+        run: npm test

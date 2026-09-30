@@ -32,11 +32,34 @@ serve `supabase/`, which holds the schema and the bootstrap script.
 ## Tests
 
 ```powershell
-npm test          # all suites, 289 assertions
+npm test          # all suites, 303 assertions
 npm run check     # syntax-check the shipped scripts
+npm run verify    # both, as CI runs it
 ```
 
-Suites read the real shipped files, so they fail if product code drifts.
+Suites read the real shipped files, so they fail if product code drifts. GitHub
+Actions runs `verify` on every push and pull request to `main`.
+
+Coverage worth knowing about:
+
+| Suite | Guards |
+| --- | --- |
+| `test-assets.js` | every image a page references exists; no duplicate copies |
+| `test-hardening.js` | leaderboard scoping, RLS, escaping, credential absence, no orphans |
+| `test-privacy.js` | teacher scoping and session expiry |
+| `test-status.js` | Not yet taken / Incomplete / completed states |
+| `test-bandfilter.js` | Who Needs Help band filtering |
+| `test-gaps-export.js` | learning-gap derivation, Excel export, print report |
+| `test-master-map.js` | the 448-question map |
+| `test-auth.js` | student onboarding and auth |
+
+## Deploying
+
+Static hosting; the docs name Vercel. Two things to set before the first deploy:
+
+1. Apply `supabase/schema.sql`, or every RPC returns 404.
+2. Replace nothing in `supabase-config.js` — the publishable key is meant for the
+   browser. All protection is in RLS, which is why the schema matters.
 
 ## Supabase
 
