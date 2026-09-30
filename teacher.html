@@ -60,6 +60,9 @@
       background:#f1ece7; color:var(--muted); font-variant-numeric:tabular-nums; font-size:.78rem;
     }
     .priority-clear { padding:4px 10px; border:1px solid #ddd5cf; border-radius:999px; background:#fff; color:var(--wine); font:700 .75rem inherit; cursor:pointer; }
+    .student-actions { display:flex; gap:8px; margin-top:10px; padding-top:8px; border-top:1px dashed #eee8e3; }
+    .scope-all { color:var(--muted); }
+    .scope-scoped { padding:9px 12px; border-left:4px solid var(--wine); border-radius:6px; background:#f8f4e8; color:var(--ink); font-weight:700; }
     [hidden] { display:none !important; }
     
     /* Question Mapping Panel Styles */
@@ -346,6 +349,7 @@
       <div class="card">
         <div class="toolbar"><div><h2>Grade-level mastery dashboard</h2><p>Section progress and item mastery use each registered student's latest attempt.</p></div><button id="teacherLogout" class="secondary">Sign out</button></div>
         <div id="dashboardMessage" role="status"></div>
+        <p id="teacherScopeNote" class="report-note" hidden></p>
         <div class="filters">
           <label>Select grade level<select id="gradeFilter" required><option value="">Choose a grade level</option></select></label>
           <label>Student report section<select id="sectionFilter" disabled><option value="">Select a grade first</option></select></label>

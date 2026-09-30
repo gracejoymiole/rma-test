@@ -3381,6 +3381,11 @@
               <span>Last: ${learner.created_at ? new Date(learner.created_at).toLocaleDateString() : '—'}</span>
               ${learner.attempt_number > 1 ? `<span>Attempt #${learner.attempt_number}</span>` : ''}
             </div>
+            <div class="student-actions">
+              ${learner.status.state === "incomplete"
+                ? `<button type="button" class="priority-clear" onclick="setAttemptComplete('${escapeHtml(learner.student_code)}', true)">Mark attempt finished</button>`
+                : `<button type="button" class="priority-clear" onclick="setAttemptComplete('${escapeHtml(learner.student_code)}', false)">Flag attempt as unfinished</button>`}
+            </div>
           </div>
         `).join('')}
       </div>
@@ -3616,6 +3621,7 @@
     dashboardMessage.hidden = true;
     try {
       await loadScoreBands();
+      await renderTeacherScope();
       
       rows = await rpc("rma_teacher_dashboard", { p_token: token });
       
@@ -3636,6 +3642,46 @@
         dashboard.hidden = true; 
         loginCard.hidden = false; 
       }
+    }
+  }
+
+  // Tell the teacher which records they are allowed to see. Older databases do
+  // not have rma_teacher_profile yet, so a missing function is not an error.
+  async function renderTeacherScope() {
+    const node = document.getElementById("teacherScopeNote");
+    if (!node) return;
+    try {
+      const profile = await rpc("rma_teacher_profile", { p_token: token });
+      const name = [profile.first_name, profile.last_name].filter(Boolean).join(" ").trim();
+      const scoped = !profile.see_all_sections && name;
+      node.textContent = scoped
+        ? `Showing only the classes assigned to ${name}.`
+        : "Showing every registered section. A head teacher can restrict an account to its own classes by setting its name and clearing 'see all sections'.";
+      node.className = scoped ? "report-note scope-scoped" : "report-note scope-all";
+    } catch (error) {
+      node.textContent = "";
+      node.hidden = true;
+    }
+  }
+
+  // Teacher-recorded observation: mark the learner's latest attempt finished or
+  // unfinished. The student pages never write is_complete, so without this the
+  // Incomplete state could never appear.
+  async function setAttemptComplete(studentCode, isComplete) {
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      await rpc("rma_set_attempt_complete", {
+        p_token: token,
+        p_student_code: studentCode,
+        p_complete: isComplete
+      });
+      rows = await rpc("rma_teacher_dashboard", { p_token: token });
+      renderDashboardOverview();
+    } catch (error) {
+      setMessage(dashboardMessage, error.message || "Could not update that attempt.");
+    } finally {
+      state.busy = false;
     }
   }
 
@@ -3724,6 +3770,7 @@
   window.renderMasterMap = renderMasterMap;
   window.resetMasterMapFilters = resetMasterMapFilters;
   window.setPriorityBandFilter = setPriorityBandFilter;
+  window.setAttemptComplete = setAttemptComplete;
   
   // Do not silently reuse a stored teacher token: shared devices require a fresh sign-in.
 })();

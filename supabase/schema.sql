@@ -28,6 +28,14 @@ create table if not exists public.rma_teacher_accounts (
   created_at timestamptz not null default now()
 );
 
+-- Teacher scoping. Both default to the previous behaviour: a blank name or
+-- see_all_sections = true means the account may view every section, so adding
+-- these columns can never lock an existing account out. Set a name and flip
+-- see_all_sections to false to restrict an account to its own classes.
+alter table public.rma_teacher_accounts add column if not exists first_name text not null default '';
+alter table public.rma_teacher_accounts add column if not exists last_name text not null default '';
+alter table public.rma_teacher_accounts add column if not exists see_all_sections boolean not null default true;
+
 create table if not exists public.rma_auth_sessions (
   token_hash text primary key,
   role text not null check (role in ('student', 'teacher')),
@@ -245,15 +253,19 @@ create or replace function public.rma_teacher_dashboard(p_token text)
 returns jsonb language plpgsql security definer
 set search_path = public, extensions, pg_temp
 as $$
-declare v_teacher_id uuid;
+declare v_teacher public.rma_teacher_accounts%rowtype;
 begin
-  select teacher_id into v_teacher_id from public.rma_auth_sessions
-   where token_hash = encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex')
-     and role = 'teacher' and expires_at > now();
-  if v_teacher_id is null then raise exception 'Teacher session expired. Sign in again.' using errcode = '28000'; end if;
-  if (select must_change_password from public.rma_teacher_accounts where id = v_teacher_id) then
+  select t.* into v_teacher from public.rma_auth_sessions se
+    join public.rma_teacher_accounts t on t.id = se.teacher_id
+   where se.token_hash = encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex')
+     and se.role = 'teacher' and se.expires_at > now();
+  if v_teacher.id is null then raise exception 'Teacher session expired. Sign in again.' using errcode = '28000'; end if;
+  if v_teacher.must_change_password then
     raise exception 'Change the initial teacher password before opening student records.' using errcode = '42501';
   end if;
+
+  -- An account with no name on file, or with see_all_sections set, keeps the
+  -- original whole-school view. Otherwise it only sees its own classes.
   return coalesce((
     select jsonb_agg(jsonb_build_object('student_id', st.id, 'grade', st.grade, 'section', st.section,
       'student_code', st.student_code, 'student_name', concat(st.last_name, ', ', st.first_name,
@@ -270,7 +282,59 @@ begin
       from public.rma_scores sc where sc.student_id = st.id order by sc.created_at desc limit 1) latest on true
     left join lateral (select count(*)::int as attempts
       from public.rma_scores sc where sc.student_id = st.id) tally on true
+    where v_teacher.see_all_sections
+       or v_teacher.first_name = '' or v_teacher.last_name = ''
+       or (lower(st.teacher_first_name) = lower(v_teacher.first_name)
+           and lower(st.teacher_last_name) = lower(v_teacher.last_name))
   ), '[]'::jsonb);
+end;
+$$;
+
+-- Lets the portal tell the teacher what scope they are looking at.
+create or replace function public.rma_teacher_profile(p_token text)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare v_teacher public.rma_teacher_accounts%rowtype;
+begin
+  select t.* into v_teacher from public.rma_auth_sessions se
+    join public.rma_teacher_accounts t on t.id = se.teacher_id
+   where se.token_hash = encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex')
+     and se.role = 'teacher' and se.expires_at > now();
+  if v_teacher.id is null then raise exception 'Teacher session expired. Sign in again.' using errcode = '28000'; end if;
+  return jsonb_build_object('username', v_teacher.username,
+    'first_name', v_teacher.first_name, 'last_name', v_teacher.last_name,
+    'see_all_sections', v_teacher.see_all_sections);
+end;
+$$;
+
+-- Teacher-recorded observation of whether the latest attempt was finished.
+create or replace function public.rma_set_attempt_complete(p_token text, p_student_code text, p_complete boolean)
+returns boolean language plpgsql security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare v_teacher public.rma_teacher_accounts%rowtype; v_count integer;
+begin
+  select t.* into v_teacher from public.rma_auth_sessions se
+    join public.rma_teacher_accounts t on t.id = se.teacher_id
+   where se.token_hash = encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex')
+     and se.role = 'teacher' and se.expires_at > now();
+  if v_teacher.id is null then raise exception 'Teacher session expired. Sign in again.' using errcode = '28000'; end if;
+  if v_teacher.must_change_password then
+    raise exception 'Change the initial teacher password before opening student records.' using errcode = '42501';
+  end if;
+
+  update public.rma_scores sc set is_complete = coalesce(p_complete, true)
+   from public.rma_students st
+   where st.id = sc.student_id
+     and st.student_code = upper(trim(coalesce(p_student_code, '')))
+     and sc.id = (select sc2.id from public.rma_scores sc2
+                   where sc2.student_id = st.id order by sc2.created_at desc limit 1);
+  get diagnostics v_count = row_count;
+  if v_count = 0 then
+    raise exception 'No submitted attempt was found for that student.' using errcode = 'P0002';
+  end if;
+  return true;
 end;
 $$;
 
@@ -282,6 +346,8 @@ revoke all on function public.rma_report_violation(text,smallint,text,text) from
 revoke all on function public.rma_teacher_login(text,text) from public;
 revoke all on function public.rma_teacher_change_password(text,text) from public;
 revoke all on function public.rma_teacher_dashboard(text) from public;
+revoke all on function public.rma_teacher_profile(text) from public;
+revoke all on function public.rma_set_attempt_complete(text, text, boolean) from public;
 grant execute on function public.rma_teacher_suggestions(text) to anon, authenticated;
 grant execute on function public.rma_student_register(smallint,text,text,text,text,text,text,text) to anon, authenticated;
 grant execute on function public.rma_student_login(text,text,smallint) to anon, authenticated;
@@ -290,6 +356,8 @@ grant execute on function public.rma_report_violation(text,smallint,text,text) t
 grant execute on function public.rma_teacher_login(text,text) to anon, authenticated;
 grant execute on function public.rma_teacher_change_password(text,text) to anon, authenticated;
 grant execute on function public.rma_teacher_dashboard(text) to anon, authenticated;
+grant execute on function public.rma_teacher_profile(text) to anon, authenticated;
+grant execute on function public.rma_set_attempt_complete(text, text, boolean) to anon, authenticated;
 
 -- Keep the student-facing leaderboard limited to familiar fields; teacher mastery is available only via the teacher RPC.
 create or replace view public.rma_leaderboard as
