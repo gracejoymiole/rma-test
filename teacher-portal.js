@@ -3248,7 +3248,8 @@
         status: statusFor(r.score, r.attempt_number, r.is_complete),
         section: r.section,
         created_at: r.created_at,
-        attempt_number: r.attempt_number
+        attempt_number: r.attempt_number,
+        weakTopics: getWeakTopics(r)
       }))
       .sort((a, b) => {
         // Incomplete attempts first: they are the ones a teacher can act on today.
@@ -3305,11 +3306,35 @@
     renderPriorityFilter(priorityCache.levels, priorityCache.stats);
     renderPriorityLearners(priorityCache.learners, priorityCache.stats);
   }
-
   function renderPriorityPanel(priorityLearners, stats, levels) {
     priorityCache = { learners: priorityLearners, stats, levels };
+
+    const gaps = new Map();
+    priorityLearners.forEach((learner) => {
+      (learner.weakTopics || []).forEach((t) => {
+        gaps.set(t.topic, (gaps.get(t.topic) || 0) + 1);
+      });
+    });
+    const topGaps = [...gaps.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+    priorityCache.gaps = topGaps;
+
+    renderPriorityGapSummary(topGaps);
     renderPriorityFilter(levels, stats);
     renderPriorityLearners(priorityLearners, stats);
+  }
+
+  function renderPriorityGapSummary(topGaps) {
+    const node = document.getElementById("priorityGapSummary");
+    if (!node) return;
+    if (!topGaps.length) { node.hidden = true; node.innerHTML = ""; return; }
+    node.hidden = false;
+    node.innerHTML = `
+      <span class="weak-topics-label">Most common learning gaps in this scope</span>
+      <ul>
+        ${topGaps.map(([topic, count]) => `
+          <li><span class="tag tag-topic">${escapeHtml(topic)}</span>
+          <span class="weak-topics-count">${count} learner${count === 1 ? "" : "s"}</span></li>`).join('')}
+      </ul>`;
   }
 
   function renderPriorityLearners(priorityLearners, stats) {
@@ -3381,6 +3406,21 @@
               <span>Last: ${learner.created_at ? new Date(learner.created_at).toLocaleDateString() : '—'}</span>
               ${learner.attempt_number > 1 ? `<span>Attempt #${learner.attempt_number}</span>` : ''}
             </div>
+            ${learner.weakTopics && learner.weakTopics.length ? `
+              <div class="weak-topics">
+                <span class="weak-topics-label">Needs support in</span>
+                <ul>
+                  ${learner.weakTopics.map((t) => `
+                    <li>
+                      <span class="tag tag-topic">${escapeHtml(t.topic)}</span>
+                      <span class="weak-topics-count">missed ${t.missed} of ${t.seen}</span>
+                    </li>`).join('')}
+                </ul>
+              </div>` : `
+              <div class="weak-topics">
+                <span class="weak-topics-label">Needs support in</span>
+                <p class="weak-topics-empty">No item-level answers were recorded for this attempt.</p>
+              </div>`}
             <div class="student-actions">
               ${learner.status.state === "incomplete"
                 ? `<button type="button" class="priority-clear" onclick="setAttemptComplete('${escapeHtml(learner.student_code)}', true)">Mark attempt finished</button>`
@@ -3594,6 +3634,52 @@
     return result;
   }
 
+  // ============================================
+  // LEARNING GAPS
+  // Turns a learner's item-level answers into "Needs support in: Fractions"
+  // by matching their missed local question numbers to the master map topics.
+  // ============================================
+
+  let mmTopicIndex = null;
+
+  function mmTopicLookup(grade) {
+    if (!mmTopicIndex) {
+      mmTopicIndex = {};
+      const map = window.RMA_MASTER_MAP;
+      if (map && Array.isArray(map.questions)) {
+        map.questions.forEach((q) => {
+          if (q.type !== "RMA Original" || !q.topic) return;
+          const byId = mmTopicIndex[q.g] || (mmTopicIndex[q.g] = {});
+          byId[q.id] = { topic: q.topic, item: q.item, cog: q.cog };
+        });
+      }
+    }
+    return mmTopicIndex[grade] || {};
+  }
+
+  function getWeakTopics(row, limit = 4) {
+    const lookup = mmTopicLookup(Number(row.grade));
+    const answers = String(row.rma_data || "").split("|");
+    if (!answers.length || !Object.keys(lookup).length) return [];
+
+    const buckets = new Map();
+    answers.forEach((answer, index) => {
+      if (answer !== "0" && answer !== "1") return;
+      const meta = lookup[index + 1];
+      if (!meta) return;
+      const bucket = buckets.get(meta.topic) || { topic: meta.topic, missed: 0, seen: 0, items: [], cog: meta.cog };
+      bucket.seen += 1;
+      if (answer === "0") { bucket.missed += 1; bucket.items.push(meta.item); }
+      buckets.set(meta.topic, bucket);
+    });
+
+    return [...buckets.values()]
+      .filter((b) => b.missed > 0)
+      .sort((a, b) => b.missed - a.missed || (a.seen - a.missed) / a.seen - (b.seen - b.missed) / b.seen)
+      .slice(0, limit)
+      .map((b) => ({ ...b, rate: Math.round(((b.seen - b.missed) / b.seen) * 100) }));
+  }
+
   function renderSelectedReport() {
     const grade = Number(gradeFilter.value);
     currentGrade = grade;
@@ -3686,6 +3772,169 @@
   }
 
   // ============================================
+  // CLASS RECORDS EXPORT (suggestion 14)
+  // SpreadsheetML rather than CSV so Excel opens the level and status
+  // columns as real values instead of raw text. No external library.
+  // ============================================
+
+  const EXPORT_COLUMNS = [
+    { header: "Student ID", key: "student_code" },
+    { header: "Name", key: "student_name" },
+    { header: "Grade", key: "grade" },
+    { header: "Section", key: "section" },
+    { header: "Score", key: "score" },
+    { header: "Percentage", key: "percentage" },
+    { header: "Level", key: "level" },
+    { header: "Status", key: "status" },
+    { header: "Attempts", key: "attempts" },
+    { header: "Last Assessment", key: "date" }
+  ];
+
+  function exportRows() {
+    return rows
+      .filter((row) => Number(row.grade) === currentGrade && (!currentSection || row.section === currentSection))
+      .sort((a, b) => String(a.section).localeCompare(String(b.section)) || String(a.student_name).localeCompare(String(b.student_name)))
+      .map((row) => {
+        const status = statusFor(row.score, row.attempt_number, row.is_complete);
+        return [
+          row.student_code || "",
+          row.student_name || "",
+          row.grade,
+          row.section || "",
+          row.score === null || row.score === undefined ? "" : row.score,
+          row.score === null || row.score === undefined ? "" : `${row.score}%`,
+          status.band ? status.band.label : "",
+          status.label,
+          row.attempts === undefined || row.attempts === null ? (row.attempt_number || "") : row.attempts,
+          row.created_at ? new Date(row.created_at).toLocaleDateString() : ""
+        ];
+      });
+  }
+
+  function xmlEscape(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
+  }
+
+  function downloadFile(filename, mime, content) {
+    const blob = new Blob(["\ufeff", content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportClassRecords() {
+    if (!currentGrade) { setMessage(dashboardMessage, "Choose a grade level first."); return; }
+    const data = exportRows();
+    if (!data.length) { setMessage(dashboardMessage, "No learners in this scope to export."); return; }
+
+    const header = EXPORT_COLUMNS.map((c) => `<Cell><Data ss:Type="String">${xmlEscape(c.header)}</Data></Cell>`).join("");
+    const body = data.map((cells) => `<Row>${cells.map((v) =>
+      `<Cell><Data ss:Type="${typeof v === "number" ? "Number" : "String"}">${xmlEscape(v)}</Data></Cell>`).join("")}</Row>`).join("");
+
+    const xml = `<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+  <Worksheet ss:Name="Class Records">
+    <Table>
+      <Row>${header}</Row>
+      ${body}
+    </Table>
+  </Worksheet>
+</Workbook>`;
+
+    const scope = currentSection ? `Grade${currentGrade}-${currentSection}` : `Grade${currentGrade}-AllSections`;
+    downloadFile(`RMA-Pathways-${scope}.xls`, "application/vnd.ms-excel;charset=utf-8", xml);
+    setMessage(dashboardMessage, `Exported ${data.length} learner record${data.length === 1 ? "" : "s"} for ${scope.replace(/-/g, " ")}.`, false);
+  }
+
+  // ============================================
+  // PRINTABLE CLASS PROGRESS REPORT (suggestion 13)
+  // ============================================
+
+  function printClassReport() {
+    if (!currentGrade) { setMessage(dashboardMessage, "Choose a grade level first."); return; }
+    const data = exportRows();
+    if (!data.length) { setMessage(dashboardMessage, "No learners in this scope to print."); return; }
+
+    const levels = getLevelDistribution(rows, currentGrade, currentSection);
+    const stats = getCompletionStats(rows, currentGrade, currentSection);
+    const scope = currentSection ? `Grade ${currentGrade} - ${currentSection}` : `Grade ${currentGrade} - All Sections`;
+
+    const body = data.map((cells, i) => `
+      <tr>
+        <td>${i + 1}</td><td>${xmlEscape(cells[0])}</td><td>${xmlEscape(cells[1])}</td>
+        <td class="num">${xmlEscape(cells[4])}</td>
+        <td>${xmlEscape(cells[6] || cells[7])}</td>
+        <td>${xmlEscape(cells[7])}</td>
+        <td>${xmlEscape(cells[9])}</td>
+      </tr>`).join("");
+
+    const band = (name) => (scoreBands.find((b) => b.band_name === name) || {}).label || name;
+    const bandRows = scoreBands.map((b) =>
+      `<span class="pill">${xmlEscape(b.icon || "")} ${xmlEscape(band(b.band_name))}: <b>${(levels && levels[b.band_name]) || 0}</b></span>`
+    ).join("");
+
+    const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>RMA Pathways Class Progress Report - ${xmlEscape(scope)}</title>
+<style>
+  @page { margin: 16mm 14mm; }
+  body { font: 12px/1.5 "Times New Roman", Georgia, serif; color:#111; }
+  h1 { font-size: 17px; margin: 0 0 2px; letter-spacing: .04em; }
+  .sub { font-size: 11px; color:#333; margin-bottom: 10px; }
+  .fields { display:grid; grid-template-columns: 1fr 1fr; gap: 8px 22px; margin: 0 0 14px; }
+  .fields div { display:flex; gap:6px; align-items:baseline; font-size: 12px; }
+  .fields span { font-weight: 700; white-space:nowrap; }
+  .fields i { flex:1; border-bottom: 1px solid #333; font-style:normal; }
+  .pills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; font-size:11px; }
+  .pill { border:1px solid #999; border-radius:999px; padding:2px 9px; }
+  .meta { font-size:11px; color:#333; margin-bottom:8px; }
+  table { width:100%; border-collapse: collapse; font-size: 11px; }
+  th, td { border:1px solid #444; padding: 4px 6px; text-align:left; }
+  th { background:#eee; }
+  td.num { text-align:right; font-variant-numeric: tabular-nums; }
+  tfoot td { font-weight:700; background:#f6f6f6; }
+  footer { margin-top: 14px; font-size: 10px; color:#444; }
+  @media print { .no-print { display:none; } }
+</style></head><body>
+<div class="no-print" style="margin-bottom:12px;">
+  <button onclick="window.print()">Print</button>
+  <button onclick="window.close()">Close</button>
+</div>
+<div class="sub">REPUBLIC OF THE PHILIPPINES<br>DEPARTMENT OF EDUCATION</div>
+<h1>RMA PATHWAYS &mdash; CLASS PROGRESS REPORT</h1>
+<div class="fields">
+  <div><span>School:</span><i></i></div>
+  <div><span>Teacher:</span><i></i></div>
+  <div><span>Grade &amp; Section:</span><i>${xmlEscape(scope)}</i></div>
+  <div><span>School Year:</span><i></i></div>
+</div>
+<div class="pills">${bandRows}
+  <span class="pill">⚠️ Incomplete: <b>${stats.incomplete}</b></span>
+  <span class="pill">⏳ Not yet taken: <b>${stats.notTaken}</b></span>
+</div>
+<div class="meta">${stats.total} learners &middot; ${stats.completed} completed (${stats.completionRate}%) &middot; generated ${new Date().toLocaleString()}</div>
+<table>
+  <thead><tr><th>#</th><th>Student ID</th><th>Name</th><th>Score</th><th>Level</th><th>Status</th><th>Assessment Date</th></tr></thead>
+  <tbody>${body}</tbody>
+  <tfoot><tr><td colspan="3">Learners in scope</td><td class="num">${stats.total}</td><td colspan="3">Completion ${stats.completionRate}%</td></tr></tfoot>
+</table>
+<footer>Teacher records export. Contains protected learner information &mdash; handle and store in line with school data-protection policy.</footer>
+</body></html>`;
+
+    const win = window.open("", "_blank");
+    if (!win) { setMessage(dashboardMessage, "Allow pop-ups for this site to open the printable report."); return; }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { try { win.print(); } catch (error) { /* user prints manually */ } }, 350);
+  }
+
+  // ============================================
   // AUTHENTICATION
   // ============================================
 
@@ -3745,6 +3994,9 @@
     renderDashboardOverview();
   });
 
+  document.getElementById("exportClassRecords").addEventListener("click", exportClassRecords);
+  document.getElementById("printClassReport").addEventListener("click", printClassReport);
+
   document.getElementById("priorityFilterContainer").addEventListener("click", (event) => {
     const chip = event.target.closest(".band-chip");
     if (chip) setPriorityBandFilter(chip.dataset.band);
@@ -3771,6 +4023,8 @@
   window.resetMasterMapFilters = resetMasterMapFilters;
   window.setPriorityBandFilter = setPriorityBandFilter;
   window.setAttemptComplete = setAttemptComplete;
+  window.exportClassRecords = exportClassRecords;
+  window.printClassReport = printClassReport;
   
   // Do not silently reuse a stored teacher token: shared devices require a fresh sign-in.
 })();

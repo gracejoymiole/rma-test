@@ -61,6 +61,13 @@
     }
     .priority-clear { padding:4px 10px; border:1px solid #ddd5cf; border-radius:999px; background:#fff; color:var(--wine); font:700 .75rem inherit; cursor:pointer; }
     .student-actions { display:flex; gap:8px; margin-top:10px; padding-top:8px; border-top:1px dashed #eee8e3; }
+    .weak-topics { margin-top:10px; padding-top:8px; border-top:1px dashed #eee8e3; }
+    .weak-topics-label { display:block; margin-bottom:6px; color:var(--wine); font-size:.74rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+    .weak-topics ul { display:flex; flex-wrap:wrap; gap:6px 14px; margin:0; padding:0; list-style:none; }
+    .weak-topics li { display:flex; align-items:center; gap:6px; }
+    .weak-topics-count { color:var(--muted); font-size:.74rem; white-space:nowrap; }
+    .weak-topics-empty { margin:0; color:var(--muted); font-size:.8rem; font-style:italic; }
+    .gap-summary { margin-bottom:16px; padding:12px 14px; border:1px solid var(--line); border-left:4px solid var(--gold); border-radius:10px; background:#faf7f2; }
     .scope-all { color:var(--muted); }
     .scope-scoped { padding:9px 12px; border-left:4px solid var(--wine); border-radius:6px; background:#f8f4e8; color:var(--ink); font-weight:700; }
     [hidden] { display:none !important; }
@@ -347,7 +354,7 @@
     </section>
     <section id="dashboard" hidden>
       <div class="card">
-        <div class="toolbar"><div><h2>Grade-level mastery dashboard</h2><p>Section progress and item mastery use each registered student's latest attempt.</p></div><button id="teacherLogout" class="secondary">Sign out</button></div>
+        <div class="toolbar"><div><h2>Grade-level mastery dashboard</h2><p>Section progress and item mastery use each registered student's latest attempt.</p></div><div style="display:flex; gap:8px;"><button id="printClassReport" class="secondary" type="button">🖨️ Print Class Report</button><button id="exportClassRecords" class="secondary" type="button">⬇️ Export to Excel</button><button id="teacherLogout" class="secondary">Sign out</button></div></div>
         <div id="dashboardMessage" role="status"></div>
         <p id="teacherScopeNote" class="report-note" hidden></p>
         <div class="filters">
@@ -389,6 +396,7 @@
           <section class="card" id="priorityLearnersCard" style="margin-bottom:16px">
             <h2 class="report-heading">Who Needs Help?</h2>
             <p class="report-note">Students requiring immediate attention and intervention. Pick a group to narrow the list.</p>
+            <div id="priorityGapSummary" class="weak-topics gap-summary" hidden></div>
             <div id="priorityFilterContainer" class="band-chips" role="group" aria-label="Filter learners by performance band"></div>
             <div id="priorityLearnersContainer"></div>
           </section>
