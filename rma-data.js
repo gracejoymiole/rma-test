@@ -42,11 +42,67 @@
     return Number.isFinite(numeric) ? Math.max(0, Math.floor(numeric)) : 0;
   }
 
+  const PENDING_KEY = `rma_${grade}_pending_submit`;
+
+  // Failed submissions are parked in localStorage and replayed on reconnect,
+  // so a dropped connection never costs a student their result.
+  function readPending() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(PENDING_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed.filter((item) => item && item.payload) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writePending(items) {
+    try {
+      localStorage.setItem(PENDING_KEY, JSON.stringify(items.slice(-5)));
+    } catch (error) {
+      console.warn("Could not queue submission for later sync:", error);
+    }
+  }
+
+  function queuePending(payload) {
+    const items = readPending();
+    const signature = JSON.stringify([payload.p_grade, payload.p_rma_data, payload.p_score]);
+    if (items.some((item) => JSON.stringify([item.payload.p_grade, item.payload.p_rma_data, item.payload.p_score]) === signature)) {
+      return;
+    }
+    items.push({ payload, queued_at: new Date().toISOString() });
+    writePending(items);
+    window.RMAAuth?.showProgressNotification?.("Answer saved locally ✓");
+  }
+
+  async function flushPending() {
+    const items = readPending();
+    if (!items.length) return true;
+    if (!window.RMAAuth?.session?.token) return false;
+
+    const remaining = [];
+    for (const item of items) {
+      try {
+        await rpc("rma_submit_score", item.payload);
+      } catch (error) {
+        remaining.push(item);
+      }
+    }
+    writePending(remaining);
+    return remaining.length === 0;
+  }
+
+  window.addEventListener("online", () => {
+    if (readPending().length) window.RMAAuth?.syncProgress?.();
+  });
+
   window.RMAData = Object.freeze({
+    pendingCount: () => readPending().length,
+    flushPending,
+
     async submit(formData) {
       const token = window.RMAAuth?.session?.token;
       if (!token) throw new Error("Student session is missing. Sign in again before submitting.");
-      return rpc("rma_submit_score", {
+      const payload = {
         p_token: token,
         p_grade: grade,
         p_score: Math.max(0, Math.min(100, Number.parseInt(formData.get("score"), 10) || 0)),
@@ -56,7 +112,13 @@
         p_duration_seconds: durationSeconds(formData.get("duration")),
         p_rma_data: String(formData.get("rma") || "").slice(0, 12000),
         p_bank_data: String(formData.get("bankData") || "").slice(0, 12000)
-      });
+      };
+      try {
+        return await rpc("rma_submit_score", payload);
+      } catch (error) {
+        queuePending(payload);
+        throw error;
+      }
     },
 
     async reportViolation(formData) {

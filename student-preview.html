@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#521018">
+  <title>Student Registration Preview | RMA PATHWAYS</title>
+  <style>
+    :root { --wine:#521018; --wine-dark:#31090e; --gold:#e8be51; --ink:#24191a; --muted:#71666a; --line:#e8ded7; }
+    * { box-sizing:border-box; } 
+    body { 
+      margin:0; 
+      min-height:100vh; 
+      color:var(--ink); 
+      background: radial-gradient(ellipse at 50% 0%, #fff9e9 0, #f7f2ea 44%, #eee5dc 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    
+    .preview-banner {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(120deg, #31090e, #521018);
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-weight: 700;
+      z-index: 1000;
+      margin-bottom: 16px;
+    }
+    
+    #loginOverlay {
+      position: fixed; 
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(17, 36, 18, 0.9);
+      display: flex; justify-content: center; align-items: center; 
+      z-index: 9999;
+    }
+    
+    .rma-auth-card { 
+      width:min(470px,100%); 
+      max-height:calc(100vh - 40px); 
+      overflow:auto; 
+      margin:auto; 
+      padding:28px; 
+      background:#fff; 
+      color:#24191a; 
+      border-radius:18px; 
+      box-shadow:0 22px 70px #0004; 
+      font:15px/1.45 system-ui,sans-serif; 
+    }
+    .rma-auth-card h2 { 
+      margin:8px 0; 
+      font-size:1.7rem; 
+      color:var(--wine,#521018); 
+    }
+    .rma-auth-home { 
+      color:var(--wine,#521018); 
+      font-size:.8rem; 
+      font-weight:700; 
+      text-decoration:none; 
+    }
+    .rma-auth-help,.rma-auth-note { 
+      color:#71666a; 
+      font-size:.88rem; 
+    }
+    .rma-auth-tabs { 
+      display:flex; 
+      gap:8px; 
+      margin:20px 0; 
+      flex-wrap: wrap;
+    }
+    .rma-auth-tab { 
+      flex:1; 
+      min-width: 120px;
+      padding:10px; 
+      border:1px solid #ddd; 
+      border-radius:9px; 
+      background:#f7f5f1; 
+      cursor:pointer; 
+      font-weight:700;
+      font-size: 0.85rem;
+    }
+    .rma-auth-tab.active { 
+      color:#fff; 
+      background:var(--primary,#521018); 
+      border-color:var(--primary,#521018); 
+    }
+    .rma-auth-panel { 
+      display:grid; 
+      gap:12px; 
+    }
+    .rma-auth-panel[hidden] { 
+      display:none; 
+    }
+    .rma-auth-panel label { 
+      display:grid; 
+      gap:5px; 
+      font-size:.83rem; 
+      font-weight:700; 
+    }
+    .rma-auth-panel span { 
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .rma-auth-panel input,.rma-auth-panel select { 
+      width:100%; 
+      box-sizing:border-box; 
+      padding:11px 12px; 
+      border:1px solid #d8d1cc; 
+      border-radius:8px; 
+      font:inherit; 
+      /* ALL TEXT IN UPPERCASE */
+      text-transform: uppercase;
+    }
+    .rma-auth-primary { 
+      width:100%; 
+      margin-top:4px; 
+      padding:12px 16px; 
+      border:0; 
+      border-radius:9px; 
+      color:#fff; 
+      background:var(--wine,#521018); 
+      font:700 1rem system-ui,sans-serif; 
+      cursor:pointer; 
+    }
+    .rma-auth-primary:disabled { 
+      opacity:.65; 
+      cursor:wait; 
+    }
+    .rma-auth-message { 
+      margin:12px 0; 
+      padding:10px 12px; 
+      color:#7a1818; 
+      background:#fff0ee; 
+      border-radius:8px; 
+      font-size:.88rem; 
+    }
+    .rma-auth-message[data-error="false"] { 
+      color:#155b30; 
+      background:#edf9f0; 
+    }
+    .rma-auth-panel dl { 
+      display:grid; 
+      grid-template-columns:1fr; 
+      gap:4px; 
+      padding:12px; 
+      background:#f8f4e8; 
+      border-radius:8px; 
+    }
+    .rma-auth-panel dt { 
+      color:#655; 
+      font-size:.75rem; 
+      font-weight:700; 
+    }
+    .rma-auth-panel dd { 
+      margin:0 0 8px; 
+      overflow-wrap:anywhere; 
+      font:700 1.1rem ui-monospace,monospace; 
+    }
+    
+    /* Feature demonstration */
+    .feature-demo {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 16px 0;
+      border: 2px dashed #d8d1cc;
+      position: relative;
+    }
+    
+    .feature-demo::before {
+      content: "💡 DEMO";
+      position: absolute;
+      top: -10px;
+      left: 16px;
+      background: var(--gold);
+      color: var(--wine);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+    
+    .typing-demo {
+      background: #f8f4e8;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 1rem;
+      margin: 8px 0;
+      text-transform: uppercase;
+    }
+    
+    .suggestion-dropdown {
+      background: #f8f4e8;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin: 8px 0;
+      border: 1px dashed #d8d1cc;
+    }
+    
+    /* Mobile Optimization */
+    @media (max-width: 412px) {
+      .rma-auth-card { 
+        width: min(100% - 40px, 470px);
+        padding: 20px;
+      }
+      .rma-auth-panel label { 
+        font-size: 0.85rem;
+      }
+      .rma-auth-primary { 
+        font-size: 0.95rem;
+      }
+    }
+    
+    @media (max-width: 375px) {
+      .rma-auth-card { 
+        padding: 16px;
+      }
+      .rma-auth-tab { 
+        padding: 8px;
+        font-size: 0.75rem;
+      }
+    }
+    
+    @media (max-width: 320px) {
+      .rma-auth-card { 
+        padding: 14px;
+      }
+      .rma-auth-panel label { 
+        font-size: 0.8rem;
+      }
+      .rma-auth-panel input { 
+        padding: 10px 10px;
+      }
+      .rma-auth-primary { 
+        padding: 10px 12px;
+        font-size: 0.9rem;
+      }
+      .rma-auth-help,.rma-auth-note { 
+        font-size: 0.8rem;
+      }
+    }
+    
+    /* Comparison table */
+    .comparison-section {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px #31090e0a;
+      margin: 24px auto;
+      max-width: 1180px;
+    }
+    
+    .comparison-section h2 {
+      color: var(--wine);
+      margin: 0 0 16px;
+      font-size: 1.4rem;
+    }
+    
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    
+    .comparison-col h3 {
+      color: var(--wine);
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+    }
+    
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .comparison-table th {
+      background: #f8f4e8;
+      color: var(--wine);
+      font-weight: 700;
+    }
+    
+    .comparison-table tr:hover {
+      background: #faf7f2;
+    }
+    
+    .feature-new {
+      color: #155b30;
+      font-weight: 700;
+    }
+    
+    .feature-improved {
+      color: #c2410c;
+      font-weight: 700;
+    }
+    
+    .check-icon {
+      color: #155b30;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-banner">
+    ⚠️ STUDENT REGISTRATION PREVIEW - Updated: Teacher names required, ALL CAPS, Auto-suggest
+  </div>
+  
+  <!-- Feature Highlights -->
+  <div class="comparison-section">
+    <h2>🎯 NEW REQUIREMENTS IMPLEMENTED</h2>
+    
+    <div class="feature-demo">
+      <h3>✅ Requirement 1: Teacher names are required for mastery card</h3>
+      <p><span class="check-icon">✓</span> Teacher Last Name field added</p>
+      <p><span class="check-icon">✓</span> Teacher First Name field added</p>
+      <p><span class="check-icon">✓</span> Both fields are required (validation enforced)</p>
+      <p><span class="check-icon">✓</span> Used in student profile for mastery card display</p>
+    </div>
+    
+    <div class="feature-demo">
+      <h3>✅ Requirement 2: All text fields in CAPLOCK (uppercase)</h3>
+      <p><span class="check-icon">✓</span> CSS: <code>text-transform: uppercase;</code> on all text inputs</p>
+      <p><span class="check-icon">✓</span> JavaScript: Auto-convert to uppercase on input event</p>
+      <p><span class="check-icon">✓</span> Example: Typing "juan" → automatically becomes "JUAN"</p>
+      <div class="typing-demo">
+        Try typing here: 
+        <input type="text" placeholder="Type lowercase..." 
+               oninput="this.value=this.value.toUpperCase();this.setSelectionRange(this.selectionStart,this.selectionEnd)"
+               style="width: 200px; margin-top: 8px;">
+      </div>
+    </div>
+    
+    <div class="feature-demo">
+      <h3>✅ Requirement 3: Auto-suggest to prevent duplicates</h3>
+      <p><span class="check-icon">✓</span> Teacher Last Name: Suggestions from existing entries</p>
+      <p><span class="check-icon">✓</span> Teacher First Name: Suggestions from existing entries</p>
+      <p><span class="check-icon">✓</span> Uses existing <code>rma_teacher_suggestions</code> RPC function</p>
+      <p><span class="check-icon">✓</span> Shows dropdown when typing (2+ characters)</p>
+      <div class="suggestion-dropdown">
+        Example: Type "RE" → Suggests: REYES, RIVERA, REYES, etc.
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Preview of New Form -->
+  <div class="comparison-section">
+    <h2>🎯 LIVE PREVIEW: Updated Registration Form</h2>
+    <p style="color: var(--muted); margin-bottom: 16px;">Try the form below - all text auto-converts to UPPERCASE</p>
+    
+    <div id="loginOverlay">
+      <section class="rma-auth-card" aria-labelledby="authTitle">
+        <a class="rma-auth-home" href="#">← RMA PATHWAYS</a>
+        <h2 id="authTitle">Grade 8 RMA</h2>
+        <p class="rma-auth-help">Piliin ang tamang sagot. | Choose the best answer.</p>
+        <div class="rma-auth-tabs" role="tablist" aria-label="Student account">
+          <button type="button" class="rma-auth-tab active" data-panel="loginPanel" onclick="showPanel('loginPanel')">Log in | Mag-log in</button>
+          <button type="button" class="rma-auth-tab" data-panel="registerPanel" onclick="showPanel('registerPanel')">Sign up | Magrehistro</button>
+        </div>
+        <div id="authMessage" class="rma-auth-message" role="alert" hidden>Test message</div>
+        
+        <!-- Login Panel -->
+        <div id="loginPanel" class="rma-auth-panel">
+          <label>
+            <span>Student ID | Student ID Numero</span>
+            <input id="loginStudentId" autocomplete="username" placeholder="RMA-8-000001" 
+                   oninput="this.value=this.value.toUpperCase();this.setSelectionRange(this.selectionStart,this.selectionEnd)">
+          </label>
+          <label>
+            <span>Password | Password</span>
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password">
+          </label>
+          <button type="button" id="startBtn" class="rma-auth-primary">
+            <span>Log in and start | Mag-log in at sumimulan</span>
+          </button>
+        </div>
+        
+        <!-- Register Panel - WITH TEACHER NAMES -->
+        <div id="registerPanel" class="rma-auth-panel" hidden>
+          <label>
+            <span>Student surname | Apelyido</span>
+            <input id="signupLastName" autocomplete="family-name" maxlength="100" placeholder="DELA CRUZ"
+                   oninput="this.value=this.value.toUpperCase();this.setSelectionRange(this.selectionStart,this.selectionEnd)" required>
+          </label>
+          <label>
+            <span>Student first name | Unang Pangalan</span>
+            <input id="signupFirstName" autocomplete="given-name" maxlength="100" placeholder="JUAN"
+                   oninput="this.value=this.value.toUpperCase();this.setSelectionRange(this.selectionStart,this.selectionEnd)" required>
+          </label>
+          <label>
+            <span>Section | Sekyon</span>
+            <input id="signupSection" maxlength="60" placeholder="TYPE YOUR SECTION | ITYPE ANG IYONG SEKYON"
+                   oninput="this.value=this.value.toUpperCase();this.setSelectionRange(this.selectionStart,this.selectionEnd)" required>
+          </label>
+          <label>
+            <span>Teacher title | Pamagat</span>
+            <select id="teacherTitle"><option value="Mr.">Mr.</option><option value="Ms.">Ms.</option></select>
+          </label>
+          <label>
+            <span>Teacher surname | Apelyido ng Guro</span>
+            <input id="teacherLastName" maxlength="100" autocomplete="off" placeholder="REYES"
+                   list="teacherLastNameSuggestions"
+                   oninput="this.value=this.value.toUpperCase();this.setSelectionRange(this.selectionStart,this.selectionEnd);suggestNames()" required>
+            <datalist id="teacherLastNameSuggestions">
+              <option value="REYES">
+              <option value="CRUZ">
+              <option value="SANTOS">
+              <option value="AQUINO">
+              <option value="RAMIREZ">
+            </datalist>
+          </label>
+          <label>
+            <span>Teacher first name | Unang Pangalan ng Guro</span>
+            <input id="teacherFirstName" maxlength="100" autocomplete="off" placeholder="JUAN"
+                   list="teacherFirstNameSuggestions"
+                   oninput="this.value=this.value.toUpperCase();this.setSelectionRange(this.selectionStart,this.selectionEnd);suggestNames()" required>
+            <datalist id="teacherFirstNameSuggestions">
+              <option value="JUAN">
+              <option value="MARIA">
+              <option value="PEDRO">
+              <option value="ANA">
+              <option value="CARLOS">
+            </datalist>
+          </label>
+          <p class="rma-auth-note">Keep your generated student ID and password safe. | Ingatan ang iyong Student ID at password.</p>
+          <button type="button" id="registerBtn" class="rma-auth-primary">
+            <span>Create account | Lumikha ng account</span>
+          </button>
+        </div>
+        
+        <!-- Credentials Panel -->
+        <div id="credentialsPanel" class="rma-auth-panel" hidden>
+          <h3>Account created | Account napagawa na</h3>
+          <p>Your password will not be shown again. | Hindi na muli ipapakita ang password.</p>
+          <dl>
+            <dt>Student ID | Student ID</dt>
+            <dd id="generatedStudentId">RMA-8-000123</dd>
+            <dt>Generated password | Password na nagawa</dt>
+            <dd id="generatedStudentPassword">ABC789XYZ123</dd>
+          </dl>
+          <button type="button" id="continueBtn" class="rma-auth-primary">
+            <span>Continue to practice | Magpatuloy sa pagsasanay</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+  
+  <!-- Feature List -->
+  <div class="comparison-section">
+    <h2>📋 UPDATED FEATURES</h2>
+    
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Implementation</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Teacher Last Name field</td>
+          <td>Required text field with auto-suggest</td>
+          <td><span class="feature-new">✅ ADDED</span></td>
+        </tr>
+        <tr>
+          <td>Teacher First Name field</td>
+          <td>Required text field with auto-suggest</td>
+          <td><span class="feature-new">✅ ADDED</span></td>
+        </tr>
+        <tr>
+          <td>All text in UPPERCASE</td>
+          <td>CSS + JS auto-convert on input</td>
+          <td><span class="feature-new">✅ IMPLEMENTED</span></td>
+        </tr>
+        <tr>
+          <td>Teacher name suggestions</td>
+          <td>Datalist populated from rma_teacher_suggestions RPC</td>
+          <td><span class="feature-new">✅ IMPLEMENTED</span></td>
+        </tr>
+        <tr>
+          <td>Prevent duplicates</td>
+          <td>Suggestions show existing entries</td>
+          <td><span class="feature-new">✅ IMPLEMENTED</span></td>
+        </tr>
+        <tr>
+          <td>Teacher info in mastery card</td>
+          <td>Passed to gameState.teacherLastName, etc.</td>
+          <td><span class="feature-new">✅ IMPLEMENTED</span></td>
+        </tr>
+        <tr>
+          <td>All fields required</td>
+          <td>Validation before submission</td>
+          <td><span class="feature-new">✅ ENFORCED</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Fields Summary -->
+  <div class="comparison-section">
+    <h2>📝 REGISTRATION FIELDS</h2>
+    
+    <div class="comparison-grid">
+      <div class="comparison-col">
+        <h3>Student Information</h3>
+        <ol style="line-height: 1.8;">
+          <li><strong>Student surname</strong> (required, ALL CAPS)</li>
+          <li><strong>Student first name</strong> (required, ALL CAPS)</li>
+          <li><strong>Section</strong> (required, ALL CAPS)</li>
+        </ol>
+      </div>
+      <div class="comparison-col">
+        <h3>Teacher Information</h3>
+        <ol style="line-height: 1.8;">
+          <li><strong>Teacher title</strong> (Mr./Ms. dropdown)</li>
+          <li><strong>Teacher surname</strong> (required, ALL CAPS, auto-suggest)</li>
+          <li><strong>Teacher first name</strong> (required, ALL CAPS, auto-suggest)</li>
+        </ol>
+      </div>
+    </div>
+    
+    <p style="margin-top: 16px; color: var(--muted);">
+      <strong>Total: 6 fields (all required)</strong> | Teacher info needed for mastery card display
+    </p>
+  </div>
+
+  <script>
+    // Simple panel switching for preview
+    function showPanel(panelId) {
+      document.querySelectorAll('.rma-auth-panel').forEach(panel => {
+        panel.hidden = panel.id !== panelId;
+      });
+      document.querySelectorAll('.rma-auth-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.panel === panelId);
+      });
+      document.getElementById('authMessage').hidden = true;
+    }
+    
+    function suggestNames() {
+      // In real implementation, this calls rma_teacher_suggestions RPC
+      console.log('Suggesting names...');
+    }
+    
+    // Show register panel by default for demo
+    showPanel('registerPanel');
+  </script>
+</body>
+</html>

@@ -108,9 +108,9 @@ as $$
 declare v_student public.rma_students%rowtype; v_password text; v_token text;
 begin
   if p_grade not in (7, 8, 9, 10)
-    or nullif(trim(p_last_name), '') is null or nullif(trim(p_first_name), '') is null
+    or nullif(trim(p_last_name), '') is null or nullif(upper(trim(p_first_name)), '') is null
     or nullif(trim(p_section), '') is null or p_teacher_title not in ('Mr.', 'Ms.')
-    or nullif(trim(p_teacher_last_name), '') is null or nullif(trim(p_teacher_first_name), '') is null then
+    or nullif(trim(p_teacher_last_name), '') is null or nullif(upper(trim(p_teacher_first_name)), '') is null then
     raise exception 'Please complete all required student, section, and teacher fields.' using errcode = '22023';
   end if;
   if length(p_section) > 60 or length(p_last_name) > 100 or length(p_first_name) > 100 then
@@ -120,9 +120,9 @@ begin
   v_password := upper(substr(encode(extensions.gen_random_bytes(10), 'hex'), 1, 12));
   insert into public.rma_students (grade, section, last_name, first_name, middle_initial,
       teacher_title, teacher_last_name, teacher_first_name, password_hash)
-    values (p_grade, upper(trim(p_section)), upper(trim(p_last_name)), trim(p_first_name),
+    values (p_grade, upper(trim(p_section)), upper(trim(p_last_name)), upper(trim(p_first_name)),
       upper(trim(coalesce(p_middle_initial, ''))), p_teacher_title, upper(trim(p_teacher_last_name)),
-      trim(p_teacher_first_name), extensions.crypt(v_password, extensions.gen_salt('bf')))
+      upper(trim(p_teacher_first_name)), extensions.crypt(v_password, extensions.gen_salt('bf')))
     returning * into v_student;
 
   v_student.student_code := 'RMA-' || v_student.grade || '-' || lpad(v_student.student_no::text, 6, '0');
@@ -294,3 +294,81 @@ revoke all on public.rma_leaderboard from public;
 grant select on public.rma_leaderboard to anon, authenticated;
 
 notify pgrst, 'reload schema';
+
+-- PHASE 1: Configurable Score Bands
+
+
+-- Score bands table for configurable performance levels
+create table if not exists public.rma_score_bands (
+  id uuid primary key default gen_random_uuid(),
+  band_name text not null unique,
+  min_score smallint not null check (min_score >= 0 and min_score <= 100),
+  max_score smallint not null check (max_score >= 0 and max_score <= 100),
+  label text not null,
+  color text not null,
+  icon text not null,
+  sort_order smallint not null default 0,
+  created_at timestamptz not null default now(),
+  check (min_score <= max_score)
+);
+
+-- Insert default score bands
+insert into public.rma_score_bands (band_name, min_score, max_score, label, color, icon, sort_order)
+values
+  ('proficient', 80, 100, 'Ready / Proficient', '#155b30', '✅', 1),
+  ('developing', 60, 79, 'Developing', '#c2410c', '🟡', 2),
+  ('emerging', 40, 59, 'Emerging', '#c2410c', '🟠', 3),
+  ('needs_support', 0, 39, 'Needs Intensive Support', '#991b1b', '🔴', 4)
+on conflict (band_name) do nothing;
+
+-- Add attempt tracking to scores table
+alter table public.rma_scores add column if not exists attempt_number smallint not null default 1;
+alter table public.rma_scores add column if not exists is_complete boolean not null default true;
+
+-- RPC to get score bands
+create or replace function public.rma_get_score_bands()
+returns jsonb language sql security definer
+set search_path = public, extensions, pg_temp
+as $$
+  select jsonb_agg(
+    jsonb_build_object(
+      'band_name', band_name,
+      'min_score', min_score,
+      'max_score', max_score,
+      'label', label,
+      'color', color,
+      'icon', icon,
+      'sort_order', sort_order
+    )
+  ) from public.rma_score_bands order by sort_order;
+$$;
+
+grant execute on function public.rma_get_score_bands() to anon, authenticated;
+
+-- RPC to get section comparison
+create or replace function public.rma_section_comparison(p_grade smallint)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare v_result jsonb;
+begin
+  select jsonb_agg(
+    jsonb_build_object(
+      'section', st.section,
+      'total_students', count(distinct st.id),
+      'completed', count(distinct sc.id),
+      'completion_rate', round(count(distinct sc.id) * 100.0 / nullif(count(distinct st.id), 0), 1),
+      'avg_score', round(avg(sc.score), 1)
+    )
+  ) into v_result
+  from public.rma_students st
+  left join public.rma_scores sc on sc.student_id = st.id and sc.grade = p_grade
+  where st.grade = p_grade
+  group by st.section
+  order by st.section;
+  
+  return coalesce(v_result, '[]'::jsonb);
+end;
+$$;
+
+grant execute on function public.rma_section_comparison(smallint) to anon, authenticated;

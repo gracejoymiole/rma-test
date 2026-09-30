@@ -1,9 +1,13 @@
 // Student credential onboarding for the standalone grade assessments.
+// Phase 1 Implementation: Simplified registration with teacher info, localStorage progress saving, mobile optimization
 (function () {
   const config = window.RMA_SUPABASE;
   const grade = Number(document.body.dataset.grade);
   const overlay = document.getElementById("loginOverlay");
-  const state = { profile: null, token: null, busy: false };
+  const state = { profile: null, token: null, busy: false, gradeConfirmed: false };
+  
+  // LocalStorage key for progress saving
+  const PROGRESS_KEY = `rma_${grade}_progress`;
 
   async function rpc(name, body) {
     const response = await fetch(`${config.url}/rest/v1/rpc/${name}`, {
@@ -29,16 +33,83 @@
     }
   }
 
+  // ============================================
+  // GRADE LEVEL CHECK
+  // The assessment page is opened from a specific grade folder, but the student
+  // declares their own grade level during onboarding. If the declared grade does
+  // not match the page they are on, warn them before the account is created so
+  // nobody is filed under the wrong grade.
+  // ============================================
+
+  function showGradeWarning(selectedGrade, source) {
+    const node = document.getElementById("gradeWarning");
+    const hint = document.getElementById("signupGradeHint");
+    if (!node) return false;
+    if (source === "login") document.getElementById("registerPanel").prepend(node);
+
+    if (!selectedGrade || Number(selectedGrade) === grade) {
+      node.hidden = true;
+      node.textContent = "";
+      if (hint) hint.textContent = `This page is the Grade ${grade} assessment. | Ito ang assessment para sa Grade ${grade}.`;
+      return false;
+    }
+
+    node.innerHTML = `<span class="rma-auth-warning-icon" aria-hidden="true">⚠️</span><span>
+        <strong>Grade level mismatch!</strong><br>
+        You selected <strong>Grade ${selectedGrade}</strong>, but you are on the <strong>Grade ${grade}</strong> ${source === "login" ? "sign-in page" : "sign-up page"}.
+        Continuing will file your account under <strong>Grade ${selectedGrade}</strong>.
+        Please check that you opened the correct grade level, or change your selection to Grade ${grade}.
+        <br><em>Hindi tugma ang antas. Pakisuri ang tamang grade level.</em>
+      </span>`;
+    node.hidden = false;
+    if (hint) hint.textContent = "";
+    return true;
+  }
+
+  function resetGradeConfirmation() {
+    state.gradeConfirmed = false;
+    const button = document.getElementById("registerBtn");
+    if (button) button.querySelector("span").textContent = "Create account | Lumikha ng account";
+  }
+
+  // ============================================
+  // OFFLINE SUBMISSION SYNC
+  // A failed submit must never silently discard a student's answers. The
+  // payload is queued in localStorage by rma-data.js and replayed here as soon
+  // as the connection returns.
+  // ============================================
+
+  function syncProgress() {
+    const pending = window.RMAData?.pendingCount ? window.RMAData.pendingCount() : 0;
+    if (!pending) {
+      window.RMAAuth?.showProgressNotification?.("✓ Progress synced");
+      return Promise.resolve(false);
+    }
+    window.RMAAuth?.showProgressNotification?.("Syncing…");
+    return window.RMAData
+      .flushPending()
+      .then((done) => {
+        window.RMAAuth?.showProgressNotification?.(done ? "✓ Progress synced" : "Still offline — answers saved locally ✓");
+        return done;
+      })
+      .catch(() => false);
+  }
+
   function profileFrom(value) {
     const profile = value.profile || value;
     state.profile = profile;
     state.token = value.token;
     window.RMAAuth.session = { token: state.token, profile };
     sessionStorage.setItem("rma_session", JSON.stringify(window.RMAAuth.session));
+    
+    // Store profile in hidden fields for assessment pages
     document.getElementById("lastName").value = profile.last_name;
     document.getElementById("firstName").value = profile.first_name;
     document.getElementById("midInitial").value = profile.middle_initial || "";
     document.getElementById("studentSection").value = profile.section;
+    
+    // Clear any saved progress when logging in fresh
+    localStorage.removeItem(PROGRESS_KEY);
   }
 
   function continueToAssessment() {
@@ -48,9 +119,9 @@
     if (student) {
       student.studentId = state.profile.student_code;
       student.studentUuid = state.profile.student_id;
-      student.teacherTitle = state.profile.teacher_title;
-      student.teacherFirstName = state.profile.teacher_first_name;
-      student.teacherLastName = state.profile.teacher_last_name;
+      student.teacherTitle = state.profile.teacher_title || "";
+      student.teacherFirstName = state.profile.teacher_first_name || "";
+      student.teacherLastName = state.profile.teacher_last_name || "";
       student.section = state.profile.section;
     }
     document.getElementById("loginOverlay").style.display = "none";
@@ -59,9 +130,114 @@
     window.RMAAuth.bypass = false;
   }
 
-  async function suggestTeachers() {
+  // ============================================
+  // LOCAL STORAGE PROGRESS SAVING
+  // ============================================
+  
+  /**
+   * Save assessment progress to localStorage
+   * Called by assessment pages via window.RMAAuth.saveProgress
+   */
+  function saveProgress(answers, startTime, additionalData = {}) {
+    try {
+      const progress = {
+        answers: answers || {},
+        startTime: startTime || Date.now(),
+        lastSaved: Date.now(),
+        grade: grade,
+        ...additionalData
+      };
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+      
+      // Notify assessment page
+      if (window.saveProgressCallback) {
+        window.saveProgressCallback(true);
+      }
+      return true;
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+      if (window.saveProgressCallback) {
+        window.saveProgressCallback(false);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Load saved progress from localStorage
+   * Called by assessment pages via window.RMAAuth.loadProgress
+   */
+  function loadProgress() {
+    try {
+      const saved = localStorage.getItem(PROGRESS_KEY);
+      if (saved) {
+        const progress = JSON.parse(saved);
+        // Validate it's for this grade
+        if (progress.grade === grade) {
+          return progress;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to load progress:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear saved progress
+   * Called after successful submission
+   */
+  function clearProgress() {
+    localStorage.removeItem(PROGRESS_KEY);
+  }
+
+  /**
+   * Auto-save every 30 seconds if there's an active session
+   */
+  function startAutoSave() {
+    if (window.autoSaveInterval) {
+      clearInterval(window.autoSaveInterval);
+    }
+    
+    window.autoSaveInterval = setInterval(() => {
+      if (state.profile && state.token) {
+        // Check if there are unsaved answers
+        if (window.getCurrentAnswers) {
+          const answers = window.getCurrentAnswers();
+          const startTime = window.getStartTime ? window.getStartTime() : null;
+          if (answers && Object.keys(answers).length > 0) {
+            saveProgress(answers, startTime);
+          }
+        }
+      }
+    }, 30000); // 30 seconds
+  }
+
+  // ============================================
+  // TEACHER NAME SUGGESTIONS
+  // ============================================
+  
+  async function suggestTeacherLastNames() {
+    const input = document.getElementById("teacherLastName");
+    const list = document.getElementById("teacherLastNameSuggestions");
+    const prefix = input.value.trim();
+    if (prefix.length < 2) return;
+    try {
+      const names = await rpc("rma_teacher_suggestions", { p_prefix: prefix });
+      list.replaceChildren(...names.map((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        return option;
+      }));
+    } catch (error) {
+      console.warn("Teacher-name suggestions unavailable:", error.message);
+    }
+  }
+
+  async function suggestTeacherFirstNames() {
     const input = document.getElementById("teacherFirstName");
-    const list = document.getElementById("teacherSuggestions");
+    const list = document.getElementById("teacherFirstNameSuggestions");
     const prefix = input.value.trim();
     if (prefix.length < 2) return;
     try {
@@ -78,63 +254,353 @@
 
   function render() {
     if (!overlay) return;
+    const gradeSelectHtml = [7, 8, 9, 10]
+      .map((g) => `<option value="${g}"${g === grade ? " selected" : ""}>Grade ${g}</option>`)
+      .join("");
     overlay.innerHTML = `
       <section class="rma-auth-card" aria-labelledby="authTitle">
         <a class="rma-auth-home" href="../index.html">← RMA PATHWAYS</a>
         <h2 id="authTitle">Grade ${grade} RMA</h2>
-        <p class="rma-auth-help">Create a student account once, or sign in with your student ID and password.</p>
+        <p class="rma-auth-help">Piliin ang tamang sagot. | Choose the best answer.</p>
         <div class="rma-auth-tabs" role="tablist" aria-label="Student account">
-          <button type="button" class="rma-auth-tab active" data-panel="loginPanel">Log in</button>
-          <button type="button" class="rma-auth-tab" data-panel="registerPanel">First-time sign up</button>
+          <button type="button" class="rma-auth-tab active" data-panel="loginPanel">Log in | Mag-log in</button>
+          <button type="button" class="rma-auth-tab" data-panel="registerPanel">Sign up | Magrehistro</button>
         </div>
         <div id="authMessage" class="rma-auth-message" role="alert" hidden></div>
         <div id="loginPanel" class="rma-auth-panel">
-          <label>Student ID<input id="loginStudentId" autocomplete="username" placeholder="RMA-${grade}-000001" required></label>
-          <label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label>
-          <button type="button" id="startBtn" class="rma-auth-primary">Log in and start</button>
+          <label>
+            <span>Student ID | Student ID Numero</span>
+            <input id="loginStudentId" autocomplete="username" placeholder="RMA-${grade}-000001" required>
+          </label>
+          <label>
+            <span>Password | Password</span>
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password" required>
+          </label>
+          <button type="button" id="startBtn" class="rma-auth-primary">
+            <span>Log in and start | Mag-log in at sumimulan</span>
+          </button>
         </div>
         <div id="registerPanel" class="rma-auth-panel" hidden>
-          <label>Student surname<input id="signupLastName" autocomplete="family-name" maxlength="100" required></label>
-          <label>Student first name<input id="signupFirstName" autocomplete="given-name" maxlength="100" required></label>
-          <label>Middle initial (optional)<input id="signupMiddleInitial" maxlength="5"></label>
-          <label>Section<input id="signupSection" maxlength="60" placeholder="TYPE YOUR SECTION" required></label>
-          <label>Teacher title<select id="teacherTitle"><option value="Mr.">Mr.</option><option value="Ms.">Ms.</option></select></label>
-          <label>Teacher surname<input id="teacherLastName" maxlength="100" autocomplete="off" required></label>
-          <label>Teacher first name<input id="teacherFirstName" maxlength="100" list="teacherSuggestions" autocomplete="off" required><datalist id="teacherSuggestions"></datalist></label>
-          <button type="button" id="registerBtn" class="rma-auth-primary">Create account and generate credentials</button>
-          <p class="rma-auth-note">Keep your generated student ID and password safe. The password is shown only once.</p>
+          <label>
+            <span>Grade level | Antas</span>
+            <select id="signupGrade" required>
+              <option value="">Select your grade level | Pumili ng antas</option>
+              ${gradeSelectHtml}
+            </select>
+            <small class="rma-auth-hint" id="signupGradeHint"></small>
+          </label>
+          <div id="gradeWarning" class="rma-auth-warning" role="alert" hidden></div>
+          <label>
+            <span>Student surname | Apelyido</span>
+            <input id="signupLastName" autocomplete="family-name" maxlength="100" placeholder="DELA CRUZ" required>
+          </label>
+          <label>
+            <span>Student first name | Unang Pangalan</span>
+            <input id="signupFirstName" autocomplete="given-name" maxlength="100" placeholder="JUAN" required>
+          </label>
+          <label>
+            <span>Section | Sekyon</span>
+            <input id="signupSection" maxlength="60" placeholder="TYPE YOUR SECTION | ITYPE ANG IYONG SEKYON" required>
+          </label>
+          <p class="rma-auth-section">MATH TEACHER'S NAME</p>
+          <label>
+            <span>MATH Teacher's title | Titulo</span>
+            <select id="teacherTitle"><option value="Mr.">Mr.</option><option value="Ms.">Ms.</option></select>
+          </label>
+          <label>
+            <span>MATH Teacher's surname | Apelyido ng MATH Teacher</span>
+            <input id="teacherLastName" maxlength="100" autocomplete="off" placeholder="REYES" list="teacherLastNameSuggestions" required>
+            <datalist id="teacherLastNameSuggestions"></datalist>
+          </label>
+          <label>
+            <span>MATH Teacher's first name | Unang Pangalan ng MATH Teacher</span>
+            <input id="teacherFirstName" maxlength="100" autocomplete="off" placeholder="JUAN" list="teacherFirstNameSuggestions" required>
+            <datalist id="teacherFirstNameSuggestions"></datalist>
+          </label>
+          <p class="rma-auth-note">All fields are automatically written in CAPITAL LETTERS. | Awtomatikong naka-CAPS ang lahat ng fields.</p>
+          <p class="rma-auth-note">Keep your generated student ID and password safe. | Ingatan ang iyong Student ID at password.</p>
+          <button type="button" id="registerBtn" class="rma-auth-primary">
+            <span>Create account | Lumikha ng account</span>
+          </button>
         </div>
         <div id="credentialsPanel" class="rma-auth-panel" hidden>
-          <h3>Account created — save these credentials</h3>
-          <p>Your password will not be shown again.</p>
-          <dl><dt>Student ID</dt><dd id="generatedStudentId"></dd><dt>Generated password</dt><dd id="generatedStudentPassword"></dd></dl>
-          <button type="button" id="continueBtn" class="rma-auth-primary">Continue to practice</button>
+          <h3>Account created | Account napagawa na</h3>
+          <p>Your password will not be shown again. | Hindi na muli ipapakita ang password.</p>
+          <dl>
+            <dt>Student ID | Student ID</dt>
+            <dd id="generatedStudentId"></dd>
+            <dt>Generated password | Password na nagawa</dt>
+            <dd id="generatedStudentPassword"></dd>
+          </dl>
+          <button type="button" id="continueBtn" class="rma-auth-primary">
+            <span>Continue to practice | Magpatuloy sa pagsasanay</span>
+          </button>
         </div>
-        <input type="hidden" id="lastName"><input type="hidden" id="firstName"><input type="hidden" id="midInitial"><input type="hidden" id="studentSection">
+        <input type="hidden" id="lastName">
+        <input type="hidden" id="firstName">
+        <input type="hidden" id="midInitial">
+        <input type="hidden" id="studentSection">
       </section>`;
     const style = document.createElement("style");
     style.textContent = `
-      #loginOverlay { z-index: 10000; overflow-y:auto; padding:20px; }
-      .rma-auth-card { width:min(470px,100%); max-height:calc(100vh - 40px); overflow:auto; margin:auto; padding:28px; background:#fff; color:#24191a; border-radius:18px; box-shadow:0 22px 70px #0004; font:15px/1.45 system-ui,sans-serif; }
-      .rma-auth-card h2 { margin:8px 0; font-size:1.7rem; color:var(--primary,#521018); }
-      .rma-auth-home { color:var(--primary,#521018); font-size:.8rem; font-weight:700; text-decoration:none; }
-      .rma-auth-help,.rma-auth-note { color:#71666a; font-size:.88rem; }
-      .rma-auth-tabs { display:flex; gap:8px; margin:20px 0; }
-      .rma-auth-tab { flex:1; padding:10px; border:1px solid #ddd; border-radius:9px; background:#f7f5f1; cursor:pointer; font-weight:700; }
-      .rma-auth-tab.active { color:#fff; background:var(--primary,#521018); border-color:var(--primary,#521018); }
-      .rma-auth-panel { display:grid; gap:12px; }
-      .rma-auth-panel[hidden] { display:none; }
-      .rma-auth-panel label { display:grid; gap:5px; font-size:.83rem; font-weight:700; }
-      .rma-auth-panel input,.rma-auth-panel select { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #d8d1cc; border-radius:8px; font:inherit; }
-      .rma-auth-primary { width:100%; margin-top:4px; padding:12px 16px; border:0; border-radius:9px; color:#fff; background:var(--primary,#521018); font:700 1rem system-ui,sans-serif; cursor:pointer; }
-      .rma-auth-primary:disabled { opacity:.65; cursor:wait; }
-      .rma-auth-message { margin:12px 0; padding:10px 12px; color:#7a1818; background:#fff0ee; border-radius:8px; font-size:.88rem; }
-      .rma-auth-message[data-error="false"] { color:#155b30; background:#edf9f0; }
-      .rma-auth-panel dl { display:grid; grid-template-columns:1fr; gap:4px; padding:12px; background:#f8f4e8; border-radius:8px; }
-      .rma-auth-panel dt { color:#655; font-size:.75rem; font-weight:700; }
-      .rma-auth-panel dd { margin:0 0 8px; overflow-wrap:anywhere; font:700 1.1rem ui-monospace,monospace; }
+      #loginOverlay { 
+        z-index: 10000; 
+        overflow-y:auto; 
+        padding:20px; 
+        background: rgba(0,0,0,0.5);
+      }
+      .rma-auth-card { 
+        width:min(470px,100%); 
+        max-height:calc(100vh - 40px); 
+        overflow:auto; 
+        margin:auto; 
+        padding:28px; 
+        background:#fff; 
+        color:#24191a; 
+        border-radius:18px; 
+        box-shadow:0 22px 70px #0004; 
+        font:15px/1.45 system-ui,sans-serif; 
+      }
+      .rma-auth-card h2 { 
+        margin:8px 0; 
+        font-size:1.7rem; 
+        color:var(--primary,#521018); 
+      }
+      .rma-auth-home { 
+        color:var(--primary,#521018); 
+        font-size:.8rem; 
+        font-weight:700; 
+        text-decoration:none; 
+      }
+      .rma-auth-help,.rma-auth-note { 
+        color:#71666a; 
+        font-size:.88rem; 
+      }
+      .rma-auth-tabs { 
+        display:flex; 
+        gap:8px; 
+        margin:20px 0; 
+        flex-wrap: wrap;
+      }
+      .rma-auth-tab { 
+        flex:1; 
+        min-width: 120px;
+        padding:10px; 
+        border:1px solid #ddd; 
+        border-radius:9px; 
+        background:#f7f5f1; 
+        cursor:pointer; 
+        font-weight:700;
+        font-size: 0.85rem;
+      }
+      .rma-auth-tab.active { 
+        color:#fff; 
+        background:var(--primary,#521018); 
+        border-color:var(--primary,#521018); 
+      }
+      .rma-auth-panel { 
+        display:grid; 
+        gap:12px; 
+      }
+      .rma-auth-panel[hidden] { 
+        display:none; 
+      }
+      .rma-auth-panel label { 
+        display:grid; 
+        gap:5px; 
+        font-size:.83rem; 
+        font-weight:700; 
+      }
+      .rma-auth-panel span { 
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+      .rma-auth-panel input,.rma-auth-panel select { 
+        width:100%; 
+        box-sizing:border-box; 
+        padding:11px 12px; 
+        border:1px solid #d8d1cc; 
+        border-radius:8px; 
+        font:inherit; 
+        /* ALL TEXT IN UPPERCASE */
+        text-transform: uppercase;
+      }
+      .rma-auth-primary { 
+        width:100%; 
+        margin-top:4px; 
+        padding:12px 16px; 
+        border:0; 
+        border-radius:9px; 
+        color:#fff; 
+        background:var(--primary,#521018); 
+        font:700 1rem system-ui,sans-serif; 
+        cursor:pointer; 
+      }
+      .rma-auth-primary:disabled { 
+        opacity:.65; 
+        cursor:wait; 
+      }
+      .rma-auth-message { 
+        margin:12px 0; 
+        padding:10px 12px; 
+        color:#7a1818; 
+        background:#fff0ee; 
+        border-radius:8px; 
+        font-size:.88rem; 
+      }
+      .rma-auth-message[data-error="false"] { 
+        color:#155b30; 
+        background:#edf9f0; 
+      } 
+      .rma-auth-warning { 
+        display:flex; 
+        gap:9px; 
+        align-items:flex-start; 
+        padding:11px 13px; 
+        color:#7c2d12; 
+        background:#fff4e5; 
+        border:1px solid #f0b47a; 
+        border-left:4px solid #c2410c; 
+        border-radius:8px; 
+        font-size:.86rem; 
+        line-height:1.45; 
+      } 
+      .rma-auth-warning[hidden] { 
+        display:none; 
+      } 
+      .rma-auth-warning .rma-auth-warning-icon { 
+        flex:0 0 auto; 
+        font-size:1rem; 
+      } 
+      .rma-auth-hint { 
+        color:#71666a; 
+        font-weight:400; 
+        font-size:.76rem; 
+      } 
+      .rma-auth-section { 
+        margin:6px 0 -2px; 
+        padding:6px 10px; 
+        color:#fff; 
+        background:var(--primary,#521018); 
+        border-radius:6px; 
+        font-size:.74rem; 
+        font-weight:800; 
+        letter-spacing:.10em; 
+        text-align:center; 
+      }
+      .rma-auth-panel dl { 
+        display:grid; 
+        grid-template-columns:1fr; 
+        gap:4px; 
+        padding:12px; 
+        background:#f8f4e8; 
+        border-radius:8px; 
+      }
+      .rma-auth-panel dt { 
+        color:#655; 
+        font-size:.75rem; 
+        font-weight:700; 
+      }
+      .rma-auth-panel dd { 
+        margin:0 0 8px; 
+        overflow-wrap:anywhere; 
+        font:700 1.1rem ui-monospace,monospace; 
+      }
+      
+      /* Mobile Optimization - Phase 1 */
+      @media (max-width: 412px) {
+        .rma-auth-card { 
+          width: min(100% - 40px, 470px);
+          padding: 20px;
+        }
+        .rma-auth-panel label { 
+          font-size: 0.85rem;
+        }
+        .rma-auth-primary { 
+          font-size: 0.95rem;
+        }
+      }
+      
+      @media (max-width: 375px) {
+        .rma-auth-card { 
+          padding: 16px;
+        }
+        .rma-auth-tab { 
+          padding: 8px;
+          font-size: 0.75rem;
+        }
+      }
+      
+      @media (max-width: 320px) {
+        .rma-auth-card { 
+          padding: 14px;
+        }
+        .rma-auth-panel label { 
+          font-size: 0.8rem;
+        }
+        .rma-auth-panel input { 
+          padding: 10px 10px;
+        }
+        .rma-auth-primary { 
+          padding: 10px 12px;
+          font-size: 0.9rem;
+        }
+        .rma-auth-help,.rma-auth-note { 
+          font-size: 0.8rem;
+        }
+      }
+      
+      /* Progress saving notification */
+      .rma-progress-notification {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 20px;
+        background: #155b30;
+        color: white;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        z-index: 10001;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideUp 0.3s ease-out;
+      }
+      
+      .rma-progress-notification.hidden {
+        display: none;
+      }
+      
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+      
+      /* Auto-capitalize all text inputs */
+      input:not([type="password"]) {
+        text-transform: uppercase;
+      }
     `;
     document.head.appendChild(style);
+    
+    // Add progress notification element
+    const notification = document.createElement('div');
+    notification.id = 'rmaProgressNotification';
+    notification.className = 'rma-progress-notification hidden';
+    notification.textContent = 'Answer saved locally ✓';
+    document.body.appendChild(notification);
+    
+    // Expose save/load to assessment pages
+    window.RMAAuth.saveProgress = saveProgress;
+    window.RMAAuth.loadProgress = loadProgress;
+    window.RMAAuth.clearProgress = clearProgress;
+    window.RMAAuth.syncProgress = syncProgress;
+    window.RMAAuth.showProgressNotification = function() {
+      const notif = document.getElementById('rmaProgressNotification');
+      if (notif) {
+        notif.classList.remove('hidden');
+        setTimeout(() => notif.classList.add('hidden'), 2000);
+      }
+    };
   }
 
   window.RMAAuth = {
@@ -146,19 +612,46 @@
       this.session = null;
       state.profile = null;
       state.token = null;
-    }
+    },
+    saveProgress,
+    loadProgress,
+    clearProgress
   };
 
   render();
   if (!overlay) return;
 
+  // Show the page-grade hint straight away, and clear the warning if a student
+  // picks the grade that matches the page they opened.
+  showGradeWarning(grade, "register");
+
+  overlay.addEventListener("change", (event) => {
+    if (event.target.id === "signupGrade") {
+      showGradeWarning(event.target.value, "register");
+      resetGradeConfirmation();
+    }
+  });
+
   overlay.addEventListener("input", (event) => {
-    if (event.target.id === "signupLastName" || event.target.id === "signupSection" || event.target.id === "teacherLastName") {
+    // AUTO-UPPERCASE ALL TEXT FIELDS
+    const textInputs = ['signupLastName', 'signupFirstName', 'signupSection', 
+                       'teacherLastName', 'teacherFirstName', 'loginStudentId'];
+    
+    if (textInputs.includes(event.target.id)) {
       const start = event.target.selectionStart;
       event.target.value = event.target.value.toLocaleUpperCase();
       event.target.setSelectionRange(start, start);
+      resetGradeConfirmation();
     }
-    if (event.target.id === "teacherFirstName") suggestTeachers();
+    
+    if (event.target.id === "loginStudentId") {
+      const idGrade = (event.target.value.trim().toUpperCase().match(/^RMA-(\d+)-/) || [])[1];
+      showGradeWarning(idGrade, "login");
+    }
+
+    // Trigger suggestions
+    if (event.target.id === "teacherLastName") suggestTeacherLastNames();
+    if (event.target.id === "teacherFirstName") suggestTeacherFirstNames();
   });
 
   overlay.addEventListener("click", async (event) => {
@@ -166,12 +659,18 @@
     if (tab) {
       overlay.querySelectorAll(".rma-auth-panel").forEach((panel) => panel.hidden = panel.id !== tab.dataset.panel);
       overlay.querySelectorAll(".rma-auth-tab").forEach((button) => button.classList.toggle("active", button === tab));
+      // Keep the grade warning visible on whichever panel is open.
+      const warning = document.getElementById("gradeWarning");
+      const activePanel = document.getElementById(tab.dataset.panel);
+      if (warning && activePanel && !activePanel.contains(warning)) activePanel.prepend(warning);
       document.getElementById("authMessage").hidden = true;
       return;
     }
 
     if (event.target.id === "continueBtn") {
       continueToAssessment();
+      // Start auto-save when assessment starts
+      startAutoSave();
       return;
     }
     if (event.target.id !== "registerBtn" && event.target.id !== "startBtn") return;
@@ -185,17 +684,44 @@
     button.disabled = true;
     try {
       if (button.id === "registerBtn") {
+        // GET ALL FIELDS - Teacher name is REQUIRED for mastery card
+        const selectedGrade = document.getElementById("signupGrade").value;
+        const lastName = document.getElementById("signupLastName").value.trim();
+        const firstName = document.getElementById("signupFirstName").value.trim();
+        const section = document.getElementById("signupSection").value.trim();
+        const teacherTitle = document.getElementById("teacherTitle").value;
+        const teacherLastName = document.getElementById("teacherLastName").value.trim();
+        const teacherFirstName = document.getElementById("teacherFirstName").value.trim();
+
+        // Validate - ALL FIELDS REQUIRED
+        if (!selectedGrade) {
+          throw new Error("Please select your grade level. | Pakipili ang iyong antas.");
+        }
+        if (!lastName || !firstName || !section || !teacherLastName || !teacherFirstName) {
+          throw new Error("Please complete ALL required fields.");
+        }
+
+        // Grade level mismatch: warn once, then require a deliberate second tap.
+        if (showGradeWarning(selectedGrade, "register") && !state.gradeConfirmed) {
+          state.gradeConfirmed = true;
+          button.querySelector("span").textContent =
+            `Tap again to create a Grade ${selectedGrade} account | Pindutin muli para sa Grade ${selectedGrade}`;
+          button.disabled = false;
+          return;
+        }
+
+        // All values already in uppercase due to input event
         const fields = {
-          p_grade: grade,
-          p_last_name: document.getElementById("signupLastName").value.trim().toLocaleUpperCase(),
-          p_first_name: document.getElementById("signupFirstName").value.trim(),
-          p_middle_initial: document.getElementById("signupMiddleInitial").value.trim().toLocaleUpperCase(),
-          p_section: document.getElementById("signupSection").value.trim().toLocaleUpperCase(),
-          p_teacher_title: document.getElementById("teacherTitle").value,
-          p_teacher_last_name: document.getElementById("teacherLastName").value.trim().toLocaleUpperCase(),
-          p_teacher_first_name: document.getElementById("teacherFirstName").value.trim()
+          p_grade: Number(selectedGrade),
+          p_last_name: lastName.toLocaleUpperCase(),
+          p_first_name: firstName.toLocaleUpperCase(),
+          p_middle_initial: "",
+          p_section: section.toLocaleUpperCase(),
+          p_teacher_title: teacherTitle,
+          p_teacher_last_name: teacherLastName.toLocaleUpperCase(),
+          p_teacher_first_name: teacherFirstName.toLocaleUpperCase()
         };
-        if (Object.values(fields).some((value, index) => index > 0 && !value && index !== 3)) throw new Error("Complete all required fields before signing up.");
+        
         const result = await rpc("rma_student_register", fields);
         profileFrom(result);
         document.getElementById("generatedStudentId").textContent = result.student_code;
@@ -205,14 +731,25 @@
         document.getElementById("credentialsPanel").hidden = false;
         overlay.querySelectorAll(".rma-auth-tab").forEach((item) => item.hidden = true);
         message("Account created. Write down both credentials before continuing.", false);
+        
+        // Start auto-save for when they start assessment
+        startAutoSave();
       } else {
+        const studentId = document.getElementById("loginStudentId").value.trim().toLocaleUpperCase();
+        // The student ID encodes the grade (RMA-7-000001). Warn on a mismatch.
+        const idGrade = (studentId.match(/^RMA-(\d+)-/) || [])[1];
+        if (idGrade) showGradeWarning(idGrade, "login");
+
         const result = await rpc("rma_student_login", {
-          p_student_code: document.getElementById("loginStudentId").value.trim().toLocaleUpperCase(),
+          p_student_code: studentId,
           p_password: document.getElementById("loginPassword").value,
-          p_grade: grade
+          p_grade: idGrade || grade
         });
         profileFrom(result);
         continueToAssessment();
+        
+        // Start auto-save for returning students
+        startAutoSave();
       }
     } catch (error) {
       console.error("Student account error:", error);

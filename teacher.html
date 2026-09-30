@@ -23,6 +23,7 @@
     .filters { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:760px; margin-top:22px; }
     .summary { display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:12px; margin:20px 0; }
     .metric { padding:15px; border-radius:12px; background:#f8f4e8; } .metric b { display:block; color:var(--wine); font-size:1.55rem; }
+    .metric span { font-size: 0.85rem; color: var(--muted); }
     .scroll { overflow:auto; } table { width:100%; border-collapse:collapse; font-size:.88rem; } th,td { padding:10px 11px; border-bottom:1px solid #eee8e3; text-align:left; white-space:nowrap; } th { color:var(--wine); background:#faf7f2; }
     .bar { width:130px; height:9px; overflow:hidden; border-radius:9px; background:#eee; } .bar i { display:block; height:100%; background:#5c9b70; }
     .report-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:16px 0; }
@@ -37,11 +38,273 @@
     .status-track { color:#854d0e; background:#fef3c7; }
     .status-support { color:#991b1b; background:#fee2e2; }
     .status-pending { color:#475569; background:#e2e8f0; }
+    .status-not-taken { color:#475569; background:#e2e8f0; }
+    .status-incomplete { color:#854d0e; background:#fef3c7; }
+    .status-emerging { color:#c2410c; background:#fef3c7; }
+    .status-needs-support { color:#991b1b; background:#fee2e2; }
     .error { padding:10px; border-radius:8px; background:#fff0ee; color:#7a1818; } .success { padding:10px; border-radius:8px; background:#edf9f0; color:#155b30; }
     .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     [hidden] { display:none !important; }
-    @media(max-width:760px) { .report-grid { grid-template-columns:1fr; } }
-    @media(max-width:650px) { .filters,.summary { grid-template-columns:1fr; } .card { padding:17px; } header { padding:16px; } }
+    
+    /* Question Mapping Panel Styles */
+    .question-mapping-panel {
+      margin-top: 16px;
+    }
+    .qm-filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .qm-filter-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .qm-filter-group label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .qm-question-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .question-card {
+      padding: 16px;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .question-card:hover {
+      border-color: var(--gold);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+    .question-id {
+      font-weight: 800;
+      color: var(--wine);
+      font-size: 0.95rem;
+      background: #f8f4e8;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .question-type {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .type-rma { background: #dcfce7; color: #14532d; }
+    .type-bank { background: #dbeafe; color: #1d4ed8; }
+    .type-aligned { background: #fef3c7; color: #92400e; }
+    .mastery-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .mastery-high { background: #dcfce7; color: #14532d; }
+    .mastery-medium { background: #fef3c7; color: #92400e; }
+    .mastery-low { background: #fee2e2; color: #991b1b; }
+    .question-text {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 12px;
+      color: var(--ink);
+    }
+    .question-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .question-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .feedback-section {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f8f4e8;
+      border-radius: 8px;
+      border-left: 4px solid var(--gold);
+    }
+    .feedback-label {
+      font-weight: 700;
+      color: var(--wine);
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+    .feedback-text {
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+    .question-options {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f4e8;
+      border-radius: 8px;
+      border-left: 4px solid var(--gold);
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      margin: 4px 0;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+    .option-item.correct-option {
+      background: #dcfce7;
+      border-color: #155b30;
+    }
+    .option-label {
+      font-weight: 700;
+      color: var(--wine);
+      min-width: 20px;
+    }
+    .option-text {
+      flex: 1;
+    }
+    .correct-marker {
+      color: #155b30;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .question-answer {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #dcfce7;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      border-left: 3px solid #155b30;
+    }
+    .aligned-options {
+      margin: 8px 0;
+      padding: 8px;
+      background: #f8f4e8;
+      border-radius: 6px;
+    }
+    .aligned-answer {
+      margin-top: 6px;
+      padding: 6px 10px;
+      background: #dcfce7;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      border-left: 3px solid #155b30;
+    }
+    .aligned-questions-list {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+    }
+    .aligned-question-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f1eb;
+    }
+    .aligned-question-item:last-child {
+      border-bottom: none;
+    }
+    .aligned-q-text {
+      font-size: 0.9rem;
+      margin-bottom: 4px;
+    }
+    .toggle-aligned {
+      background: none;
+      border: none;
+      color: var(--wine);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .toggle-aligned:before {
+      content: "▶ ";
+      font-size: 0.8rem;
+    }
+    .toggle-aligned.expanded:before {
+      content: "▼ ";
+    }
+    .search-box {
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 16px;
+    }
+
+    /* Master Map Panel */
+    .mm-summary { display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:12px; margin:0 0 18px; }
+    .mm-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:14px; }
+    .mm-filters label { display:grid; gap:5px; margin:0; font-size:.78rem; letter-spacing:.02em; text-transform:uppercase; color:var(--muted); }
+    .mm-filters select, .mm-filters input { min-width:170px; padding:9px 10px; }
+    .mm-count { margin:0 0 12px; font-size:.85rem; color:var(--muted); }
+    .mm-table { width:100%; border-collapse:collapse; font-size:.86rem; }
+    .mm-table th { position:sticky; top:0; z-index:1; white-space:nowrap; }
+    .mm-table td { white-space:normal; vertical-align:top; line-height:1.5; }
+    .mm-table td.mm-num, .mm-table td.mm-local { white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .mm-scroll { max-height:640px; overflow:auto; border:1px solid var(--line); border-radius:12px; }
+    .tag { display:inline-block; padding:2px 9px; border-radius:999px; font-size:.72rem; font-weight:800; letter-spacing:.02em; white-space:nowrap; }
+    .tag-grade { color:#5b21b6; background:#ede9fe; }
+    .tag-topic { color:#0f5132; background:#d1e7dd; }
+    .tag-cog { color:#7c2d12; background:#ffe4d6; }
+    .tag-type-original { color:#14532d; background:#dcfce7; }
+    .tag-type-aligned { color:#92400e; background:#fef3c7; }
+    .mm-item-ref { font-size:.74rem; color:var(--muted); white-space:nowrap; }
+    .mm-topic-counts { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; margin-top:6px; }
+    .mm-topic-count { padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#faf7f2; font-size:.82rem; }
+    .mm-topic-count strong { color:var(--wine); }
+    .mm-empty { padding:24px; text-align:center; color:var(--muted); }
+    .active-tab { background:var(--wine) !important; color:#fff !important; }
+    .mm-hint { margin:0 0 14px; }
+    details.mm-blueprint { margin-top:16px; }
+    details.mm-blueprint > summary { cursor:pointer; color:var(--wine); font-weight:800; }
+    
+    /* Level Distribution */
+    .level-distribution { display: grid; gap: 8px; margin-top: 8px; }
+    .level-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: white; border-radius: 8px; border: 1px solid #eee; }
+    .level-icon { font-size: 1.2rem; }
+    .level-distribution .level-item strong { color: var(--wine); }
+    
+    /* Mobile Optimization */
+    @media(max-width:760px) { 
+      .report-grid { grid-template-columns:1fr; } 
+      .summary { grid-template-columns:repeat(2,1fr); }
+      .mm-summary { grid-template-columns:repeat(2,1fr); }
+      .question-card { padding: 12px; }
+      .question-header { flex-direction: column; align-items: flex-start; }
+    }
+    @media(max-width:650px) { 
+      .filters,.summary { grid-template-columns:1fr; } 
+      .mm-summary { grid-template-columns:1fr; }
+      .card { padding:17px; } 
+      header { padding:16px; } 
+      .qm-filters { flex-direction: column; align-items: stretch; }
+      .mm-filters { flex-direction: column; align-items: stretch; }
+      .mm-filters select, .mm-filters input { min-width:0; width:100%; }
+    }
+    @media(max-width:480px) {
+      .summary { grid-template-columns:1fr; }
+      .student-card-priority { padding: 12px; }
+      .student-score { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .filters { grid-template-columns: 1fr; }
+      .question-meta { flex-direction: column; gap: 6px; }
+    }
   </style>
 </head>
 <body>
@@ -65,7 +328,7 @@
     </section>
     <section id="dashboard" hidden>
       <div class="card">
-        <div class="toolbar"><div><h2>Grade-level mastery dashboard</h2><p>Section progress and item mastery use each registered student’s latest attempt.</p></div><button id="teacherLogout" class="secondary">Sign out</button></div>
+        <div class="toolbar"><div><h2>Grade-level mastery dashboard</h2><p>Section progress and item mastery use each registered student's latest attempt.</p></div><button id="teacherLogout" class="secondary">Sign out</button></div>
         <div id="dashboardMessage" role="status"></div>
         <div class="filters">
           <label>Select grade level<select id="gradeFilter" required><option value="">Choose a grade level</option></select></label>
@@ -73,27 +336,142 @@
         </div>
       </div>
       <div id="reportCard" hidden>
-        <div id="summary" class="summary"></div>
-        <div class="report-grid">
-          <section class="card"><h2 class="report-heading">Section completion</h2><p class="report-note">Share of registered students with a submitted attempt.</p><div id="completionChart" class="chart-wrap"></div></section>
-          <section class="card"><h2 class="report-heading">Section average score</h2><p class="report-note">Mean of latest submitted scores for students in each section.</p><div id="scoreChart" class="chart-wrap"></div></section>
+        
+        <!-- Main Dashboard Tabs -->
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="toolbar" style="margin-bottom: 0;">
+            <button class="secondary" id="tabOverview" onclick="showTab('overview')" style="flex: 1;">📊 Overview</button>
+            <button class="secondary" id="tabQuestionMap" onclick="showTab('questionMap')" style="flex: 1;">📚 Question Map</button>
+            <button class="secondary" id="tabMasterMap" onclick="showTab('masterMap')" style="flex: 1;">🗺️ Master Map</button>
+          </div>
         </div>
-        <div class="report-grid">
-          <section class="card"><h2 class="report-heading">Whole-grade question extremes</h2><p class="report-note">Highest and lowest mastery across students in the selected grade.</p><div id="gradeHighlights" class="report-grid"></div></section>
-          <section class="card"><h2 class="report-heading">Most / least mastered by section</h2><p class="report-note">Extremes are calculated from the latest attempt for each student.</p><div class="scroll"><table><thead><tr><th>Section</th><th>Least mastered</th><th>Rate</th><th>Most mastered</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div></section>
+        
+        <!-- Overview Tab -->
+        <div id="tabOverviewContent">
+          <div id="summary" class="summary"></div>
+          <div class="report-grid">
+            <section class="card"><h2 class="report-heading">Section completion</h2><p class="report-note">Share of registered students with a submitted attempt.</p><div id="completionChart" class="chart-wrap"></div></section>
+            <section class="card"><h2 class="report-heading">Section average score</h2><p class="report-note">Mean of latest submitted scores for students in each section.</p><div id="scoreChart" class="chart-wrap"></div></section>
+          </div>
+          <div class="report-grid">
+            <section class="card"><h2 class="report-heading">Whole-grade question extremes</h2><p class="report-note">Highest and lowest mastery across students in the selected grade.</p><div id="gradeHighlights" class="report-grid"></div></section>
+            <section class="card"><h2 class="report-heading">Most / least mastered by section</h2><p class="report-note">Extremes are calculated from the latest attempt for each student.</p><div class="scroll"><table><thead><tr><th>Section</th><th>Least mastered</th><th>Rate</th><th>Most mastered</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div></section>
+          </div>
+          
+          <!-- PHASE 1: Completion Status Card -->
+          <section class="card" id="completionStatusCard" style="margin-bottom:16px">
+            <h2 class="report-heading">Assessment Completion</h2>
+            <p class="report-note">Track which students have completed the assessment.</p>
+            <div id="completionStatusContainer"></div>
+          </section>
+          
+          <!-- PHASE 1: Who Needs Help Card -->
+          <section class="card" id="priorityLearnersCard" style="margin-bottom:16px">
+            <h2 class="report-heading">Who Needs Help?</h2>
+            <p class="report-note">Students requiring immediate attention and intervention.</p>
+            <div id="priorityLearnersContainer"></div>
+          </section>
+          
+          <section class="card" style="margin-bottom:16px">
+            <h2 class="report-heading">Question mastery details</h2><p id="questionScope" class="report-note"></p>
+            <div class="scroll"><table><thead><tr><th>Question</th><th>Correct</th><th>Responses</th><th>Mastery</th><th>Rate</th></tr></thead><tbody id="masteryRows"></tbody></table></div>
+          </section>
+          <section class="card">
+            <h2 class="report-heading">Student status</h2><p id="studentScope" class="report-note"></p>
+            <div class="scroll"><table><thead><tr><th>Student ID</th><th>Name</th><th>Teacher entered</th><th>Latest score</th><th>Status</th><th>Latest attempt</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+          </section>
         </div>
-        <section class="card" style="margin-bottom:16px">
-          <h2 class="report-heading">Question mastery details</h2><p id="questionScope" class="report-note"></p>
-          <div class="scroll"><table><thead><tr><th>Question</th><th>Correct</th><th>Responses</th><th>Mastery</th><th>Rate</th></tr></thead><tbody id="masteryRows"></tbody></table></div>
-        </section>
-        <section class="card">
-          <h2 class="report-heading">Student status</h2><p id="studentScope" class="report-note"></p>
-          <div class="scroll"><table><thead><tr><th>Student ID</th><th>Name</th><th>Teacher entered</th><th>Latest score</th><th>Status</th><th>Latest attempt</th></tr></thead><tbody id="studentRows"></tbody></table></div>
-        </section>
+        
+        <!-- Question Map Tab -->
+        <div id="tabQuestionMapContent" hidden>
+          <div class="card question-mapping-panel">
+            <h2 class="report-heading">📚 Complete Question Map & Aligned Items</h2>
+            <p class="report-note">View all RMA original questions, bank questions, and aligned Filipino scenario questions with explanations.</p>
+            
+            <!-- Question Search and Filters -->
+            <div class="qm-filters">
+              <div class="qm-filter-group">
+                <label>Search:</label>
+                <input type="text" id="questionSearch" class="search-box" placeholder="Search questions..." oninput="filterQuestions()">
+              </div>
+              <div class="qm-filter-group">
+                <label>Type:</label>
+                <select id="questionTypeFilter" onchange="filterQuestions()">
+                  <option value="all">All Types</option>
+                  <option value="rma">RMA Original</option>
+                  <option value="bank">Bank Questions</option>
+                  <option value="aligned">Aligned Filipino Scenarios</option>
+                </select>
+              </div>
+              <div class="qm-filter-group">
+                <label>Mastery:</label>
+                <select id="masteryFilter" onchange="filterQuestions()">
+                  <option value="all">All Levels</option>
+                  <option value="high">High (&gt;80%)</option>
+                  <option value="medium">Medium (60-80%)</option>
+                  <option value="low">Low (&lt;60%)</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Questions Grid -->
+            <div id="questionsGrid" class="qm-question-grid"></div>
+          </div>
+        </div>
+        
+        <!-- Master Map Tab -->
+        <div id="tabMasterMapContent" hidden>
+          <div class="card question-mapping-panel">
+            <h2 class="report-heading">🗺️ Master Map of Questions (Grades 7–10)</h2>
+            <p class="report-note" id="masterMapSource">Every RMA question across Grades 7–10, tagged by grade level, topic / mathematical objective, and cognitive process.</p>
+            
+            <div class="mm-summary" id="masterMapSummary"></div>
+            
+            <div class="mm-filters">
+              <label>Grade level<select id="mmGrade"><option value="all">All grades (7–10)</option></select></label>
+              <label>Topic<select id="mmTopic"><option value="all">All topics</option></select></label>
+              <label>Cognitive process<select id="mmCognitive"><option value="all">All processes</option></select></label>
+              <label>Source type<select id="mmType">
+                <option value="all">All sources</option>
+                <option value="RMA Original">RMA Original</option>
+                <option value="RMA Aligned">RMA Aligned</option>
+              </select></label>
+              <label>Search<input type="text" id="mmSearch" placeholder="Search question text or RMA item #"></label>
+              <button class="secondary" id="mmReset" type="button">Reset filters</button>
+            </div>
+            
+            <p class="mm-count" id="masterMapCount"></p>
+            
+            <div class="mm-scroll">
+              <table class="mm-table">
+                <thead><tr>
+                  <th>Grade</th><th>#</th><th>RMA Item</th><th>Topic</th><th>Process</th><th>Source</th><th>Question</th>
+                </tr></thead>
+                <tbody id="masterMapRows"></tbody>
+              </table>
+            </div>
+            
+            <details class="mm-blueprint">
+              <summary>47-item RMA blueprint (topic &amp; cognitive process per global item)</summary>
+              <div class="mm-scroll" style="margin-top:12px;">
+                <table class="mm-table">
+                  <thead><tr><th>Item</th><th>Topic</th><th>Process</th><th>Applies to</th><th>Local #</th><th>Question</th></tr></thead>
+                  <tbody id="blueprintRows"></tbody>
+                </table>
+              </div>
+            </details>
+            
+            <h3 class="report-heading" style="margin-top:22px;">Questions per topic</h3>
+            <p class="report-note">Counts for the selected grade level and source type.</p>
+            <div class="mm-topic-counts" id="masterMapTopicCounts"></div>
+          </div>
+        </div>
+        
       </div>
     </section>
   </main>
   <script src="supabase-config.js"></script>
+  <script src="rma-master-map.js"></script>
   <script src="teacher-portal.js"></script>
 </body>
 </html>
