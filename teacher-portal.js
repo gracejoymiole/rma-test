@@ -13,6 +13,7 @@
   let scoreBands = [];
   let currentGrade = null;
   let currentSection = null;
+  let questionMastery = new Map();
 
   // ============================================
   // QUESTION MAP DATA - RMA Original, Bank, and Aligned Filipino Scenarios
@@ -2735,38 +2736,44 @@
   }
 
   /**
-   * Update question mastery rates from actual student data
+   * Real per-question accuracy, built from submitted attempts.
+   *
+   * rma_data stores one bit per RMA item, so item N maps to
+   * RMA-Q<grade>-<N, zero-padded to two digits>. Bank and aligned items are
+   * not recorded per-item in a form that maps back to their ids (bank_data
+   * uses bare item numbers, and aligned items are never submitted), so they
+   * carry no mastery at all. They are left without a mastery value rather than
+   * reported as 0%, which is what made the "High" and "Medium" filters return
+   * an empty list while "Low" returned everything.
    */
-  function updateQuestionMasteryFromData() {
-    if (!rows || rows.length === 0) return;
-    
-    const allQuestions = getAllQuestions();
-    
-    // Process each row to update mastery rates
-    rows.forEach(row => {
-      if (row.rma_data) {
-        const rmaItems = String(row.rma_data).split('|');
-        rmaItems.forEach((item, index) => {
-          if (item === '0' || item === '1') {
-            const questionId = `RMA-Q${currentGrade}-${index + 1}`;
-            const question = allQuestions.find(q => q.id === questionId);
-            // This would update mastery in actual implementation
-          }
+  function computeQuestionMastery() {
+    const grade = Number(currentGrade || 10);
+    const totals = new Map();
+
+    rows
+      .filter((row) => Number(row.grade) === grade
+        && row.score !== null && row.score !== undefined
+        && row.is_complete !== false)
+      .forEach((row) => {
+        String(row.rma_data || "").split("|").forEach((answer, index) => {
+          if (answer !== "0" && answer !== "1") return;
+          const id = `RMA-Q${grade}-${String(index + 1).padStart(2, "0")}`;
+          const total = totals.get(id) || { correct: 0, count: 0 };
+          total.count += 1;
+          if (answer === "1") total.correct += 1;
+          totals.set(id, total);
         });
-      }
-      
-      if (row.bank_data) {
-        const bankItems = String(row.bank_data).split('|');
-        bankItems.forEach(item => {
-          const match = item.match(/^([^:]+):([01])$/);
-          if (match) {
-            const bankQuestionId = match[1];
-            const isCorrect = match[2] === '1';
-            // Update bank question mastery
-          }
-        });
-      }
-    });
+      });
+
+    questionMastery = new Map([...totals.entries()].map(([id, total]) => [id, {
+      rate: Math.round((total.correct / total.count) * 100),
+      correct: total.correct,
+      count: total.count
+    }]));
+  }
+
+  function masteryFor(question) {
+    return questionMastery.get(question.id) || null;
   }
 
   /**
@@ -2778,14 +2785,16 @@
     
     if (!container) return;
     
-    // Update mastery rates from actual data if available
-    updateQuestionMasteryFromData();
+    computeQuestionMastery();
     
     container.innerHTML = questions.map(question => {
-      const masteryClass = question.masteryRate >= 80 ? 'mastery-high' : 
-                          question.masteryRate >= 60 ? 'mastery-medium' : 'mastery-low';
-      const masteryText = question.masteryRate >= 80 ? 'HIGH' : 
-                          question.masteryRate >= 60 ? 'MEDIUM' : 'LOW';
+      const mastery = masteryFor(question);
+      const rate = mastery ? mastery.rate : null;
+      const masteryClass = rate === null ? 'mastery-none'
+        : rate >= 80 ? 'mastery-high'
+        : rate >= 60 ? 'mastery-medium' : 'mastery-low';
+      const masteryText = rate === null ? 'No responses'
+        : rate >= 80 ? 'HIGH' : rate >= 60 ? 'MEDIUM' : 'LOW';
       
       // Render options if available
       const optionsHtml = question.options && question.options.length > 0 ? `
@@ -2812,11 +2821,12 @@
       ` : '';
       
       return `
-        <div class="question-card" data-type="${question.type}" data-mastery="${masteryClass}" data-category="${question.category || ''}">
+        <div class="question-card" data-type="${question.type}" data-mastery="${masteryClass}" data-has-mastery="${rate === null ? 'no' : 'yes'}" data-category="${escapeHtml(question.category || '')}">
           <div class="question-header">
             <span class="question-id">${escapeHtml(question.id)}</span>
             <span class="question-type type-${question.type}">${question.type.toUpperCase()}</span>
-            ${question.masteryRate > 0 ? `<span class="mastery-badge ${masteryClass}">${masteryText}: ${question.masteryRate}%</span>` : ''}
+            <span class="mastery-badge ${masteryClass}">${masteryText}${rate === null ? '' : `: ${rate}%`}</span>
+            ${mastery ? `<span class="mastery-count">${mastery.correct}/${mastery.count} correct</span>` : ''}
           </div>
           <div class="question-text">${escapeHtml(question.text)}</div>
           ${optionsHtml}
@@ -2940,11 +2950,15 @@
         show = false;
       }
       
-      // Mastery filter
+      // Mastery filter. Bank and aligned items carry no mastery because their
+      // responses cannot be keyed back to their ids, so they are excluded from
+      // every band instead of being counted as low.
       if (masteryFilter !== 'all') {
-        if (masteryFilter === 'high' && !masteryClass.includes('high')) show = false;
-        if (masteryFilter === 'medium' && !masteryClass.includes('medium')) show = false;
-        if (masteryFilter === 'low' && !masteryClass.includes('low')) show = false;
+        if (card.dataset.hasMastery !== 'yes') {
+          show = false;
+        } else if (masteryFilter === 'high' && !masteryClass.includes('high')) show = false;
+        else if (masteryFilter === 'medium' && !masteryClass.includes('medium')) show = false;
+        else if (masteryFilter === 'low' && !masteryClass.includes('low')) show = false;
       }
       
       card.style.display = show ? 'block' : 'none';

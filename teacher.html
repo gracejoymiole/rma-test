@@ -142,6 +142,11 @@
     .mastery-high { background: #dcfce7; color: #14532d; }
     .mastery-medium { background: #fef3c7; color: #92400e; }
     .mastery-low { background: #fee2e2; color: #991b1b; }
+    /* Bank and aligned items have no per-item responses, so they are never
+       placed in a mastery band; they are greyed rather than shown as 0%. */
+    .mastery-none { background: #f1f0ef; color: #71666a; font-weight: 600; }
+    .mastery-count { color: var(--muted); font-size: 0.72rem; }
+    .link-btn { background:none; border:none; padding:0; font:inherit; color:var(--primary); text-decoration:underline; cursor:pointer; }
     .question-text {
       font-size: 0.95rem;
       line-height: 1.6;
@@ -414,8 +419,8 @@
         <!-- Question Map Tab -->
         <div id="tabQuestionMapContent" hidden>
           <div class="card question-mapping-panel">
-            <h2 class="report-heading">📚 Complete Question Map & Aligned Items</h2>
-            <p class="report-note">View all RMA original questions, bank questions, and aligned Filipino scenario questions with explanations.</p>
+            <h2 class="report-heading">📚 Question Reference: Answers &amp; Explanations</h2>
+            <p class="report-note">Answer keys and explanations for a sample of RMA, bank, and aligned Filipino scenario items. Mastery is shown for RMA items only, from real submissions. For the full question inventory across all four grades, use the <button class="link-btn" type="button" onclick="showTab('masterMap')">Master Map</button>.</p>
             
             <!-- Question Search and Filters -->
             <div class="qm-filters">
@@ -435,7 +440,7 @@
               <div class="qm-filter-group">
                 <label>Mastery:</label>
                 <select id="masteryFilter" onchange="filterQuestions()">
-                  <option value="all">All Levels</option>
+                  <option value="all">All Items</option>
                   <option value="high">High (&gt;80%)</option>
                   <option value="medium">Medium (60-80%)</option>
                   <option value="low">Low (&lt;60%)</option>

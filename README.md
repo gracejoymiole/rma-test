@@ -32,7 +32,7 @@ serve `supabase/`, which holds the schema and the bootstrap script.
 ## Tests
 
 ```powershell
-npm test          # all suites, 303 assertions
+npm test          # all suites, 344 assertions
 npm run check     # syntax-check the shipped scripts
 npm run verify    # both, as CI runs it
 ```
@@ -50,6 +50,7 @@ Coverage worth knowing about:
 | `test-status.js` | Not yet taken / Incomplete / completed states |
 | `test-bandfilter.js` | Who Needs Help band filtering |
 | `test-gaps-export.js` | learning-gap derivation, Excel export, print report |
+| `test-mastery.js` | per-question mastery, and that items with no data are not counted as 0% |
 | `test-master-map.js` | the 448-question map |
 | `test-auth.js` | student onboarding and auth |
 
@@ -58,7 +59,7 @@ Coverage worth knowing about:
 Static hosting; the docs name Vercel. Two things to set before the first deploy:
 
 1. Apply `supabase/schema.sql`, or every RPC returns 404.
-2. Replace nothing in `supabase-config.js` — the publishable key is meant for the
+2. Replace nothing in `supabase-config.js` â€” the publishable key is meant for the
    browser. All protection is in RLS, which is why the schema matters.
 
 ## Supabase
