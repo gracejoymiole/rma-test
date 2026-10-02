@@ -32,7 +32,7 @@ serve `supabase/`, which holds the schema and the bootstrap script.
 ## Tests
 
 ```powershell
-npm test          # all suites, 344 assertions
+npm test          # all suites, 374 assertions
 npm run check     # syntax-check the shipped scripts
 npm run verify    # both, as CI runs it
 ```
@@ -51,6 +51,7 @@ Coverage worth knowing about:
 | `test-bandfilter.js` | Who Needs Help band filtering |
 | `test-gaps-export.js` | learning-gap derivation, Excel export, print report |
 | `test-mastery.js` | per-question mastery, and that items with no data are not counted as 0% |
+| `test-deployment.js` | schema/client contract, and that no client reads a table directly |
 | `test-master-map.js` | the 448-question map |
 | `test-auth.js` | student onboarding and auth |
 
@@ -59,22 +60,35 @@ Coverage worth knowing about:
 Static hosting; the docs name Vercel. Two things to set before the first deploy:
 
 1. Apply `supabase/schema.sql`, or every RPC returns 404.
-2. Replace nothing in `supabase-config.js` â€” the publishable key is meant for the
+2. Replace nothing in `supabase-config.js` — the publishable key is meant for the
    browser. All protection is in RLS, which is why the schema matters.
+
+The project ref lives in `supabase-config.js`. Confirm it matches the project you
+are deploying to: the CLI's project list can name a project "RMA" that is a
+different database entirely, and a mismatched ref will happily reject the
+publishable key with `Invalid API key`.
 
 ## Supabase
 
-1. Apply `supabase/schema.sql` in the SQL editor. It is idempotent and safe to
-   re-run; it ends with `notify pgrst, 'reload schema'`.
-2. Create the first teacher account:
+### If the leaderboard is leaking, run this first
 
-   ```sql
-   set rma_bootstrap_teacher_password = 'choose-a-strong-password';
-   \i supabase/teacher-bootstrap.sql
-   ```
+`supabase/urgent-leaderboard-fix.sql` is a single paste into the SQL Editor that
+drops the anonymous `rma_leaderboard` view and replaces it with
+`rma_leaderboard_top(p_token, p_limit)`, which derives grade and section from
+the caller's own session. Idempotent; safe to re-run.
 
-   The script forces `must_change_password = true`, so the account prompts for a
-   new password on first login.
+Then apply the full `supabase/schema.sql`, which is idempotent and safe to
+re-run. It ends with `notify pgrst, 'reload schema'`.
+
+Create the first teacher account:
+
+```sql
+set rma_bootstrap_teacher_password = 'choose-a-strong-password';
+\i supabase/teacher-bootstrap.sql
+```
+
+The script forces `must_change_password = true`, so the account prompts for a
+new password on first login.
 
 Never commit a working password. Earlier revisions of `teacher-bootstrap.sql`
 shipped one in plaintext; it remains readable in git history and must be
