@@ -32,10 +32,17 @@ serve `supabase/`, which holds the schema and the bootstrap script.
 ## Tests
 
 ```powershell
-npm test          # all suites, 374 assertions
-npm run check     # syntax-check the shipped scripts
-npm run verify    # both, as CI runs it
+npm test           # all suites, 425 assertions
+npm run check      # syntax-check the shipped scripts
+npm run verify     # both, as CI runs it
+npm run verify:live  # checks the deployed Supabase project, not the repo
 ```
+
+`npm run verify:live` is the one to run after you paste SQL into the Supabase
+SQL Editor. It probes the live project over the same public PostgREST surface
+the browser uses, so it reports what a real user would get rather than what the
+Editor claims after a script that may have rolled back. It exits non-zero and
+names anything still missing.
 
 Suites read the real shipped files, so they fail if product code drifts. GitHub
 Actions runs `verify` on every push and pull request to `main`.
@@ -79,6 +86,25 @@ the caller's own session. Idempotent; safe to re-run.
 
 Then apply the full `supabase/schema.sql`, which is idempotent and safe to
 re-run. It ends with `notify pgrst, 'reload schema'`.
+
+The SQL Editor runs a script as one transaction, so a single error discards
+everything it did. If a run fails partway, use `supabase/apply-missing.sql`
+instead: it holds only the objects that never got created, copied verbatim from
+`schema.sql`. `tests/test-deployment.js` fails if the two files ever drift apart.
+
+Two traps that file is ordered to avoid:
+
+- A bare `order by <col>` after `from <table>` in an aggregate fails with 42803.
+  The ordering has to live inside `jsonb_agg`.
+- `revoke` and `grant` on a function that does not exist fail with 42883, while
+  `drop ... if exists` is safe. Revoke only what the same script creates.
+
+A `plpgsql` body is not resolved when the function is created, so a missing
+column will not fail the paste; it fails later, for a real teacher, in the
+browser. Add every column before the functions that use it, and let
+`npm run verify:live` check the columns too.
+
+After any paste, confirm it with `npm run verify:live`.
 
 Create the first teacher account:
 

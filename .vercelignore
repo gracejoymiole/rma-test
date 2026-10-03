@@ -1,4 +1,6 @@
 supabase/
+tools/
+tests/
 node_modules/
 .vercel/
 .DS_Store

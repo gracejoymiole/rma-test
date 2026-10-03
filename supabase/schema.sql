@@ -455,17 +455,24 @@ create or replace function public.rma_get_score_bands()
 returns jsonb language sql security definer
 set search_path = public, extensions, pg_temp
 as $$
-  select jsonb_agg(
-    jsonb_build_object(
-      'band_name', band_name,
-      'min_score', min_score,
-      'max_score', max_score,
-      'label', label,
-      'color', color,
-      'icon', icon,
-      'sort_order', sort_order
-    )
-  ) from public.rma_score_bands order by sort_order;
+  -- ORDER BY must live inside the aggregate: a bare "order by sort_order"
+  -- after FROM is rejected (42803) because sort_order is neither grouped nor
+  -- aggregated. The client sorts by sort_order too, but return it ordered.
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'band_name', band_name,
+        'min_score', min_score,
+        'max_score', max_score,
+        'label', label,
+        'color', color,
+        'icon', icon,
+        'sort_order', sort_order
+      )
+      order by sort_order
+    ),
+    '[]'::jsonb
+  ) from public.rma_score_bands;
 $$;
 
 grant execute on function public.rma_get_score_bands() to anon, authenticated;
@@ -476,5 +483,7 @@ grant execute on function public.rma_get_score_bands() to anon, authenticated;
 -- every section in a grade. No client code called it, so it was attack surface with
 -- no benefit. Teachers get the same picture from rma_teacher_dashboard(p_token),
 -- which requires a session. Drop it in case an older deploy created it.
-revoke all on function public.rma_section_comparison(smallint) from public, anon, authenticated;
+-- No revoke here on purpose: REVOKE against a function that does not exist
+-- raises 42883 and would abort the whole run. Dropping the function removes
+-- its grants with it, so the revoke buys nothing.
 drop function if exists public.rma_section_comparison(smallint);
