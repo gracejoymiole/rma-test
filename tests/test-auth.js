@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 
@@ -42,7 +42,7 @@ try {
   check('rma-auth.js evaluates without throwing', true);
 } catch (e) {
   check('rma-auth.js evaluates without throwing', false, e.message);
-  console.log(out.join('\n'));
+console.log(out.join('\n'));
   process.exit(1);
 }
 
@@ -130,6 +130,47 @@ FILIPINO.forEach((w) => check(`auth UI drops "${w}"`, !html.includes(w)));
 check('English labels survive the cleanup',
   ['Log in', 'Sign up', 'Password', 'Grade level', 'Student surname', 'Section']
     .every((l) => html.includes(l)));
+
+// --- the password must be normalised before it is checked ---
+// rma_student_login compares with crypt(), which is case-sensitive, while the
+// password is generated as upper(hex). Every generated password contains at
+// least one letter, so a student who writes it in lower case can never log in
+// and the portal only reports that the credentials are wrong.
+// The window has to clear the explanatory comment above the password line.
+const loginCall = (src2.match(/rpc\("rma_student_login"[\s\S]{0,1200}?\n\s*\}\);/) || [])[0] || '';
+check('the login call was found to assert against', loginCall.length > 0);
+check('login sends an uppercased password',
+  /p_password:[^\n]*\.toLocaleUpperCase\(\)/.test(loginCall));
+check('login does not send the raw password field',
+  !/p_password:\s*document\.getElementById\("loginPassword"\)\.value\s*,/.test(loginCall));
+check('the password field is uppercased as it is typed',
+  /'loginPassword'/.test(src2));
+check('student ID is still uppercased at the send site',
+  /loginStudentId"\)\.value\.trim\(\)\.toLocaleUpperCase\(\)/.test(src2));
+
+// --- the sign-in button must not run the exam's name validation ---
+// startBtn belongs to rma-auth.js: it is the "Log in and start" button. The
+// grade pages attach their own handler to it and used to run it on a real
+// click, which asked a student who had only typed a student ID and password to
+// enter their name. rma-auth re-dispatches that click after authenticating,
+// with RMAAuth.bypass set, and no page ever read the flag.
+const PAGES = ['FINAL GRADE 7 RMA/G7 RMA1 V1.html', 'RMA G8 V2/G8 RMA V5.html',
+  'RMA G9 V1/rmag9 v3.html', 'RMA G10 V1/g10rma v4.html'];
+PAGES.forEach((rel) => {
+  const page = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const base = path.basename(rel);
+  const handler = (page.match(/getElementById\('startBtn'\)\.addEventListener\('click', \(\) => \{([\s\S]*?)\n\s*const now = Date\.now\(\);/) || [])[1] || '';
+  check(`${base} guards its startBtn handler`, handler.length > 0);
+  check(`${base} ignores a sign-in click`,
+    /window\.RMAAuth\.bypass !== true\)\s*return/.test(handler));
+});
+check('auth sets the bypass flag before re-dispatching the click',
+  /RMAAuth\.bypass = true;[\s\S]{0,200}?dispatchEvent/.test(src2)
+  && /RMAAuth\.bypass = false;/.test(src2));
+check('every grade page attaches exactly one startBtn handler', PAGES.every((rel) => {
+  const page = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  return (page.match(/getElementById\('startBtn'\)\.addEventListener/g) || []).length === 1;
+}));
 
 console.log(out.join('\n'));
 console.log(out.some((r) => r.startsWith('FAIL')) ? '\nSOME CHECKS FAILED' : '\nALL CHECKS PASSED');

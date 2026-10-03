@@ -716,8 +716,8 @@
 
   overlay.addEventListener("input", (event) => {
     // AUTO-UPPERCASE ALL TEXT FIELDS
-    const textInputs = ['signupLastName', 'signupFirstName', 'signupSection', 
-                       'teacherLastName', 'teacherFirstName', 'loginStudentId'];
+    const textInputs = ['signupLastName', 'signupFirstName', 'signupSection',
+                       'teacherLastName', 'teacherFirstName', 'loginStudentId', 'loginPassword'];
     
     if (textInputs.includes(event.target.id)) {
       const start = event.target.selectionStart;
@@ -824,7 +824,13 @@
 
         const result = await rpc("rma_student_login", {
           p_student_code: studentId,
-          p_password: document.getElementById("loginPassword").value,
+          // rma_student_login compares the password with crypt(), which is
+          // case-sensitive, and the password is generated as upper(hex). Every
+          // generated password therefore contains at least one letter, so a
+          // student who writes it down or types it in lower case can never log
+          // in. Uppercase it here, the same way the student ID and every sign-up
+          // field are already normalised, so what is typed is what is checked.
+          p_password: document.getElementById("loginPassword").value.toLocaleUpperCase(),
           p_grade: idGrade || grade
         });
         profileFrom(result);

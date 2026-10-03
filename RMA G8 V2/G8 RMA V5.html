@@ -1539,6 +1539,13 @@ function lockExam(name) {
 }
 
 document.getElementById('startBtn').addEventListener('click', () => {
+    // This button is the sign-in button from rma-auth.js, not a page control.
+    // rma-auth.js re-dispatches a click here once the student is authenticated,
+    // with RMAAuth.bypass set; a real click is just someone logging in. Without
+    // this guard the name check below ran on the sign-in click and asked a
+    // student who had only typed a student ID and password to enter their name.
+    if (!window.RMAAuth || window.RMAAuth.bypass !== true) return;
+
     const now = Date.now();
     
     if (SECURITY.banUntil > now) {
