@@ -17,6 +17,15 @@
     .auth { max-width:430px; margin:40px auto; } h2 { margin:0 0 7px; color:var(--wine); } p { color:var(--muted); }
     label { display:grid; gap:6px; margin:14px 0; font-size:.88rem; font-weight:700; }
     input,select { width:100%; padding:11px 12px; border:1px solid #d8d1cc; border-radius:8px; font:inherit; background:white; }
+    /* Reveal button for password fields; the input keeps its own box. */
+    .pwd { position:relative; display:block; }
+    .pwd input { padding-right:42px; }
+    .pwd-eye { position:absolute; right:5px; top:50%; transform:translateY(-50%); display:flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; border:0; border-radius:7px; color:var(--muted); background:transparent; cursor:pointer; }
+    .pwd-eye:hover { color:var(--ink); background:#f1ece7; }
+    .pwd-eye:focus-visible { outline:2px solid var(--wine); outline-offset:1px; }
+    .pwd-eye-slash { opacity:0; }
+    .pwd-eye[aria-pressed="true"] .pwd-eye-slash { opacity:1; }
+    .pwd-eye[aria-pressed="true"] { color:var(--wine); }
     button { padding:11px 15px; border:0; border-radius:8px; color:#fff; background:var(--wine); font:700 .95rem system-ui,sans-serif; cursor:pointer; }
     button:disabled { opacity:.6; cursor:wait; }
     .primary { width:100%; margin-top:8px; } .secondary { color:var(--wine); background:#f5efea; }
@@ -378,7 +387,7 @@
       <p>Teacher access is restricted to the classroom mastery dashboard.</p>
       <div id="teacherMessage" role="alert" hidden></div>
       <label>Username<input id="teacherUsername" autocomplete="username" value="teacher123"></label>
-      <label>Password<input id="teacherPassword" type="password" autocomplete="current-password" placeholder="Enter teacher password"></label>
+      <label>Password<span class="pwd"><input id="teacherPassword" type="password" autocomplete="current-password" placeholder="Enter teacher password"><button type="button" class="pwd-eye" data-toggle-password="teacherPassword" aria-label="Show password" aria-pressed="false" aria-controls="teacherPassword"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle><line class="pwd-eye-slash" x1="3.5" y1="3.5" x2="20.5" y2="20.5"></line></svg></button></span></label>
       <button id="teacherLogin" class="primary">Sign in</button>
     </section>
     <section id="changeCard" class="card auth" hidden>

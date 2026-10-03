@@ -90,6 +90,31 @@ check('portal sends grade, section and limit',
 check('portal escapes leaderboard names and codes',
   /escapeHtml\((?:row|entry|lb)\.(?:name|student_code)\)/.test(portal));
 
+// The card used to print the raw driver message, so a half-applied deploy put
+// "Could not find the function public.rma_teacher_leaderboard(...) in the schema
+// cache" in front of a teacher. The failure has to read as an instruction for
+// the person who can fix it, not as Postgres internals.
+const lbBody = (portal.match(/async function loadLeaderboards\(\) \{([\s\S]*?)\n  \}/) || [])[1] || '';
+check('leaderboard card never prints error.message directly',
+  lbBody.length > 0 && !/escapeHtml\(error\.message\)/.test(lbBody)
+  && !/\$\{error\.message \|\|/.test(lbBody));
+check('leaderboard routes failures through friendlyError',
+  /friendlyError\(error,/.test(lbBody));
+check('friendlyError has a message for a missing function',
+  /schema cache\|PGRST202/.test(portal) && /database setup needs to be finished/.test(portal));
+check('friendlyError has a message for a dropped connection',
+  /failed to fetch/i.test(portal));
+check('friendlyError falls back rather than showing raw text',
+  /return hit \? hit\.message : fallback;/.test(portal));
+check('the raw driver text is still logged for whoever deploys',
+  /console\.warn\("\[rma\] leaderboard request failed:/.test(portal));
+check('an expired session ends the portal, not just the card',
+  /endSessionIfExpired\(error\)/.test(lbBody)
+  && /function endSessionIfExpired/.test(portal)
+  && /sessionStorage\.removeItem\("rma_teacher_token"\)/.test(portal));
+check('the stale scope note is cleared when the card errors',
+  /leaderboardNote[\s\S]{0,80}?\.textContent = ""/.test(lbBody));
+
 // Every page that ships the teacher UI also needs a deploy file the operator
 // can paste, because the CLI cannot reach the project.
 const deploy = path.join(ROOT, 'supabase', 'apply-leaderboard.sql');

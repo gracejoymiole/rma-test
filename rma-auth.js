@@ -50,7 +50,7 @@
     if (!selectedGrade || Number(selectedGrade) === grade) {
       node.hidden = true;
       node.textContent = "";
-      if (hint) hint.textContent = `This page is the Grade ${grade} assessment. | Ito ang assessment para sa Grade ${grade}.`;
+      if (hint) hint.textContent = `This page is the Grade ${grade} assessment.`;
       return false;
     }
 
@@ -59,7 +59,6 @@
         You selected <strong>Grade ${selectedGrade}</strong>, but you are on the <strong>Grade ${grade}</strong> ${source === "login" ? "sign-in page" : "sign-up page"}.
         Continuing will file your account under <strong>Grade ${selectedGrade}</strong>.
         Please check that you opened the correct grade level, or change your selection to Grade ${grade}.
-        <br><em>Hindi tugma ang antas. Pakisuri ang tamang grade level.</em>
       </span>`;
     node.hidden = false;
     if (hint) hint.textContent = "";
@@ -69,7 +68,7 @@
   function resetGradeConfirmation() {
     state.gradeConfirmed = false;
     const button = document.getElementById("registerBtn");
-    if (button) button.querySelector("span").textContent = "Create account | Lumikha ng account";
+    if (button) button.querySelector("span").textContent = "Create account";
   }
 
   // ============================================
@@ -261,79 +260,90 @@
       <section class="rma-auth-card" aria-labelledby="authTitle">
         <a class="rma-auth-home" href="../index.html">← RMA PATHWAYS</a>
         <h2 id="authTitle">Grade ${grade} RMA</h2>
-        <p class="rma-auth-help">Piliin ang tamang sagot. | Choose the best answer.</p>
+        <p class="rma-auth-help">Choose the best answer.</p>
         <div class="rma-auth-tabs" role="tablist" aria-label="Student account">
-          <button type="button" class="rma-auth-tab active" data-panel="loginPanel">Log in | Mag-log in</button>
-          <button type="button" class="rma-auth-tab" data-panel="registerPanel">Sign up | Magrehistro</button>
+          <button type="button" class="rma-auth-tab active" data-panel="loginPanel">Log in</button>
+          <button type="button" class="rma-auth-tab" data-panel="registerPanel">Sign up</button>
         </div>
         <div id="authMessage" class="rma-auth-message" role="alert" hidden></div>
         <div id="loginPanel" class="rma-auth-panel">
           <label>
-            <span>Student ID | Student ID Numero</span>
+            <span>Student ID</span>
             <input id="loginStudentId" autocomplete="username" placeholder="RMA-${grade}-000001" required>
           </label>
           <label>
-            <span>Password | Password</span>
-            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password" required>
+            <span>Password</span>
+            <span class="rma-auth-password">
+              <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter password" required>
+              <button type="button" class="rma-auth-eye" data-toggle-password="loginPassword"
+                      aria-label="Show password" aria-pressed="false" aria-controls="loginPassword">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <line class="rma-auth-eye-slash" x1="3.5" y1="3.5" x2="20.5" y2="20.5"></line>
+                </svg>
+              </button>
+            </span>
           </label>
           <button type="button" id="startBtn" class="rma-auth-primary">
-            <span>Log in and start | Mag-log in at sumimulan</span>
+            <span>Log in and start</span>
           </button>
         </div>
         <div id="registerPanel" class="rma-auth-panel" hidden>
           <label>
-            <span>Grade level | Antas</span>
+            <span>Grade level</span>
             <select id="signupGrade" required>
-              <option value="">Select your grade level | Pumili ng antas</option>
+              <option value="">Select your grade level</option>
               ${gradeSelectHtml}
             </select>
             <small class="rma-auth-hint" id="signupGradeHint"></small>
           </label>
           <div id="gradeWarning" class="rma-auth-warning" role="alert" hidden></div>
           <label>
-            <span>Student surname | Apelyido</span>
+            <span>Student surname</span>
             <input id="signupLastName" autocomplete="family-name" maxlength="100" placeholder="DELA CRUZ" required>
           </label>
           <label>
-            <span>Student first name | Unang Pangalan</span>
+            <span>Student first name</span>
             <input id="signupFirstName" autocomplete="given-name" maxlength="100" placeholder="JUAN" required>
           </label>
           <label>
-            <span>Section | Sekyon</span>
-            <input id="signupSection" maxlength="60" placeholder="TYPE YOUR SECTION | ITYPE ANG IYONG SEKYON" required>
+            <span>Section</span>
+            <input id="signupSection" maxlength="60" placeholder="TYPE YOUR SECTION" required>
           </label>
           <p class="rma-auth-section">MATH TEACHER'S NAME</p>
           <label>
-            <span>MATH Teacher's title | Titulo</span>
+            <span>MATH Teacher's title</span>
             <select id="teacherTitle"><option value="Mr.">Mr.</option><option value="Ms.">Ms.</option></select>
           </label>
           <label>
-            <span>MATH Teacher's surname | Apelyido ng MATH Teacher</span>
+            <span>MATH Teacher's surname</span>
             <input id="teacherLastName" maxlength="100" autocomplete="off" placeholder="REYES" list="teacherLastNameSuggestions" required>
             <datalist id="teacherLastNameSuggestions"></datalist>
           </label>
           <label>
-            <span>MATH Teacher's first name | Unang Pangalan ng MATH Teacher</span>
+            <span>MATH Teacher's first name</span>
             <input id="teacherFirstName" maxlength="100" autocomplete="off" placeholder="JUAN" list="teacherFirstNameSuggestions" required>
             <datalist id="teacherFirstNameSuggestions"></datalist>
           </label>
-          <p class="rma-auth-note">All fields are automatically written in CAPITAL LETTERS. | Awtomatikong naka-CAPS ang lahat ng fields.</p>
-          <p class="rma-auth-note">Keep your generated student ID and password safe. | Ingatan ang iyong Student ID at password.</p>
+          <p class="rma-auth-note">All fields are automatically written in CAPITAL LETTERS.</p>
+          <p class="rma-auth-note">Keep your generated student ID and password safe.</p>
           <button type="button" id="registerBtn" class="rma-auth-primary">
-            <span>Create account | Lumikha ng account</span>
+            <span>Create account</span>
           </button>
         </div>
         <div id="credentialsPanel" class="rma-auth-panel" hidden>
-          <h3>Account created | Account napagawa na</h3>
-          <p>Your password will not be shown again. | Hindi na muli ipapakita ang password.</p>
+          <h3>Account created</h3>
+          <p>Your password will not be shown again.</p>
           <dl>
-            <dt>Student ID | Student ID</dt>
+            <dt>Student ID</dt>
             <dd id="generatedStudentId"></dd>
-            <dt>Generated password | Password na nagawa</dt>
+            <dt>Generated password</dt>
             <dd id="generatedStudentPassword"></dd>
           </dl>
           <button type="button" id="continueBtn" class="rma-auth-primary">
-            <span>Continue to practice | Magpatuloy sa pagsasanay</span>
+            <span>Continue to practice</span>
           </button>
         </div>
         <input type="hidden" id="lastName">
@@ -425,17 +435,51 @@
         /* ALL TEXT IN UPPERCASE */
         text-transform: uppercase;
       }
-      .rma-auth-primary { 
-        width:100%; 
-        margin-top:4px; 
-        padding:12px 16px; 
-        border:0; 
-        border-radius:9px; 
-        color:#fff; 
-        background:var(--primary,#521018); 
-        font:700 1rem system-ui,sans-serif; 
-        cursor:pointer; 
+      .rma-auth-primary {
+        width:100%;
+        margin-top:4px;
+        padding:12px 16px;
+        border:0;
+        border-radius:9px;
+        color:#fff;
+        background:var(--primary,#521018);
+        font:700 1rem system-ui,sans-serif;
+        cursor:pointer;
       }
+      /* Password field with a reveal button. The button sits inside the label, so
+         it needs its own stacking and hit area rather than pushing the input. */
+      .rma-auth-password {
+        position:relative;
+        display:block;
+      }
+      .rma-auth-password input {
+        padding-right:42px;
+        box-sizing:border-box;
+        width:100%;
+      }
+      .rma-auth-eye {
+        position:absolute;
+        right:6px;
+        top:50%;
+        transform:translateY(-50%);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:32px;
+        height:32px;
+        padding:0;
+        border:0;
+        border-radius:7px;
+        background:transparent;
+        color:#71666a;
+        cursor:pointer;
+      }
+      .rma-auth-eye:hover { background:#f1ece7; color:#24191a; }
+      .rma-auth-eye:focus-visible { outline:2px solid var(--primary,#521018); outline-offset:1px; }
+      /* The slash only appears once the password is actually visible. */
+      .rma-auth-eye-slash { opacity:0; }
+      .rma-auth-eye[aria-pressed="true"] .rma-auth-eye-slash { opacity:1; }
+      .rma-auth-eye[aria-pressed="true"] { color:var(--primary,#521018); }
       .rma-auth-primary:disabled { 
         opacity:.65; 
         cursor:wait; 
@@ -575,8 +619,10 @@
         to { opacity: 1; transform: translateX(-50%) translateY(0); }
       }
       
-      /* Auto-capitalize all text inputs */
-      input:not([type="password"]) {
+      /* Auto-capitalize all text inputs. The reveal button flips the password field to
+         type="text", so excluding by type alone would uppercase a password the
+         moment a student checks it. Exclude the field itself instead. */
+      input:not([type="password"]):not(.rma-auth-password input) {
         text-transform: uppercase;
       }
     `;
@@ -588,7 +634,10 @@
     notification.className = 'rma-progress-notification hidden';
     notification.textContent = 'Answer saved locally ✓';
     document.body.appendChild(notification);
-    
+
+    // innerHTML was just replaced, so any revealed password is masked again.
+    maskPasswords();
+
     // Expose save/load to assessment pages
     window.RMAAuth.saveProgress = saveProgress;
     window.RMAAuth.loadProgress = loadProgress;
@@ -624,6 +673,39 @@
   // Show the page-grade hint straight away, and clear the warning if a student
   // picks the grade that matches the page they opened.
   showGradeWarning(grade, "register");
+
+  // Reveal a password so it can be checked before submitting. Delegated, because
+  // the card is re-rendered by render() and a bound listener would not survive.
+  // Masking is also restored whenever the form is re-rendered, so a revealed
+  // password is never left on screen after the view is rebuilt.
+  overlay.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-toggle-password]");
+    if (!button) return;
+    // The button sits inside a <label>, so stop the label from also claiming the
+    // click, which would fight the focus the toggle is trying to place.
+    event.preventDefault();
+    const input = document.getElementById(button.dataset.togglePassword);
+    if (!input) return;
+    const revealed = input.type === "password";
+    input.type = revealed ? "text" : "password";
+    button.setAttribute("aria-pressed", String(revealed));
+    button.setAttribute("aria-label", revealed ? "Hide password" : "Show password");
+    // Keep the caret in the password, so typing continues where it left off.
+    input.focus({ preventScroll: true });
+    const atEnd = input.value.length;
+    try { input.setSelectionRange(atEnd, atEnd); } catch { /* not all types support it */ }
+  });
+
+  // A freshly rendered card must never inherit a revealed password. Declared as a
+  // function so it hoists: render() calls this before the definition is reached.
+  function maskPasswords() {
+    overlay.querySelectorAll("[data-toggle-password]").forEach((button) => {
+      const input = document.getElementById(button.dataset.togglePassword);
+      if (input) input.type = "password";
+      button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-label", "Show password");
+    });
+  }
 
   overlay.addEventListener("change", (event) => {
     if (event.target.id === "signupGrade") {
@@ -695,7 +777,7 @@
 
         // Validate - ALL FIELDS REQUIRED
         if (!selectedGrade) {
-          throw new Error("Please select your grade level. | Pakipili ang iyong antas.");
+          throw new Error("Please select your grade level.");
         }
         if (!lastName || !firstName || !section || !teacherLastName || !teacherFirstName) {
           throw new Error("Please complete ALL required fields.");
@@ -705,7 +787,7 @@
         if (showGradeWarning(selectedGrade, "register") && !state.gradeConfirmed) {
           state.gradeConfirmed = true;
           button.querySelector("span").textContent =
-            `Tap again to create a Grade ${selectedGrade} account | Pindutin muli para sa Grade ${selectedGrade}`;
+            `Tap again to create a Grade ${selectedGrade} account`;
           button.disabled = false;
           return;
         }

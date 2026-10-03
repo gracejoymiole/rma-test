@@ -3551,6 +3551,40 @@
     }
   }
 
+  // A teacher should never be shown a Postgres or PostgREST message. The worst
+  // one names internal function signatures -- "Could not find the function
+  // public.rma_teacher_leaderboard(p_grade, p_limit, p_section, p_token) in the
+  // schema cache" -- which says nothing useful to a teacher and describes a
+  // deployment step only the department can perform. The raw text still goes to
+  // the console, because it is the only clue when a paste is half applied.
+  const FRIENDLY_ERRORS = [
+    { test: /schema cache|PGRST202|Could not find the function|does not exist/i,
+      message: "This report is not available yet. The database setup needs to be finished before it can load." },
+    { test: /expired|invalid session|session required|not authenticated/i,
+      message: "Your session has expired. Please sign in again." },
+    { test: /failed to fetch|networkerror|load failed/i,
+      message: "Could not reach the server. Check your connection and try again." },
+  ];
+
+  function friendlyError(error, fallback) {
+    const raw = String((error && error.message) || "");
+    if (raw) console.warn("[rma] leaderboard request failed:", raw);
+    const hit = FRIENDLY_ERRORS.find((f) => f.test.test(raw));
+    return hit ? hit.message : fallback;
+  }
+
+  // An expired session has to tear the portal down, not just relabel the error,
+  // otherwise every other panel fails the same way behind a stale token.
+  function endSessionIfExpired(error) {
+    if (!/expired|invalid session|session required/i.test(String((error && error.message) || ""))) return false;
+    token = "";
+    rows = [];
+    sessionStorage.removeItem("rma_teacher_token");
+    dashboard.hidden = true;
+    loginCard.hidden = false;
+    return true;
+  }
+
   async function loadLeaderboards() {
     const live = document.getElementById("liveLeaderboard");
     const allTime = document.getElementById("allTimeLeaderboard");
@@ -3566,9 +3600,12 @@
       });
       renderLeaderboards(data);
     } catch (error) {
-      const message = error.message || "The leaderboard could not be loaded.";
+      if (endSessionIfExpired(error)) return;
+      const message = friendlyError(error, "The leaderboard could not be loaded. Try again in a moment.");
       live.innerHTML = `<p class="report-note">${escapeHtml(message)}</p>`;
       allTime.innerHTML = `<p class="report-note">${escapeHtml(message)}</p>`;
+      const note = document.getElementById("leaderboardNote");
+      if (note) note.textContent = "";
     }
   }
 
@@ -4043,6 +4080,33 @@
   // AUTHENTICATION
   // ============================================
 
+  // Reveal a teacher password so it can be checked before submitting. Delegated on
+  // the document because the card is shown and hidden rather than rebuilt, and a
+  // bound listener on a hidden node would still work but ties the handler to one
+// element. Masking is restored on sign-in so the field is never left revealed.
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-toggle-password]");
+    if (!button) return;
+    // The button sits inside a <label>, so stop the label claiming the click too.
+    event.preventDefault();
+    const input = document.getElementById(button.dataset.togglePassword);
+    if (!input) return;
+    const revealed = input.type === "password";
+    input.type = revealed ? "text" : "password";
+    button.setAttribute("aria-pressed", String(revealed));
+    button.setAttribute("aria-label", revealed ? "Hide password" : "Show password");
+    input.focus({ preventScroll: true });
+  });
+
+  function maskTeacherPasswords() {
+    document.querySelectorAll("[data-toggle-password]").forEach((button) => {
+      const input = document.getElementById(button.dataset.togglePassword);
+      if (input) input.type = "password";
+      button.setAttribute("aria-pressed", "false");
+      button.setAttribute("aria-label", "Show password");
+    });
+  }
+
   document.getElementById("teacherLogin").addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
@@ -4054,6 +4118,7 @@
       });
       token = result.token;
       sessionStorage.setItem("rma_teacher_token", token);
+      maskTeacherPasswords();
       if (result.must_change_password) showChangePassword(); else showDashboard();
     } catch (error) {
       setMessage(message, error.message || "Sign in failed.");

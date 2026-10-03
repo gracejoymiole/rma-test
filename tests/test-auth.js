@@ -73,5 +73,63 @@ check('login parses grade from student ID', /match\(\/\^RMA-\(\\d\+\)-\/\)/.test
 // uppercase enforcement
 check('uppercase input handler covers all text fields', /'signupLastName', 'signupFirstName', 'signupSection'/.test(src2) && /'teacherLastName', 'teacherFirstName', 'loginStudentId'/.test(src2));
 
+// --- the reveal button must not make a password look uppercase ---
+// The stylesheet uppercases every input that is not type="password". Revealing
+// flips the field to type="text", which would silently uppercase the password a
+// student is trying to check. The rule has to exclude the field itself.
+check('uppercase rule cannot capture a revealed password',
+  /input:not\(\[type="password"\]\):not\(\.rma-auth-password input\)/.test(src2));
+check('uppercase rule is not the bare type-only selector',
+  !/input:not\(\[type="password"\]\)\s*\{\s*text-transform/.test(src2));
+
+// --- password reveal on the student login ---
+// The student card is built entirely in rma-auth.js, markup and CSS together. The
+// teacher card is markup and CSS in teacher.html with its behaviour in
+// teacher-portal.js, so each is checked against the file that actually holds it.
+const portalSrc = fs.readFileSync(path.join(ROOT, 'teacher-portal.js'), 'utf8');
+const teacherHtml = fs.readFileSync(path.join(ROOT, 'teacher.html'), 'utf8');
+[['student login', src2, src2, 'rma-auth-eye'],
+  ['teacher login', portalSrc, teacherHtml, 'pwd-eye']].forEach(([where, js, markup, cls]) => {
+  check(`${where} has a reveal button`,
+    new RegExp(`data-toggle-password="\\w+"`).test(markup));
+  check(`${where} reveal button is labelled for screen readers`,
+    /aria-label="Show password"[^>]*aria-pressed="false"/.test(markup)
+    || /aria-pressed="false"[^>]*aria-label="Show password"/.test(markup));
+  check(`${where} reveal is tied to its password field`,
+    new RegExp(`aria-controls="\\w+"`).test(markup));
+  check(`${where} reveal toggles the input type`,
+    /input\.type = revealed \? "text" : "password"/.test(js));
+  check(`${where} reveal updates aria-pressed`,
+    /setAttribute\("aria-pressed", String\(revealed\)\)/.test(js));
+  check(`${where} reveal stops the label stealing the click`, /event\.preventDefault\(\)/.test(js));
+  check(`${where} reveal styles exist`, new RegExp(`\\.${cls}\\b`).test(markup));
+  check(`${where} reveal icon hides its slash until revealed`,
+    new RegExp(`\\.${cls}-slash \\{ opacity:0`).test(markup.replace(/\s+/g, ' ')));
+  check(`${where} reveal icon is an inline svg`, /<svg[^>]*viewBox="0 0 24 24"/.test(markup));
+});
+// The student card is generated, so the button must survive into the real DOM.
+check('student reveal button reaches the rendered card',
+  /data-toggle-password="loginPassword"/.test(html));
+// A revealed password must never survive a re-render or a sign-in.
+check('student reveal is re-masked when the card re-renders',
+  /maskPasswords\(\);/.test(src2) && /function maskPasswords\(\)/.test(src2));
+check('teacher reveal is re-masked on sign-in',
+  /maskTeacherPasswords\(\);/.test(portalSrc) && /function maskTeacherPasswords\(\)/.test(portalSrc));
+
+// --- the onboarding UI is English only ---
+// The aligned Filipino questions in the teacher's Question Map are deliberate
+// assessment content and are not in scope here; this is the student sign-up and
+// log-in card only.
+const FILIPINO = ['Antas', 'Apelyido', 'Mag-log in', 'Magrehistro', 'Sekyon', 'Lumikha',
+  'napagawa', 'Pindutin', 'Pakipili', 'Awtomatikong', 'Ingatan', 'Magpatuloy',
+  'Piliin ang', 'Hindi tugma', 'Unang Pangalan', 'Titulo', 'ITYPE ANG'];
+check('no "English | Filipino" pairs remain in the auth card',
+  !/\|/.test(html.replace(/\|\|/g, '')) || !FILIPINO.some((w) => html.includes(w)),
+  FILIPINO.filter((w) => html.includes(w)).join(', '));
+FILIPINO.forEach((w) => check(`auth UI drops "${w}"`, !html.includes(w)));
+check('English labels survive the cleanup',
+  ['Log in', 'Sign up', 'Password', 'Grade level', 'Student surname', 'Section']
+    .every((l) => html.includes(l)));
+
 console.log(out.join('\n'));
 console.log(out.some((r) => r.startsWith('FAIL')) ? '\nSOME CHECKS FAILED' : '\nALL CHECKS PASSED');
