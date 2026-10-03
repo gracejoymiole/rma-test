@@ -16,7 +16,7 @@ const PAGES = [
 const GRADE_DIRS = ['FINAL GRADE 7 RMA', 'RMA G8 V2', 'RMA G9 V1', 'RMA G10 V1'];
 const EXPECTED = ['Box-1.png', 'Figure-1.png', 'Figure-2.png', 'Figure-3.png', 'Figure-4.png',
   'Figure-5.png', 'Figure-6.png', 'Figure-7.png', 'Figure-8.png', 'Figure-9.png', 'Figure-10.png',
-  'Table-1.png', 'Table-2.png', 'addimg-1.png', 'addimg-2.png', 'mwnhslogo.png'];
+  'Table-1.png', 'Table-2.png', 'eq1.png', 'addimg-2.png', 'mwnhslogo.png'];
 
 const md5 = (buf) => require('crypto').createHash('md5').update(buf).digest('hex');
 
@@ -48,11 +48,73 @@ PAGES.forEach((rel) => {
   check(`${path.basename(rel)} no bare grade-local refs`, !refs.some((r) => !r.startsWith('../assets/')), refs.filter((r) => !r.startsWith('../assets/')).join(','));
 });
 
-// --- the dead eq1.png entry is gone ---
-const g7 = fs.readFileSync(path.join(ROOT, PAGES[0]), 'utf8');
-check('missing eq1.png entry removed', !/eq1\.png/.test(g7));
-check('getFigureUrl still defined', /function getFigureUrl\(label\)/.test(g7));
-check('figure map still has the real labels', /"Box 1": "\.\.\/assets\/Box-1\.png"/.test(g7));
+// --- every figure a question points at must actually reach the student ---
+// getFigureUrl was defined on all four pages and called from none of them: the
+// render loop built "Figure-1.png" from the label, which resolves against the
+// page's own folder rather than assets/, so every figure 404'd and the onerror
+// handler hid it. Students read "Refer to Figure 1" and were shown nothing.
+// Defining the helper is not enough, so this checks it is wired up.
+//
+// "addimg 1" and "eq1" are two labels for one and the same image. It was filed
+// as addimg-1.png, so every "Refer to eq1" question had nothing to resolve,
+// while "Refer to addimg 1" resolved to a file that was never really that
+// figure's name. Renamed to eq1.png on 2026-10-03, so both labels point there.
+// No label is known to be missing now; the list stays so that a future gap is
+// added deliberately rather than discovered in a browser.
+const KNOWN_MISSING_FIGURES = [];
+
+PAGES.forEach((rel) => {
+  const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const base = path.basename(rel);
+
+  const body = text.replace(/function getFigureUrl\([\s\S]*?\n\}/, '');
+  check(`${base} calls getFigureUrl`, /getFigureUrl\(/.test(body));
+  check(`${base} does not build image paths from the label`,
+    !/fileName = label\.replace/.test(text));
+  check(`${base} does not hide a figure that failed to load`,
+    !/img\.onerror = function\(\)\s*\{[^}]*console\.log/.test(text));
+
+  // The lookup table, and every label it promises.
+  const table = (text.match(/const figures = \{([\s\S]*?)\}/) || [])[1] || '';
+  const mapped = new Map([...table.matchAll(/"([^"]+)":\s*"([^"]+)"/g)].map((m) => [m[1], m[2]]));
+  check(`${base} lookup table is not empty`, mapped.size > 0, `${mapped.size} labels`);
+
+  const dir = path.dirname(path.join(ROOT, rel));
+  const badTargets = [...mapped.entries()].filter(([, t]) => !fs.existsSync(path.resolve(dir, t)));
+  check(`${base} every mapped figure exists`, badTargets.length === 0,
+    badTargets.map(([l, t]) => `${l}->${t}`).join(', '));
+
+  // Labels used by real questions. Read them out of the question text values
+  // rather than scanning the file, so the matching regex used by the render
+  // loop cannot be mistaken for a label.
+  const qStart = text.indexOf('const rawQuestions');
+  const qEnd = text.indexOf('];', qStart);
+  const questions = text.slice(qStart, qEnd > qStart ? qEnd : undefined);
+  const used = new Set();
+  for (const m of questions.matchAll(/text:\s*"((?:[^"\\]|\\.)*)"/g)) {
+    for (const ref of m[1].matchAll(/\[Refer to ([^\]]+)\]/g)) used.add(ref[1].trim());
+  }
+  check(`${base} has questions referencing figures`, used.size > 0, `${used.size} labels`);
+
+  const unmapped = [...used].filter((l) => !mapped.has(l));
+  const unexpected = unmapped.filter((l) => !KNOWN_MISSING_FIGURES.includes(l));
+  check(`${base} every referenced label is mapped`, unexpected.length === 0,
+    unexpected.length ? unexpected.join(', ')
+      : unmapped.length ? `known gap: ${unmapped.join(', ')}` : '');
+});
+
+// The old filename must not come back, or "addimg 1" will resolve to a 404 the
+// same way every figure did before. Checked across the whole repo, not just the
+// lookup tables, because a stale reference anywhere is enough to break it.
+const staleRefs = PAGES.filter((rel) =>
+  fs.readFileSync(path.join(ROOT, rel), 'utf8').includes('addimg-1.png'));
+check('no page still points at addimg-1.png', staleRefs.length === 0, staleRefs.join(', '));
+check('addimg-1.png is gone from assets/',
+  !fs.existsSync(path.join(ROOT, 'assets', 'addimg-1.png')));
+check('eq1.png is in assets/ and non-empty', (() => {
+  const p = path.join(ROOT, 'assets', 'eq1.png');
+  return fs.existsSync(p) && fs.statSync(p).size > 0;
+})());
 
 // --- index.html points at the shared logo ---
 const index = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
