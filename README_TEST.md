@@ -75,7 +75,7 @@ Test the implementation of the Question Map panel and related features before co
 
 | Document | Purpose |
 |----------|---------|
-| `IMPLEMENTATION_SUMMARY.md` | Detailed summary of what was implemented |
+| `README.md` | Project documentation, layout, and feature reference |
 | `LOCAL_TEST_GUIDE.md` | Step-by-step testing instructions |
 | `README_TEST.md` | This file - quick reference |
 

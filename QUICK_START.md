@@ -62,7 +62,7 @@ Then open: http://localhost:8000/teacher.html
 4. **supabase/schema.sql** - Added score bands table, uppercase name fields
 
 ### New Files:
-1. **IMPLEMENTATION_SUMMARY.md** - Complete documentation
+1. **`README.md`** - Project documentation
 2. **QUICK_START.md** - This file
 
 ---
@@ -109,4 +109,4 @@ Then open: http://localhost:8000/teacher.html
 
 ## 📞 NEED HELP?
 
-Check the **IMPLEMENTATION_SUMMARY.md** file for complete details on all implemented features.
+Check the **README.md** file for complete details on all implemented features.

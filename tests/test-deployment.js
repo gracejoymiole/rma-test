@@ -155,6 +155,62 @@ check('verify-live reads a permission error as "column exists"',
 check('verify-live still fails on a genuinely missing column',
   live.includes("'column does not exist'"));
 check('verify-live is wired to npm run', /verify-live\.js$/.test(pkg.scripts['verify:live'] || ''));
+
+// --- verify-live must never point the operator at a script that lacks the fix ---
+// SQL can only be applied by hand, so a wrong filename is worse than no advice:
+// it reads as progress and leaves the failure in place. This is the guard for
+// exactly that. rma_teacher_leaderboard was missing from the live project while
+// the tool kept telling the reader to run apply-missing.sql, which does not
+// create it.
+const remedyBlock = (live.match(/const REMEDIATION = \{([\s\S]*?)\n\};/) || [])[1] || '';
+// Keys are bare when they are valid identifiers and quoted otherwise, so both
+// forms have to parse or a silently dropped entry would look like full coverage.
+const remedies = [...remedyBlock.matchAll(/^\s*(?:'([^']+)'|([\w.]+)):\s*'([^']+)'/gm)]
+  .map((m) => ({ name: m[1] || m[2], file: m[3] }));
+check('verify-live declares a remediation map', remedies.length > 0,
+  remedies.length + ' entries');
+
+const sqlText = (rel) => {
+  const p = path.join(ROOT, rel.replace(/\//g, path.sep));
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+};
+
+// A check name is either a bare RPC (created as a function) or table.column
+// (created as a column), plus one special case for the dropped leaderboard view.
+function createsThe(sql, name) {
+  if (name === 'rma_leaderboard view hidden') {
+    return /create or replace function public\.rma_leaderboard_top\(/.test(sql);
+  }
+  if (name.includes('.')) {
+    return new RegExp(`add column if not exists ${name.split('.')[1]}\\b`).test(sql);
+  }
+  return new RegExp(`create\\s+or\\s+replace\\s+function\\s+(?:public\\.)?${name}\\s*\\(`).test(sql);
+}
+
+remedies.forEach(({ name, file }) => {
+  const sql = sqlText(file);
+  check(`remediation for ${name} names a real script`, sql !== null, file);
+  check(`remediation for ${name} names a script that creates it`,
+    sql !== null && createsThe(sql, name), file);
+});
+
+// Every RPC the tool probes must have an entry, or a failure would report no fix.
+['rma_student_login', 'rma_teacher_login', 'rma_teacher_dashboard', 'rma_teacher_profile',
+  'rma_set_attempt_complete', 'rma_leaderboard_top', 'rma_teacher_leaderboard',
+  'rma_get_score_bands'].forEach((fn) => check(`remediation map covers ${fn}`,
+  remedies.some((r) => r.name === fn)));
+
+// Every column the tool probes must have an entry too.
+['rma_scores.attempt_number', 'rma_scores.is_complete', 'rma_teacher_accounts.first_name',
+  'rma_teacher_accounts.last_name', 'rma_teacher_accounts.see_all_sections']
+  .forEach((c) => check(`remediation map covers ${c}`,
+    remedies.some((r) => r.name === c)));
+check('remediation map covers the leaderboard leak',
+  remedies.some((r) => r.name === 'rma_leaderboard view hidden'));
+// No entry may be dead weight, which would let the map drift out of date quietly.
+check('remediation map has no entries for checks that are never made',
+  remedies.every((r) => live.includes(`'${r.name}'`)), 
+  remedies.filter((r) => !live.includes(`'${r.name}'`)).map((r) => r.name).join(', '));
 check('tools/ is excluded from deploy', /\ntools\//.test(fs.readFileSync(path.join(ROOT, '.vercelignore'), 'utf8')));
 check('tests/ is excluded from deploy', /\ntests\//.test(fs.readFileSync(path.join(ROOT, '.vercelignore'), 'utf8')));
 

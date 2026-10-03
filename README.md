@@ -29,10 +29,36 @@ npm run serve     # http://localhost:5500
 Any static server works; there is no build step. The included script refuses to
 serve `supabase/`, which holds the schema and the bootstrap script.
 
+## Teacher portal
+
+`teacher.html` is three tabs over the same session-scoped data.
+
+**📊 Overview** — grade and section filters, then class metrics, section
+completion and average-score charts, highest and lowest item mastery for the
+grade and per section, a question mastery table, and a per-student status table.
+Status comes from the `rma_score_bands` table rather than hardcoded thresholds:
+`Ready / Proficient` (80-100), `Developing` (60-79), `Emerging` (40-59), and
+`Needs Intensive Support` (0-39), plus `Incomplete` for an unfinished attempt and
+`Not yet taken` for no attempt at all. The Who Needs Help card filters by band. A
+teacher sees their own sections unless `see_all_sections` is set on their account.
+
+**📚 Question Map** — answer keys and explanations, filterable by search text, by
+type (RMA original / bank / aligned Filipino), and by mastery band. Mastery
+appears for RMA items only, computed from real submissions: `rma_data` stores one
+bit per RMA item, so item N maps to `RMA-Q<grade>-<NN>`. Bank and aligned items
+are never submitted per-item, so they carry no mastery value and are left blank
+rather than reported as 0%.
+
+**🗺️ Master Map** — the full question inventory across all four grades, from
+`rma-master-map.js`, which is generated from
+`RMA_Grade7-10_Complete_Question_Mapping.xlsx` and must not be edited by hand. It
+carries 47 blueprint items and 448 question rows tagged by grade, topic and
+cognitive process.
+
 ## Tests
 
 ```powershell
-npm test           # all suites, 521 assertions
+npm test           # all suites, 565 assertions
 npm run check      # syntax-check the shipped scripts
 npm run verify     # both, as CI runs it
 npm run verify:live  # checks the deployed Supabase project, not the repo

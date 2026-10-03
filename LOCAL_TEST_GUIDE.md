@@ -159,7 +159,7 @@ Apply `supabase/schema.sql` in the SQL editor. `rma_teacher_login` returns 404 u
 ## Contact
 
 For questions or issues, refer to:
-- Implementation Summary: `IMPLEMENTATION_SUMMARY.md`
+- Project documentation: `README.md`
 - This guide: `LOCAL_TEST_GUIDE.md`
 
 **Note:** All changes are currently only in local files. No changes have been committed to GitHub yet.

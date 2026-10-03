@@ -24,9 +24,31 @@ if (!url || !key) {
 const rest = `${url}/rest/v1`;
 const headers = { apikey: key, Authorization: `Bearer ${key}` };
 
+// Which script actually creates each thing checked below. SQL can only be
+// applied by hand, so naming the wrong script is worse than staying quiet: it
+// looks like progress and leaves the failure exactly where it was. Every entry
+// is verified against the real files by tests/test-deployment.js, and a check
+// with no entry is reported as having no known fix rather than guessing.
+const REMEDIATION = {
+  'rma_leaderboard view hidden': 'supabase/urgent-leaderboard-fix.sql',
+  rma_student_login: 'supabase/schema.sql',
+  rma_teacher_login: 'supabase/schema.sql',
+  rma_teacher_dashboard: 'supabase/schema.sql',
+  rma_teacher_profile: 'supabase/apply-missing.sql',
+  rma_set_attempt_complete: 'supabase/apply-missing.sql',
+  rma_leaderboard_top: 'supabase/urgent-leaderboard-fix.sql',
+  rma_teacher_leaderboard: 'supabase/apply-leaderboard.sql',
+  rma_get_score_bands: 'supabase/apply-missing.sql',
+  'rma_scores.attempt_number': 'supabase/apply-missing.sql',
+  'rma_scores.is_complete': 'supabase/apply-missing.sql',
+  'rma_teacher_accounts.first_name': 'supabase/apply-missing.sql',
+  'rma_teacher_accounts.last_name': 'supabase/apply-missing.sql',
+  'rma_teacher_accounts.see_all_sections': 'supabase/apply-missing.sql',
+};
+
 const results = [];
 const pass = (name, detail) => results.push({ ok: true, name, detail });
-const fail = (name, detail) => results.push({ ok: false, name, detail });
+const fail = (name, detail) => results.push({ ok: false, name, detail, fix: REMEDIATION[name] });
 
 async function call(rpc, body) {
   const r = await fetch(`${rest}/rpc/${rpc}`, {
@@ -133,17 +155,37 @@ async function main() {
   await checkColumn('rma_teacher_accounts', 'last_name');
   await checkColumn('rma_teacher_accounts', 'see_all_sections');
 
-  const width = Math.max(...results.map((r) => r.name.length)) + 2;
+  const failed = results.filter((r) => !r.ok);
+  // Wide enough for the longest check name and the longest script path, so the
+  // remediation list below lines up instead of being truncated by pad().
+  const width = Math.max(
+    ...results.map((r) => r.name.length),
+    ...failed.map((r) => (r.fix || '').length + 2)
+  ) + 2;
   const pad = (s) => (s + ' '.repeat(width)).slice(0, width);
   console.log('\nLive check against ' + url + '\n');
   for (const r of results) {
     console.log(`  ${r.ok ? 'PASS' : 'FAIL'}  ${pad(r.name)}  ${r.detail}`);
   }
-  const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} passed`);
   if (failed.length) {
-    console.log('\nStill missing: run supabase/apply-missing.sql in the SQL Editor,');
-    console.log('or the full supabase/schema.sql, then run this again.');
+    const leaked = failed.filter((r) => r.name === 'rma_leaderboard view hidden');
+    if (leaked.length) {
+      console.log('\n  The anonymous rma_leaderboard view is reachable again. Learner names are');
+      console.log('  exposed to anyone until supabase/urgent-leaderboard-fix.sql is pasted.');
+    }
+    const byFile = new Map();
+    for (const r of failed) {
+      const file = r.fix || '(no script named for this check)';
+      if (!byFile.has(file)) byFile.set(file, []);
+      byFile.get(file).push(r.name);
+    }
+    console.log('\nStill missing. Paste these into the Supabase SQL Editor for this project:');
+    for (const [file, names] of [...byFile].sort((a, b) => a[0].localeCompare(b[0]))) {
+      console.log(`  ${pad(file + '  ')}  ${names.join(', ')}`);
+    }
+    console.log('\nEach script is idempotent and safe to re-run. supabase/schema.sql creates all');
+    console.log('of the above in a single paste if that is easier, then run this again.');
   }
   process.exit(failed.length ? 1 : 0);
 }
