@@ -386,6 +386,7 @@
     <script src="../supabase-config.js"></script>
     <script src="../rma-data.js"></script>
     <script src="../rma-auth.js"></script>
+<script src="../rma-selection.js"></script>
     <script>
 // ==========================================
 // 1. CONFIGURATION & VARIABLES
@@ -1592,20 +1593,19 @@ function initGame() {
 
     const FIXED_COUNT = Math.min(38, rawQuestions.length);
     const RANDOM_COUNT = Math.min(12, rawQuestions.length - FIXED_COUNT);
+
+    // Tag-aware selection. Every question already knows its topic through
+    // getMathObjective(i + 1), so the random block is spread across the topics
+    // this grade covers. Cutting it from one flat tail pool meant which bank
+    // items a student got was decided by array position, and the later topics
+    // were barely reachable.
+    const { indices: finalIndices } = RMASelection.selectByTopic({
+      length: rawQuestions.length,
+      fixedCount: FIXED_COUNT,
+      randomCount: RANDOM_COUNT,
+      topicOf: (i) => getMathObjective(i + 1)
+    });
     
-    let fixedIndices = [];
-    let randomPoolIndices = [];
-    
-    for (let i = 0; i < rawQuestions.length; i++) {
-        if (i < FIXED_COUNT) fixedIndices.push(i);
-        else randomPoolIndices.push(i);
-    }
-    
-    shuffleArray(randomPoolIndices);
-    let selectedRandomIndices = randomPoolIndices.slice(0, RANDOM_COUNT);
-    let finalIndices = fixedIndices.concat(selectedRandomIndices);
-    
-    shuffleArray(finalIndices); // I-shuffle ang buong 60 items
     gameState.activeQuestions = finalIndices.map(i => ({ rawIndex: i }));
     gameState.currentQIndex = 0;
     dom.qTotalDisp.textContent = gameState.activeQuestions.length;

@@ -29,7 +29,8 @@ check('urgent file keeps the empty-name guard', /first_name_mi/.test(urgent) && 
 
 // --- the full schema still carries everything the portal calls ---
 ['rma_get_score_bands', 'rma_teacher_profile', 'rma_set_attempt_complete',
-  'rma_teacher_dashboard', 'rma_teacher_login', 'rma_student_login', 'rma_leaderboard_top']
+  'rma_teacher_dashboard', 'rma_teacher_login', 'rma_student_login', 'rma_leaderboard_top',
+  'rma_teacher_leaderboard']
   .forEach((fn) => check(`schema defines ${fn}`, schema.includes(`function public.${fn}(`)));
 
 check('schema drops the dead section comparison', /drop function if exists public\.rma_section_comparison/.test(schema));
@@ -133,7 +134,8 @@ check('no revoke targets a function that may be absent',
 const live = fs.readFileSync(path.join(ROOT, 'tools', 'verify-live.js'), 'utf8');
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 ['rma_teacher_dashboard', 'rma_teacher_profile', 'rma_set_attempt_complete',
-  'rma_leaderboard_top', 'rma_student_login', 'rma_teacher_login', 'rma_get_score_bands']
+  'rma_leaderboard_top', 'rma_student_login', 'rma_teacher_login', 'rma_get_score_bands',
+  'rma_teacher_leaderboard']
   .forEach((fn) => check(`verify-live probes ${fn}`, live.includes(`'${fn}'`)));
 check('verify-live asserts the leaking view stays hidden', live.includes('rma_leaderboard?select='));
 ['rma_scores', 'rma_teacher_accounts'].forEach((t) => {

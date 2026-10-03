@@ -3241,30 +3241,38 @@
     return counts;
   }
   
-  function getPriorityLearners(rows, grade, section) {
-    const filteredRows = section 
+  function getScopedLearners(rows, grade, section) {
+    const filteredRows = section
       ? rows.filter(r => Number(r.grade) === grade && r.section === section)
       : rows.filter(r => Number(r.grade) === grade);
-    
-    // Anything below "proficient" needs attention, and an unfinished attempt
-    // needs attention regardless of the score it managed to record.
-    const needsSupport = filteredRows
-      .filter(r => {
-        const status = statusFor(r.score, r.attempt_number, r.is_complete);
-        return status.state === "incomplete"
-          || (status.band && ['needs_support', 'emerging'].includes(status.band.band_name));
-      })
-      .map(r => ({
-        student_id: r.student_id,
-        student_code: r.student_code,
-        student_name: r.student_name || `${r.last_name}, ${r.first_name}`,
-        score: r.score,
-        status: statusFor(r.score, r.attempt_number, r.is_complete),
-        section: r.section,
-        created_at: r.created_at,
-        attempt_number: r.attempt_number,
-        weakTopics: getWeakTopics(r)
-      }))
+
+    return filteredRows.map(r => ({
+      student_id: r.student_id,
+      student_code: r.student_code,
+      student_name: r.student_name || `${r.last_name}, ${r.first_name}`,
+      score: r.score,
+      status: statusFor(r.score, r.attempt_number, r.is_complete),
+      section: r.section,
+      created_at: r.created_at,
+      attempt_number: r.attempt_number,
+      weakTopics: getWeakTopics(r)
+    }));
+  }
+
+  // Anything below "proficient" needs attention, and an unfinished attempt
+  // needs attention regardless of the score it managed to record. This defines
+  // the card's default group, not a limit on what the chips may show. The chips
+  // count every learner in scope, so the list has to start from all of them:
+  // restricting it here meant "proficient" and "developing" could be selected
+  // but never matched anything, because those learners were never in the list.
+  function needsAttention(learner) {
+    return learner.status.state === "incomplete"
+      || (learner.status.band && ['needs_support', 'emerging'].includes(learner.status.band.band_name));
+  }
+
+  function getPriorityLearners(rows, grade, section) {
+    return getScopedLearners(rows, grade, section)
+      .filter(needsAttention)
       .sort((a, b) => {
         // Incomplete attempts first: they are the ones a teacher can act on today.
         if (a.status.state !== b.status.state) {
@@ -3275,8 +3283,6 @@
         }
         return new Date(b.created_at) - new Date(a.created_at);
       });
-    
-    return needsSupport;
   }
 
   // ============================================
@@ -3285,29 +3291,35 @@
   // learners in it, rather than reading a list and filtering it mentally.
   // ============================================
 
-  let priorityBandFilter = null;
-  let priorityCache = { learners: [], stats: null, levels: null };
+  // The card's default group. Every chip count has to match what the list
+  // actually shows, so "Needs help" and "All learners" are separate chips
+  // rather than one "All learners" chip that quietly meant "needs help".
+  const NEEDS_HELP = "needs-help";
+  let priorityBandFilter = NEEDS_HELP;
+  let priorityCache = { scoped: [], stats: null, levels: null, needsHelp: 0 };
 
   function priorityMatchesBand(learner, key) {
     if (!key || key === "all") return true;
+    if (key === NEEDS_HELP) return needsAttention(learner);
     if (key === "incomplete") return learner.status.state === "incomplete";
     return Boolean(learner.status.band) && learner.status.band.band_name === key;
   }
 
-  function renderPriorityFilter(levels, stats) {
+  function renderPriorityFilter(levels, stats, needsHelpCount) {
     const container = document.getElementById("priorityFilterContainer");
     if (!container) return;
 
-    const chips = [{ key: "all", label: "All learners", icon: "👥", count: stats.total }];
+    const chips = [{ key: NEEDS_HELP, label: "Needs help", icon: "🎯", count: needsHelpCount }];
     scoreBands.forEach((band) => {
       chips.push({ key: band.band_name, label: band.label, icon: band.icon, count: (levels && levels[band.band_name]) || 0, color: band.color });
     });
     chips.push({ key: "incomplete", label: "Incomplete", icon: "⚠️", count: stats.incomplete });
     chips.push({ key: "not-taken", label: "Not yet taken", icon: "⏳", count: stats.notTaken });
+    chips.push({ key: "all", label: "All learners", icon: "👥", count: stats.total });
 
     container.innerHTML = chips.map((chip) => `
-      <button type="button" class="band-chip ${priorityBandFilter === chip.key || (!priorityBandFilter && chip.key === "all") ? "active" : ""}"
-        data-band="${escapeHtml(chip.key)}" aria-pressed="${priorityBandFilter === chip.key || (!priorityBandFilter && chip.key === "all")}"
+      <button type="button" class="band-chip ${priorityBandFilter === chip.key ? "active" : ""}"
+        data-band="${escapeHtml(chip.key)}" aria-pressed="${priorityBandFilter === chip.key}"
         ${chip.color ? `style="--chip-color:${chip.color}"` : ""}>
         <span class="band-chip-icon" aria-hidden="true">${chip.icon}</span>
         <span class="band-chip-label">${escapeHtml(chip.label)}</span>
@@ -3316,13 +3328,15 @@
   }
 
   function setPriorityBandFilter(key) {
-    priorityBandFilter = priorityBandFilter === key ? null : key;
-    renderPriorityFilter(priorityCache.levels, priorityCache.stats);
-    renderPriorityLearners(priorityCache.learners, priorityCache.stats);
+    // Clicking the active chip returns to the default group rather than to an
+    // undefined state that would show every learner and contradict the label.
+    priorityBandFilter = priorityBandFilter === key ? NEEDS_HELP : key;
+    renderPriorityFilter(priorityCache.levels, priorityCache.stats, priorityCache.needsHelp);
+    renderPriorityLearners(priorityCache.scoped, priorityCache.stats);
   }
-  function renderPriorityPanel(priorityLearners, stats, levels) {
-    priorityCache = { learners: priorityLearners, stats, levels };
 
+  function renderPriorityPanel(priorityLearners, scopedLearners, stats, levels) {
+    priorityCache = { scoped: scopedLearners, stats, levels, needsHelp: priorityLearners.length };
     const gaps = new Map();
     priorityLearners.forEach((learner) => {
       (learner.weakTopics || []).forEach((t) => {
@@ -3333,8 +3347,8 @@
     priorityCache.gaps = topGaps;
 
     renderPriorityGapSummary(topGaps);
-    renderPriorityFilter(levels, stats);
-    renderPriorityLearners(priorityLearners, stats);
+    renderPriorityFilter(levels, stats, priorityLearners.length);
+    renderPriorityLearners(scopedLearners, stats);
   }
 
   function renderPriorityGapSummary(topGaps) {
@@ -3351,23 +3365,27 @@
       </ul>`;
   }
 
-  function renderPriorityLearners(priorityLearners, stats) {
+  // scopedLearners is every learner in the report scope. Filtering starts from
+  // that list, so selecting any band shows the learners the chip counted.
+  function renderPriorityLearners(scopedLearners, stats) {
     const container = document.getElementById("priorityLearnersContainer");
     if (!container) return;
 
     const key = priorityBandFilter;
     const activeLabel = key && key !== "all"
-      ? (key === "incomplete" ? "Incomplete"
+      ? (key === NEEDS_HELP ? "Needs help"
+        : key === "incomplete" ? "Incomplete"
         : key === "not-taken" ? "Not yet taken"
         : (scoreBands.find((b) => b.band_name === key) || {}).label || key)
       : null;
+    const total = (stats && stats.total) || scopedLearners.length;
 
     if (key === "not-taken") {
       const list = (stats && stats.notTakenList) || [];
       container.innerHTML = `
         <div class="priority-stats">
           <span class="priority-count">${list.length} learner${list.length === 1 ? "" : "s"} — ${escapeHtml(activeLabel)}</span>
-          <button type="button" class="priority-clear" onclick="setPriorityBandFilter('not-taken')">Show all</button>
+          <button type="button" class="priority-clear" onclick="setPriorityBandFilter('all')">Show all ${total}</button>
         </div>
         <div class="priority-list">
           ${list.length ? list.map((student) => `
@@ -3386,23 +3404,26 @@
       return;
     }
 
-    const visible = priorityLearners.filter((learner) => priorityMatchesBand(learner, key));
+    const visible = scopedLearners.filter((learner) => priorityMatchesBand(learner, key));
 
     if (visible.length === 0) {
+      const isBand = key && key !== "all" && key !== NEEDS_HELP && key !== "incomplete";
       container.innerHTML = `
         <div class="priority-stats">
           <span class="priority-count">No learners in ${escapeHtml(activeLabel || "this scope")}</span>
         </div>
-        <p class="report-note">${priorityLearners.length === 0
+        <p class="report-note">${key === NEEDS_HELP
           ? "No students currently need intensive support. Well done!"
-          : "Nobody in this group needs remediation. Choose another band above."}</p>`;
+          : isBand
+            ? "Nobody in this scope landed in this band. Choose another group above."
+            : "Nobody in this group needs remediation. Choose another band above."}</p>`;
       return;
     }
 
     container.innerHTML = `
       <div class="priority-stats">
-        <span class="priority-count">${visible.length} learner${visible.length === 1 ? "" : "s"}${activeLabel ? ` — ${escapeHtml(activeLabel)}` : " need support"}</span>
-        ${activeLabel ? `<button type="button" class="priority-clear" onclick="setPriorityBandFilter('all')">Show all ${priorityLearners.length}</button>` : ''}
+        <span class="priority-count">${visible.length} learner${visible.length === 1 ? "" : "s"}${activeLabel ? ` — ${escapeHtml(activeLabel)}` : ""}</span>
+        ${activeLabel ? `<button type="button" class="priority-clear" onclick="setPriorityBandFilter('all')">Show all ${total}</button>` : ''}
       </div>
       <div class="priority-list">
         ${visible.map(learner => `
@@ -3488,6 +3509,69 @@
     `;
   }
 
+  // ============================================
+  // SECTION LEADERBOARDS (live + all time)
+  // ============================================
+  // "Live" is each student's most recent completed attempt, "all time" is their
+  // personal best, so a student who improves is not punished for having sat the
+  // assessment twice. Both come back scoped to the teacher and to the grade and
+  // section currently selected above.
+  function leaderboardRows(entries, scoreKey) {
+    if (!Array.isArray(entries) || !entries.length) {
+      return `<p class="report-note">No completed attempts in this scope yet.</p>`;
+    }
+    return `<table class="leaderboard-table">
+      <thead><tr><th>#</th><th>Learner</th><th>Section</th><th>Score</th><th>Time</th><th>Attempts</th></tr></thead>
+      <tbody>${entries.map((row) => `
+        <tr>
+          <td><b>${escapeHtml(row.rank)}</b></td>
+          <td>
+            <span class="learner-name">${escapeHtml(row.name || "—")}</span>
+            ${row.student_code ? `<span class="learner-code">${escapeHtml(row.student_code)}</span>` : ""}
+          </td>
+          <td>${escapeHtml(row.section || "—")}</td>
+          <td><b>${escapeHtml(row[scoreKey] ?? "—")}</b></td>
+          <td>${escapeHtml(row.duration || "—")}</td>
+          <td>${escapeHtml(row.attempts ?? 0)}</td>
+        </tr>`).join("")}</tbody>
+    </table>`;
+  }
+
+  function renderLeaderboards(payload) {
+    const live = document.getElementById("liveLeaderboard");
+    const allTime = document.getElementById("allTimeLeaderboard");
+    const note = document.getElementById("leaderboardNote");
+    if (!live || !allTime) return;
+    const data = payload || {};
+    live.innerHTML = leaderboardRows(data.live, "score");
+    allTime.innerHTML = leaderboardRows(data.all_time, "score");
+    if (note) {
+      const scope = `Grade ${currentGrade}${currentSection ? ` · ${currentSection}` : " · all sections"}`;
+      note.textContent = `${scope}. Unfinished attempts are left off both lists.`;
+    }
+  }
+
+  async function loadLeaderboards() {
+    const live = document.getElementById("liveLeaderboard");
+    const allTime = document.getElementById("allTimeLeaderboard");
+    if (!live || !allTime) return;
+    live.innerHTML = `<p class="report-note">Loading…</p>`;
+    allTime.innerHTML = `<p class="report-note">Loading…</p>`;
+    try {
+      const data = await rpc("rma_teacher_leaderboard", {
+        p_token: token,
+        p_grade: currentGrade || null,
+        p_section: currentSection || null,
+        p_limit: 10,
+      });
+      renderLeaderboards(data);
+    } catch (error) {
+      const message = error.message || "The leaderboard could not be loaded.";
+      live.innerHTML = `<p class="report-note">${escapeHtml(message)}</p>`;
+      allTime.innerHTML = `<p class="report-note">${escapeHtml(message)}</p>`;
+    }
+  }
+
   function renderDashboardOverview() {
     if (!currentGrade) {
       document.getElementById("reportCard").hidden = true;
@@ -3497,6 +3581,7 @@
     const stats = getCompletionStats(rows, currentGrade, currentSection);
     const levels = getLevelDistribution(rows, currentGrade, currentSection);
     const priorityLearners = getPriorityLearners(rows, currentGrade, currentSection);
+    const scopedLearners = getScopedLearners(rows, currentGrade, currentSection);
     
     document.getElementById("summary").innerHTML = `
       <div class="metric">
@@ -3593,7 +3678,8 @@
     }).join("") || '<tr><td colspan="6">No students are registered for this report scope.</td></tr>';
     
     renderCompletionStatus(stats);
-    renderPriorityPanel(priorityLearners, stats, levels);
+    renderPriorityPanel(priorityLearners, scopedLearners, stats, levels);
+    loadLeaderboards();
   }
 
   function getBandColorForRate(rate) {
@@ -3989,7 +4075,7 @@
   gradeFilter.addEventListener("change", () => {
     const grade = Number(gradeFilter.value);
     currentGrade = grade;
-    priorityBandFilter = null;
+    priorityBandFilter = NEEDS_HELP;
     if (!grade) {
       sectionFilter.innerHTML = '<option value="">Select a grade first</option>';
       sectionFilter.disabled = true;
@@ -4009,7 +4095,7 @@
 
   sectionFilter.addEventListener("change", () => {
     currentSection = sectionFilter.value === "*" ? null : sectionFilter.value;
-    priorityBandFilter = null;
+    priorityBandFilter = NEEDS_HELP;
     renderDashboardOverview();
   });
 

@@ -32,7 +32,7 @@ serve `supabase/`, which holds the schema and the bootstrap script.
 ## Tests
 
 ```powershell
-npm test           # all suites, 425 assertions
+npm test           # all suites, 521 assertions
 npm run check      # syntax-check the shipped scripts
 npm run verify     # both, as CI runs it
 npm run verify:live  # checks the deployed Supabase project, not the repo
@@ -59,6 +59,9 @@ Coverage worth knowing about:
 | `test-gaps-export.js` | learning-gap derivation, Excel export, print report |
 | `test-mastery.js` | per-question mastery, and that items with no data are not counted as 0% |
 | `test-deployment.js` | schema/client contract, and that no client reads a table directly |
+| `test-selection.js` | tag-aware question selection, and that all four pages use it |
+| `test-leaderboard.js` | leaderboard RPC scope, permissions, and live vs all-time semantics |
+| `test-pages.js` | the four grade pages still parse as JavaScript |
 | `test-master-map.js` | the 448-question map |
 | `test-auth.js` | student onboarding and auth |
 
@@ -105,6 +108,41 @@ browser. Add every column before the functions that use it, and let
 `npm run verify:live` check the columns too.
 
 After any paste, confirm it with `npm run verify:live`.
+
+### Leaderboard
+
+The teacher dashboard shows a live and an all-time leaderboard per section.
+Live is each learner's most recent completed attempt; all time is their personal
+best, so a repeat attempt improves a score rather than replacing it. Unfinished
+attempts are left off both.
+
+`supabase/apply-leaderboard.sql` deploys the RPC that backs it. It is granted to
+`authenticated` only, never `anon`, and resolves the teacher's scope once into
+an array that both lists read from, so the two cannot disagree about who is
+visible. Grade and section filters are applied inside the function: a caller
+cannot widen its own scope by passing different arguments.
+
+### Question selection
+
+Each grade page serves a fixed block of RMA items plus a random block drawn from
+the rest. `rma-selection.js` decides that random block using the topic tags the
+pages already derive through `getMathObjective(i + 1)`, so a student gets a fair
+sample across the topics that grade covers instead of whichever bank items
+happened to sit at the end of the array.
+
+The Filipino-aligned items in `teacher-portal.js` are **not** served to students:
+no grade page loads that file. They are also incomplete as questions, so they
+cannot be served as they stand.
+
+| Grade | Filipino-aligned | Has options + answer |
+|-------|------------------|----------------------|
+| 7 | 30 | 10 |
+| 8 | 30 | 0 |
+| 9 | 30 | 0 |
+| 10 | 200 | 200 |
+
+Until Grades 7, 8 and 9 have answerable items, selection covers the English
+questions only. Nothing in the student path references the aligned bank.
 
 Create the first teacher account:
 

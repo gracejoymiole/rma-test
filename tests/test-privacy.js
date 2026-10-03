@@ -16,8 +16,16 @@ check('blank name keeps full access', /v_teacher\.first_name = '' or v_teacher\.
 check('scoping matches student teacher names',
   /lower\(st\.teacher_first_name\) = lower\(v_teacher\.first_name\)/.test(sql) &&
   /lower\(st\.teacher_last_name\) = lower\(v_teacher\.last_name\)/.test(sql));
-check('password guard on dashboard + set_attempt_complete (not profile)',
-  (sql.match(/Change the initial teacher password before opening student records/g) || []).length === 2);
+// Every RPC that hands back student records has to be blocked until the teacher
+// has replaced the bootstrap password. Asserted per function rather than by
+// counting occurrences, so adding an RPC cannot silently skip the guard.
+const fnBody = (name) => (sql.match(new RegExp(`create or replace function public\\.${name}\\([\\s\\S]*?\\n\\$\\$;`)) || [''])[0];
+const PASSWORD_GUARD = 'Change the initial teacher password before opening student records';
+const studentRecordRPCs = ['rma_teacher_dashboard', 'rma_set_attempt_complete', 'rma_teacher_leaderboard'];
+studentRecordRPCs.forEach((fn) => check(
+  `password guard present on ${fn}`, fnBody(fn).includes(PASSWORD_GUARD)));
+check('profile is deliberately not password-guarded (it returns the teacher\'s own name only)',
+  fnBody('rma_teacher_profile').length > 0 && !fnBody('rma_teacher_profile').includes(PASSWORD_GUARD));
 check('set_attempt_complete only touches the latest attempt', /order by sc2\.created_at desc limit 1/.test(sql));
 check('set_attempt_complete checks row_count', /get diagnostics v_count = row_count/.test(sql));
 check('set_attempt_complete errors when nothing matched', /No submitted attempt was found for that student/.test(sql));

@@ -336,6 +336,38 @@
       .filters { grid-template-columns: 1fr; }
       .question-meta { flex-direction: column; gap: 6px; }
     }
+  /* Compact cards with internal scrolling.
+       The lists inside these cards are unbounded by default, so one large class
+       pushed everything below it off the panel. Cap each list and let it scroll
+       on its own, keeping the heading, chips and totals of every card visible at
+       the same time. max-height is viewport-relative so it adapts to a laptop
+       screen instead of assuming a fixed pixel budget. */
+    :root { --card-list-max: min(56vh, 460px); }
+    .card { padding:18px; }
+    .scroll { max-height:var(--card-list-max); overflow:auto; }
+    .mm-scroll { max-height:var(--card-list-max); }
+    .priority-list {
+      display:grid; gap:10px;
+      max-height:var(--card-list-max);
+      overflow-y:auto; overscroll-behavior:contain;
+      padding-right:6px;
+    }
+    .not-taken-list {
+      max-height:min(38vh,300px);
+      overflow-y:auto; overscroll-behavior:contain;
+      padding-right:6px;
+    }
+    .priority-list .student-card-priority,
+    .not-taken-list li { padding:11px 12px; }
+    .metric { padding:12px 14px; }
+    .summary { gap:10px; }
+    .leaderboard-heading { margin:0 0 8px; font-size:.95rem; }
+    .leaderboard-scroll { max-height:min(46vh,380px); }
+    .leaderboard-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+    .leaderboard-table th, .leaderboard-table td { padding:7px 9px; border-bottom:1px solid #eee8e3; text-align:left; white-space:nowrap; }
+    .leaderboard-table th { position:sticky; top:0; background:#faf7f2; }
+    .leaderboard-table .learner-name { display:block; font-weight:600; }
+    .leaderboard-table .learner-code { display:block; color:var(--muted); font-size:.74rem; }
   </style>
 </head>
 <body>
@@ -390,6 +422,23 @@
             <section class="card"><h2 class="report-heading">Most / least mastered by section</h2><p class="report-note">Extremes are calculated from the latest attempt for each student.</p><div class="scroll"><table><thead><tr><th>Section</th><th>Least mastered</th><th>Rate</th><th>Most mastered</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div></section>
           </div>
           
+          <!-- Section leaderboards -->
+          <section class="card" id="leaderboardCard" style="margin-bottom:16px">
+            <h2 class="report-heading">Section Leaderboard</h2>
+            <p class="report-note">Live shows each learner's most recent completed attempt; all time shows their personal best. Both follow the grade and section selected above.</p>
+            <p class="report-note" id="leaderboardNote" style="margin-top:-8px"></p>
+            <div class="report-grid">
+              <div>
+                <h3 class="leaderboard-heading">Live</h3>
+                <div class="scroll leaderboard-scroll" id="liveLeaderboard"></div>
+              </div>
+              <div>
+                <h3 class="leaderboard-heading">All time (personal best)</h3>
+                <div class="scroll leaderboard-scroll" id="allTimeLeaderboard"></div>
+              </div>
+            </div>
+          </section>
+
           <!-- PHASE 1: Completion Status Card -->
           <section class="card" id="completionStatusCard" style="margin-bottom:16px">
             <h2 class="report-heading">Assessment Completion</h2>
@@ -400,7 +449,7 @@
           <!-- PHASE 1: Who Needs Help Card -->
           <section class="card" id="priorityLearnersCard" style="margin-bottom:16px">
             <h2 class="report-heading">Who Needs Help?</h2>
-            <p class="report-note">Students requiring immediate attention and intervention. Pick a group to narrow the list.</p>
+            <p class="report-note">Opens on the learners who need attention. Pick any group to see exactly who is in it, and each count matches the list below it.</p>
             <div id="priorityGapSummary" class="weak-topics gap-summary" hidden></div>
             <div id="priorityFilterContainer" class="band-chips" role="group" aria-label="Filter learners by performance band"></div>
             <div id="priorityLearnersContainer"></div>

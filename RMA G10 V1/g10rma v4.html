@@ -385,6 +385,7 @@
     <script src="../supabase-config.js"></script>
     <script src="../rma-data.js"></script>
     <script src="../rma-auth.js"></script>
+<script src="../rma-selection.js"></script>
     <script>
 // ==========================================
 // 1. CONFIGURATION & VARIABLES
@@ -2049,21 +2050,20 @@ function initGame() {
     dom.resultContent.classList.add('hidden');
     dom.quizContent.classList.remove('hidden');
     
-    const FIXED_COUNT = Math.min(47, rawQuestions.length);  
-    const RANDOM_COUNT = Math.min(13, rawQuestions.length - FIXED_COUNT); 
-    
-    let fixedIndices = [];
-    let randomPoolIndices = [];
+    const FIXED_COUNT = Math.min(47, rawQuestions.length);
+    const RANDOM_COUNT = Math.min(13, rawQuestions.length - FIXED_COUNT);
 
-    for (let i = 0; i < rawQuestions.length; i++) {
-        if (i < FIXED_COUNT) fixedIndices.push(i);
-        else randomPoolIndices.push(i);
-    }
-
-    shuffleArray(randomPoolIndices);
-    let selectedRandomIndices = randomPoolIndices.slice(0, RANDOM_COUNT);
-    let finalIndices = fixedIndices.concat(selectedRandomIndices);
-    shuffleArray(finalIndices);
+    // Tag-aware selection. Every question already knows its topic through
+    // getMathObjective(i + 1), so the random block is spread across the topics
+    // this grade covers. Cutting it from one flat tail pool meant which bank
+    // items a student got was decided by array position, and the later topics
+    // were barely reachable.
+    const { indices: finalIndices } = RMASelection.selectByTopic({
+      length: rawQuestions.length,
+      fixedCount: FIXED_COUNT,
+      randomCount: RANDOM_COUNT,
+      topicOf: (i) => getMathObjective(i + 1)
+    });
 
     gameState.activeQuestions = finalIndices.map(i => ({ rawIndex: i }));
     gameState.currentQIndex = 0;
