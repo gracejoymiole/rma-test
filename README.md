@@ -77,6 +77,27 @@ then pages keep saving scores without them.
 
 `python3 tools/browser-check.py` drives the real pages in Chromium (needs Playwright).
 
+## Removing a learner
+
+The Overview tab ends with **Remove a student**. Choose a grade level and section
+with the filters already at the top of the dashboard and the card lists everyone
+in that scope who can be removed. Pressing **Remove** only arms a separate
+**Confirm delete**, so a stray first click does nothing; the armed state clears
+itself after eight seconds.
+
+Removing a learner deletes their account, every attempt, every violation record
+and every session. It cannot be undone, so the scope check that matters lives in
+the database: `rma_remove_student` refuses unless the student's recorded teacher
+matches the signed-in teacher, or that account carries `see_all_sections`. The
+list in the browser is a convenience, not the guard. The function is granted to
+signed-in teachers only, never to `anon`.
+
+Run `supabase/add-remove-student.sql` once to enable it. Until then the control
+reports that the database setup is unfinished rather than failing. The child rows
+are deleted before the student because `rma_scores` and `rma_violations` are
+`on delete set null`, so removing the student alone would silently orphan the
+attempt history.
+
 ## Penalties
 
 The practice test is deliberately forgiving. Reaching the limit â€” 3 warnings, or
@@ -94,10 +115,35 @@ page's `<head>`, with the family name held in `--font-display` and `--font-body`
 custom properties so they match without loading the stylesheet twice. `tests/test-theme.js`
 fails if a page goes back to a different family, or if the old names come back.
 
+## Density
+
+The phone sets the comfortable baseline and a bigger screen fits **more** rather
+than showing the same content in a bigger box. So type does not grow with the
+viewport: the scale in `rma-theme.css` is near-flat, and a 1500px query trims it.
+`clamp()` cannot shrink — its minimum has to be at or below its maximum — which is
+why the trim is a separate rule. Card padding grows only a little and is capped,
+`--measure` is a ceiling rather than a target, and the 1600px query adds density
+without widening anything.
+
+The teacher portal follows the same rule: cards get tighter, not wider, as the
+screen grows, so more of the class list fits per screen.
+
+## Answer feedback
+
+The verdict line and the XP badge follow the actual outcome. A correct answer
+reads *Exactly right* with a **+1 XP** badge; a wrong answer reads *Not this time*
+and shows the explanation without the badge; an expired timer reads *Time ran out*.
+The badge is painted only for `.explanation.is-correct`.
+
+This mattered because the line was hardcoded as "Exactly right." in the markup and
+the badge was painted by CSS on every shown explanation, so a question that timed
+out claimed the answer was right and appeared to award a point it never earned.
+`tests/test-feedback-admin.js` now guards all three verdicts on all four pages.
+
 ## Tests
 
 ```powershell
-npm test           # all suites, 986 assertions
+npm test           # all suites, 1143 assertions
 npm run check      # syntax-check the shipped scripts
 npm run verify     # both, as CI runs it
 npm run verify:live  # checks the deployed Supabase project, not the repo

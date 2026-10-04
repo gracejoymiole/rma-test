@@ -44,6 +44,12 @@
     .report-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:16px 0; }
     .report-heading { margin:0 0 6px; color:var(--wine); font-size:1.1rem; }
     .report-note { margin:0 0 14px; font-size:.82rem; }
+    /* An empty note used to be left in the flow with margin-top:-8px, which
+       pulled the leaderboard grid up under the paragraph above it and read as a
+       stray line across the card. It now starts hidden and takes real space only
+       when there is something to say. */
+    .leaderboard-note { margin:-4px 0 14px; }
+    .leaderboard-note:empty { display:none; }
     .chart-wrap { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
     /* The floor used to be a flat 560px, which forced a sideways scroll on any
        phone. It is now a min() so the chart scales down with the card and only
@@ -414,11 +420,23 @@
        treated as the default and wider screens add back what they can afford. */
     :root {
       --tap: 44px;
-      --gutter: clamp(14px, 3.5vw, 28px);
+      /* shrinks toward the large end, so a desktop fits more per screen */
+      --gutter: clamp(12px, 2.2vw, 20px);
+      --fs-xs: clamp(.66rem, .78vw, .74rem);
+      --fs-sm: clamp(.78rem, .92vw, .86rem);
+      --fs-base: clamp(.88rem, 1vw, .95rem);
+      --fs-lg: clamp(1rem, 1.3vw, 1.15rem);
     }
-    body { overflow-x:hidden; line-height:1.5; }
+    body { overflow-x:hidden; line-height:1.5; font-size:var(--fs-base); }
     img, svg, table, .card { max-width:100%; }
-    main { width:min(1180px, 100% - var(--gutter) * 2); margin:clamp(14px,3vw,32px) auto; }
+    /* Cards get denser, not wider, as the screen grows: a monitor shows more of
+       the class list at a smaller type size rather than the same rows stretched. */
+    main { width:min(1080px, 100% - var(--gutter) * 2); margin:clamp(12px,2.2vw,22px) auto; }
+    .card { padding:clamp(13px, 1.6vw, 18px); }
+    h2, .report-heading { font-size:var(--fs-lg); }
+    .report-note { font-size:var(--fs-xs); }
+    table { font-size:var(--fs-sm); }
+    .status, .tag, .mastery-count { font-size:var(--fs-xs); }
 
     /* Tables used to be nowrap throughout, which forced the whole page sideways.
        The first column sticks so a scrolled row still says whose row it is. */
@@ -446,8 +464,35 @@
     .brand-id { min-width:0; flex-wrap:wrap; }
     /* A sticky header would eat a fifth of a short phone screen. */
     header { position:static; padding:12px var(--gutter); }
-    .scroll, .mm-scroll { max-height:none; }
+    /* Bounded on a phone too, not just on a desktop. The Question mastery list
+       runs to one row per item, so uncapped it pushed every card below it off
+       the page. Viewport-relative so it adapts rather than assuming a pixel
+       budget, and the header row sticks so the columns stay readable.
+       This overrides the desktop budget above, and the 900px query below hands
+       it back to --card-list-max on a screen with room. */
+    :root { --card-list-max: 62dvh; }
+    .scroll, .mm-scroll { max-height:var(--card-list-max); overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+    .scroll thead th, .scroll th { position:sticky; top:0; z-index:1; background:#F3FBFE; }
     .card-list-scroll { -webkit-overflow-scrolling:touch; }
+    /* ---------- remove a student ---------- */
+    .remove-card { border-color:#e9c3c8; }
+    .remove-card .report-heading { color:#9f1239; }
+    .remove-list-items { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+    .remove-row {
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:9px 11px; border:1px solid #e9e2dd; border-radius:12px; background:#fff;
+    }
+    .remove-who { min-width:0; }
+    .remove-who b { display:block; font-size:.9rem; }
+    .remove-who span { display:block; color:var(--muted); font-size:.74rem; overflow-wrap:anywhere; }
+    .btn-danger-ghost {
+      flex:none; min-height:38px; padding:0 14px; border:1px solid #d9a3ab; border-radius:10px;
+      background:#fff; color:#9f1239; font:700 .82rem var(--font-body); cursor:pointer;
+    }
+    .btn-danger-ghost:hover { background:#fdf2f4; }
+    .btn-danger-ghost:disabled { opacity:.55; cursor:wait; }
+    .remove-confirm { color:#9f1239; font-weight:700; }
+    .remove-empty { color:var(--muted); font-size:.86rem; }
 
     @media (min-width:560px) {
       .report-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
@@ -461,8 +506,9 @@
       .scroll, .mm-scroll { max-height:var(--card-list-max); }
     }
     @media (min-width:1200px) {
-      :root { --gutter: 28px; }
-      .report-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+      /* A wide screen gets a slightly roomier gutter and nothing else. Cards stay
+         narrow and type stays small, so more of the class list fits per screen. */
+      :root { --gutter: 20px; }
     }
     /* Landscape phone: a tall sticky header is worse than a scrolling one. */
     @media (max-height:520px) and (orientation:landscape) {
@@ -529,7 +575,7 @@
           <section class="card" id="leaderboardCard" style="margin-bottom:16px">
             <h2 class="report-heading">Section Leaderboard</h2>
             <p class="report-note">Live shows each learner's most recent completed attempt; all time shows their personal best. Both follow the grade and section selected above.</p>
-            <p class="report-note" id="leaderboardNote" style="margin-top:-8px"></p>
+            <p class="report-note leaderboard-note" id="leaderboardNote" hidden></p>
             <div class="report-grid">
               <div>
                 <h3 class="leaderboard-heading">Live</h3>
@@ -565,6 +611,15 @@
           <section class="card">
             <h2 class="report-heading">Student status</h2><p id="studentScope" class="report-note"></p>
             <div class="scroll"><table><thead><tr><th>Student ID</th><th>Name</th><th>Teacher entered</th><th>Latest score</th><th>Status</th><th>Latest attempt</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+          </section>
+          <!-- Removing a learner is destructive and cannot be undone, so it sits
+               last in the Overview, behind the grade and section chosen above,
+               and every row names exactly what will be deleted. -->
+          <section class="card remove-card" id="removeStudentCard" style="margin-top:16px">
+            <h2 class="report-heading">Remove a student</h2>
+            <p class="report-note" id="removeScopeNote">Choose a grade level and section above to see who can be removed. Removing a learner deletes their account and every attempt recorded against it. This cannot be undone.</p>
+            <div id="removeMessage" role="status"></div>
+            <div class="scroll remove-list"><ul id="removableList" class="remove-list-items"></ul></div>
           </section>
         </div>
         

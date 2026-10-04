@@ -178,7 +178,7 @@
             <p class="help-budget" id="helpBudget"></p>
             <p class="help-note" id="helpNote" aria-live="polite"></p>
           </div>
-          <div class="explanation" id="explanationBox"><strong class="fb-title">Exactly right.</strong><span id="explanationText"></span></div>
+          <div class="explanation" id="explanationBox"><strong class="fb-title" id="fbTitle">Choose an answer to see how it is worked out.</strong><span id="explanationText"></span></div>
           <div class="controls">
             <button class="btn btn-primary" id="checkBtn" disabled>Check answer</button>
             <button class="btn btn-success hidden" id="nextBtn">Next question</button>
@@ -335,6 +335,7 @@ const dom = {
     nextBtn: document.getElementById('nextBtn'),
     progressBar: document.getElementById('progressBar'),
     explanationBox: document.getElementById('explanationBox'),
+    fbTitle: document.getElementById('fbTitle'),
     explanationText: document.getElementById('explanationText'),
     resultContent: document.getElementById('resultContent'),
     quizContent: document.getElementById('quizContent'),
@@ -1793,7 +1794,9 @@ function startQuestionTimer() {
                 cb.disabled = true;
             });
 
+            dom.fbTitle.textContent = 'Time ran out';
             dom.explanationText.textContent = "Time ran out. Please proceed to the next question.";
+            dom.explanationBox.classList.add('is-timeup');
             dom.explanationBox.style.display = 'block';
 
             const pointer = gameState.activeQuestions[gameState.currentQIndex];
@@ -2001,6 +2004,9 @@ function loadQuestion() {
     });
 
     dom.explanationBox.style.display = 'none';
+    // The verdict classes must not survive into the next question, or a
+    // timed-out question would keep showing the previous one's reward.
+    dom.explanationBox.classList.remove('is-correct', 'is-wrong', 'is-timeup');
     dom.checkBtn.disabled = true; 
     dom.checkBtn.classList.remove('hidden');
     dom.nextBtn.classList.add('hidden');
@@ -2031,11 +2037,17 @@ dom.checkBtn.addEventListener('click', () => {
         document.getElementById('soundCorrect').play();
         gameState.scorePoints += XP_PER_CORRECT;
         gameState.correctCount++;
+        dom.fbTitle.textContent = 'Exactly right.';
         dom.explanationText.textContent = qData.explanation;
+        dom.explanationBox.classList.add('is-correct');
         dom.explanationBox.style.display = 'block';
     } else {
         document.getElementById('soundWrong').play();
-        dom.explanationBox.style.display = 'none'; 
+        dom.fbTitle.textContent = 'Not this time.';
+        // The explanation is the teaching moment, so show it even on a miss.
+        dom.explanationText.textContent = qData.explanation;
+        dom.explanationBox.classList.add('is-wrong');
+        dom.explanationBox.style.display = 'block'; 
     }
 
     const labels = document.querySelectorAll('.option-label');

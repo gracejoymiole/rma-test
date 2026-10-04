@@ -138,7 +138,20 @@ body {
 .option-label.wrong input[type="checkbox"]::after { content: "\2715"; width: auto; height: auto; margin: 0; border: 0; transform: none; color: #fff; font-size: 13px; line-height: 1; }
 
 .explanation { display: none; position: relative; margin-top: 22px; padding: 18px 22px; border-radius: 16px; background: var(--teal-tint); border: 1px solid var(--teal); }
-.explanation::after { content: "+1 XP"; position: absolute; top: -12px; right: 18px; padding: 4px 12px; border-radius: 999px; background: var(--amber); color: var(--ink); font-size: .75rem; font-weight: 700; }
+/* The XP badge is a reward, so it belongs to a correct answer only. It used to be
+   painted unconditionally, so a timed-out question read "Exactly right." and
+   "+1 XP" above "Time ran out." The badge now hangs off .is-correct. */
+.explanation::after { content: none; }
+.explanation.is-correct { background: var(--teal-tint); border-color: var(--teal); }
+.explanation.is-correct::after {
+  content: "+1 XP"; position: absolute; top: -12px; right: 18px; padding: 4px 12px;
+  border-radius: 999px; background: var(--amber); color: var(--ink); font-size: .75rem; font-weight: 700;
+}
+/* A missed question is called out in the same shape but without the reward. */
+.explanation.is-wrong, .explanation.is-timeup {
+  background: var(--coral-tint); border-color: var(--coral);
+}
+.explanation.is-wrong .fb-title, .explanation.is-timeup .fb-title { color: var(--coral-deep); }
 .fb-title { display: block; margin-bottom: 4px; font: 700 1rem var(--font-display); color: var(--teal-deep); }
 #explanationText { display: block; line-height: 1.55; color: var(--ink); }
 
@@ -229,24 +242,34 @@ body .developer-credit { z-index: 40; }
    what it can afford. Nothing here changes markup or ids. */
 
 /* ---- fluid foundations ----
-   clamp() lets one declaration cover a 320px phone and a 2560px monitor. The
-   middle value is what the design was drawn at, so nothing moves at the sizes
-   it was reviewed at. */
+   Phone-first and denser as the screen grows. Every clamp() shrinks toward the
+   large end: a desktop fits more per screen instead of showing the same content
+   in a bigger box. --measure is deliberately a ceiling, not a target, so cards
+   stay narrow rather than stretching across a monitor. */
 :root {
-  /* page gutter: 16px on a phone, breathing room on a desktop */
-  --gutter: clamp(14px, 3.5vw, 32px);
-  --measure: 1180px;
-  /* card padding grows with the viewport but stops before it looks loose */
-  --pad-card: clamp(18px, 4.2vw, 40px);
-  --pad-quiz: clamp(20px, 4.6vw, 44px);
-  --radius: clamp(14px, 2.2vw, 22px);
-  /* one tap target floor across every control */
+  /* gutter: comfortable on a phone, tighter per-viewport-unit on a big screen */
+  --gutter: clamp(12px, 2.4vw, 20px);
+  --measure: 1080px;
+  /* padding shrinks as the screen grows, so a card holds more content */
+  --pad-card: clamp(14px, 2.2vw, 26px);
+  --pad-quiz: clamp(16px, 2.4vw, 30px);
+  --radius: clamp(12px, 1.6vw, 18px);
+  /* one tap target floor across every control; never scales below this */
   --tap: 44px;
+  /* A scale the whole sheet can lean on. Nearly flat: type must not grow with
+     the viewport or a desktop just shows the same words in a bigger box. The
+     large-screen trim below is where it actually gets smaller, because clamp()
+     cannot shrink (its min must be <= its max). */
+  --fs-xs: clamp(.72rem, .74vw, .73rem);
+  --fs-sm: clamp(.82rem, .88vw, .85rem);
+  --fs-base: clamp(.90rem, .96vw, .92rem);
+  --fs-lg: clamp(1.02rem, 1.12vw, 1.05rem);
 }
 
 body {
-  /* Fredoka has a large x-height; a touch more leading keeps long
-     Filipino question text readable on a small screen. */
+  /* Fredoka has a large x-height; a touch more leading keeps long Filipino
+     question text readable on a small screen. */
+  font-size: var(--fs-base);
   line-height: 1.5;
   overflow-x: hidden;
 }
@@ -256,19 +279,19 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
 
 .quest {
   width: min(var(--measure), 100% - var(--gutter) * 2);
-  margin: clamp(12px, 2.4vw, 22px) auto 0;
+  margin: clamp(10px, 1.8vw, 16px) auto 0;
 }
 
 .main-container {
   /* Phone first: one column. The sidebar becomes a drawer below. */
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(14px, 2.2vw, 28px);
+  gap: clamp(12px, 1.8vw, 22px);
   width: min(var(--measure), 100%);
-  margin: clamp(14px, 2.6vw, 24px) auto clamp(28px, 6vw, 48px);
+  margin: clamp(12px, 2vw, 18px) auto clamp(24px, 4vw, 36px);
   padding: 0 var(--gutter);
   /* Room for the fixed action bar plus the home indicator. */
-  padding-bottom: calc(var(--tap) * 2 + env(safe-area-inset-bottom, 0px) + 16px);
+  padding-bottom: calc(var(--tap) * 2 + env(safe-area-inset-bottom, 0px) + 12px);
 }
 
 .card {
@@ -279,40 +302,43 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
 
 /* ---- header: wrap instead of squash ---- */
 .rma-header {
-  gap: 10px;
-  padding: clamp(9px, 1.6vw, 14px) var(--gutter);
+  gap: 8px;
+  padding: clamp(8px, 1.4vw, 12px) var(--gutter);
   flex-wrap: wrap;
 }
 .rma-brand { min-width: 0; }
-.rma-logo { width: clamp(34px, 8vw, 46px); height: clamp(34px, 8vw, 46px); }
+.rma-logo { width: clamp(32px, 6vw, 40px); height: clamp(32px, 6vw, 40px); }
 /* The name is the one thing that must not wrap mid-word. */
 .rma-brand-name {
-  font: 700 clamp(.92rem, 2.6vw, 1.05rem)/1.15 var(--font-display);
+  font: 700 clamp(.86rem, 1.9vw, 1rem)/1.15 var(--font-display);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.rma-brand-sub { font-size: clamp(.62rem, 1.9vw, .72rem); }
+.rma-brand-sub { font-size: var(--fs-xs); }
 .rma-tools { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 /* A pill must never be narrower than what it shows. */
-.pill { height: var(--tap); padding: 0 12px; font-size: clamp(.8rem, 2.2vw, .92rem); }
+.pill { height: var(--tap); padding: 0 11px; font-size: var(--fs-sm); }
 .icon-btn { width: var(--tap); height: var(--tap); }
 
 /* ---- question and options ---- */
 .question-text {
-  /* Scales with the screen instead of jumping at a breakpoint. */
-  font: 600 clamp(1.2rem, 4.4vw, 1.75rem)/1.35 var(--font-display);
-  max-width: 42ch;
-  margin: clamp(16px, 3vw, 24px) 0 8px;
+  /* Shrinks gently as the screen grows, so a desktop shows more questions
+     without the type becoming small enough to lose legibility. */
+  font: 600 clamp(1.15rem, 2.6vw, 1.45rem)/1.35 var(--font-display);
+  max-width: 46ch;
+  margin: clamp(14px, 2.2vw, 20px) 0 8px;
 }
-.options-grid { gap: clamp(10px, 2vw, 12px); }
+.q-help { font-size: var(--fs-sm); }
+.options-grid { gap: clamp(8px, 1.5vw, 11px); }
 /* Full-width row, at least a thumb tall, so a mis-tap is unlikely. */
 .option-label {
-  min-height: max(var(--tap), 8.5vh);
-  padding: 12px clamp(12px, 2.4vw, 18px);
-  gap: clamp(10px, 2.2vw, 16px);
+  min-height: max(var(--tap), 7.5vh);
+  padding: 11px clamp(11px, 1.8vw, 15px);
+  gap: clamp(9px, 1.6vw, 13px);
+  font-size: var(--fs-base);
 }
-.option-label::before { width: clamp(30px, 8vw, 36px); height: clamp(30px, 8vw, 36px); }
+.option-label::before { width: clamp(28px, 6vw, 32px); height: clamp(28px, 6vw, 32px); font-size: var(--fs-xs); }
 
 /* ---- actions: a bottom bar the thumb can reach ----
    On a phone the buttons stay in the flow but stick to the bottom of the
@@ -324,12 +350,12 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
-  margin-top: clamp(18px, 3vw, 28px);
-  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  margin-top: clamp(16px, 2.4vw, 22px);
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--line);
   background: linear-gradient(to top, #fff 70%, rgba(255, 255, 255, 0));
 }
-.controls .btn { width: 100%; min-height: var(--tap); }
+.controls .btn { width: 100%; min-height: var(--tap); font-size: var(--fs-base); }
 
 /* ---- leaderboard as a bottom sheet ---- */
 .lb-toggle {
@@ -338,12 +364,12 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   justify-content: space-between;
   width: 100%;
   min-height: var(--tap);
-  padding: 0 20px;
+  padding: 0 18px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: #fff;
   color: var(--ink);
-  font: 700 1rem var(--font-body);
+  font: 700 var(--fs-base) var(--font-body);
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(31, 29, 54, .06);
 }
@@ -360,7 +386,7 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   border-radius: 26px 26px 0 0;
-  padding: 14px clamp(16px, 5vw, 22px) calc(26px + env(safe-area-inset-bottom, 0px));
+  padding: 12px clamp(14px, 4vw, 20px) calc(24px + env(safe-area-inset-bottom, 0px));
   transform: translateY(105%);
   transition: transform .25s ease, visibility 0s .25s;
   box-shadow: 0 -16px 40px rgba(31, 29, 54, .25);
@@ -370,7 +396,7 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   display: block;
   width: 44px;
   height: 5px;
-  margin: 0 auto 14px;
+  margin: 0 auto 12px;
   border-radius: 99px;
   background: var(--line);
 }
@@ -379,8 +405,8 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   display: grid;
   place-items: center;
   position: absolute;
-  right: 18px;
-  top: 22px;
+  right: 16px;
+  top: 20px;
   width: var(--tap);
   height: var(--tap);
   padding: 0;
@@ -392,6 +418,8 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   cursor: pointer;
 }
 .lb-head { padding-right: 58px; }
+.lb-head h3 { font-size: var(--fs-lg); }
+.lb-kicker { font-size: var(--fs-xs); }
 .lb-backdrop {
   display: block;
   position: fixed;
@@ -406,17 +434,25 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
 .lb-backdrop.open { opacity: 1; visibility: visible; }
 
 /* The table scrolls inside the sheet rather than widening the page. */
-.leaderboard-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 4px; }
+.leaderboard-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 4px; font-size: var(--fs-sm); }
+.leaderboard-table th { font-size: var(--fs-xs); }
 
 /* ---- results ---- */
-.ring { width: clamp(140px, 42vw, 196px); height: clamp(140px, 42vw, 196px); }
-#finalScore { font-size: clamp(1.8rem, 6vw, 2.3rem); }
-.stats { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
-.stats b { font-size: clamp(1rem, 3.4vw, 1.15rem); }
-#actionButtons .btn { width: min(360px, 100%); min-height: var(--tap); }
+.ring { width: clamp(128px, 34vw, 170px); height: clamp(128px, 34vw, 170px); }
+#finalScore { font-size: clamp(1.7rem, 4.4vw, 2.05rem); }
+#resultTitle { font-size: clamp(1.3rem, 3vw, 1.75rem); }
+#resultMessage { font-size: var(--fs-sm); }
+.stats { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); }
+.stats span { font-size: var(--fs-xs); }
+.stats b { font-size: clamp(.95rem, 2.4vw, 1.05rem); }
+#actionButtons .btn { width: min(340px, 100%); min-height: var(--tap); }
 
 /* ---- run card ---- */
-.run-xp b { font: 700 clamp(2rem, 8vw, 2.6rem)/1 var(--font-display); }
+.run-label, .run-note { font-size: var(--fs-xs); }
+.run-xp b { font: 700 clamp(1.8rem, 6vw, 2.2rem)/1 var(--font-display); }
+
+/* ---- help card ---- */
+.help-btn { min-height: 74px; padding: 10px 12px; font-size: var(--fs-sm); }
 
 /* ---- very narrow phones ---- */
 @media (max-width: 380px) {
@@ -464,9 +500,26 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
 }
 
 /* ---- very wide: keep the measure, let the background breathe ---- */
+/* ---- very wide: hold the measure, keep type small ----
+   Nothing is added here on purpose. A monitor gets the same narrow cards and
+   the same small type, so a class list stays readable instead of stretching. */
 @media (min-width: 1600px) {
-  :root { --measure: 1320px; }
-  .question-text { font-size: clamp(1.75rem, 1.4vw, 2.05rem); }
+  :root { --measure: 1120px; }
+}
+/* ---- very wide: trim the type, hold everything else ----
+   This is where the scale actually gets smaller. clamp() cannot shrink, so the
+   scale above is kept nearly flat and a wide screen reduces it here. A monitor
+   then shows more questions and more rows per screen instead of the same ones
+   spread across a wider box. */
+@media (min-width: 1500px) {
+  :root {
+    --fs-xs: .68rem;
+    --fs-sm: .80rem;
+    --fs-base: .86rem;
+    --fs-lg: 1rem;
+  }
+  .question-text { font-size: clamp(1.05rem, 1.5vw, 1.25rem); }
+  .card { padding: 16px; }
 }
 
 /* ---- landscape phones: the sheet must not eat the viewport ---- */

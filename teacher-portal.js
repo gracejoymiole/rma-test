@@ -3548,6 +3548,9 @@
     if (note) {
       const scope = `Grade ${currentGrade}${currentSection ? ` · ${currentSection}` : " · all sections"}`;
       note.textContent = `${scope}. Unfinished attempts are left off both lists.`;
+      // The note ships hidden so an empty paragraph cannot pull the grid up under
+      // the paragraph above it. Showing text has to reveal it again.
+      note.hidden = false;
     }
   }
 
@@ -3605,7 +3608,7 @@
       live.innerHTML = `<p class="report-note">${escapeHtml(message)}</p>`;
       allTime.innerHTML = `<p class="report-note">${escapeHtml(message)}</p>`;
       const note = document.getElementById("leaderboardNote");
-      if (note) note.textContent = "";
+      if (note) { note.textContent = ""; note.hidden = true; }
     }
   }
 
@@ -3724,8 +3727,125 @@
     
     renderCompletionStatus(stats);
     renderPriorityPanel(priorityLearners, scopedLearners, stats, levels);
+    renderRemovableStudents();
     loadLeaderboards();
   }
+
+  // ============================================
+  // REMOVE A STUDENT
+  // ============================================
+  //
+  // Destructive and irreversible, so it is deliberately awkward: the learner is
+  // picked from the grade and section already chosen above, and pressing Remove
+  // only arms a second, separate Confirm. A stray first click does nothing.
+  //
+  // The scope check that matters is in rma_remove_student in the database. The
+  // filter here is a convenience so the list matches what the teacher can see.
+
+  function removeMessage(text, isError) {
+    const node = document.getElementById("removeMessage");
+    if (!node) return;
+    node.className = isError ? "remove-confirm" : "report-note";
+    node.textContent = text;
+  }
+
+  function renderRemovableStudents() {
+    const list = document.getElementById("removableList");
+    const note = document.getElementById("removeScopeNote");
+    if (!list) return;
+
+    const grade = Number(currentGrade);
+    const section = currentSection;
+
+    if (!grade) {
+      if (note) note.textContent = "Choose a grade level and section above to see who can be removed. Removing a learner deletes their account and every attempt recorded against it. This cannot be undone.";
+      list.innerHTML = '<li class="remove-empty">No grade level chosen yet.</li>';
+      return;
+    }
+
+    // Only learners with a real id can be named; a row without one is a
+    // placeholder from the left join in the dashboard query.
+    const candidates = rows
+      .filter((row) => Number(row.grade) === grade
+        && row.student_id
+        && (!section || section === "*" || String(row.section) === String(section)))
+      .sort((a, b) => String(a.student_name || "").localeCompare(String(b.student_name || "")));
+
+    const where = section && section !== "*"
+      ? `Grade ${grade} · ${section}`
+      : `Grade ${grade} · all sections`;
+
+    if (note) {
+      note.textContent = `${where}. ${candidates.length} learner${candidates.length === 1 ? "" : "s"} can be removed. `
+        + "Removing a learner deletes their account and every attempt recorded against it, and it cannot be undone.";
+    }
+
+    if (!candidates.length) {
+      list.innerHTML = '<li class="remove-empty">There is nobody to remove in this scope.</li>';
+      return;
+    }
+
+    list.innerHTML = candidates.map((row) => `
+      <li class="remove-row">
+        <span class="remove-who">
+          <b>${escapeHtml(row.student_name || "")}</b>
+          <span>${escapeHtml(row.student_code || "")} · ${escapeHtml(row.section || "")} · ${escapeHtml(row.teacher_name || "")}</span>
+        </span>
+        <button type="button" class="btn-danger-ghost" data-remove-student="${escapeHtml(row.student_id)}">Remove</button>
+      </li>`).join("");
+  }
+
+  // Arms a confirm, or performs the removal when the confirm is already armed.
+  document.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-remove-student]");
+    if (!button) return;
+
+    const id = button.dataset.removeStudent;
+
+    if (button.dataset.armed !== "1") {
+      const row = rows.find((r) => r.student_id === id);
+      const name = row ? (row.student_name || row.student_code) : "this learner";
+      button.dataset.armed = "1";
+      button.textContent = "Confirm delete";
+      removeMessage(`Press Confirm delete to remove ${name}, their attempts and their sessions. This cannot be undone.`, true);
+      // Disarm if they click anywhere else, so a later stray click cannot fire it.
+      setTimeout(() => {
+        if (!document.body.contains(button)) return;
+        button.dataset.armed = "0";
+        button.textContent = "Remove";
+      }, 8000);
+      return;
+    }
+
+    const row = rows.find((r) => r.student_id === id);
+    const name = row ? (row.student_name || row.student_code) : "this learner";
+    button.disabled = true;
+    button.textContent = "Removing…";
+    removeMessage(`Removing ${name}…`, false);
+
+    try {
+      const result = await rpc("rma_remove_student", { p_token: token, p_student_id: id });
+      const removed = (result && result.student_name) || name;
+      removeMessage(
+        `Removed ${removed} along with ${Number(result.scores_deleted) || 0} attempt(s), `
+        + `${Number(result.violations_deleted) || 0} violation record(s) and `
+        + `${Number(result.sessions_deleted) || 0} session(s).`, false);
+      await loadDashboard();
+    } catch (error) {
+      button.disabled = false;
+      button.dataset.armed = "0";
+      button.textContent = "Remove";
+      // The function arrives with add-remove-student.sql; until then this is the
+      // message a teacher will see, so it says what to do rather than leaking
+      // a PostgREST error.
+      const raw = String((error && error.message) || "");
+      if (/PGRST202|schema cache|does not exist/i.test(raw)) {
+        removeMessage("Removing a learner is not set up on this database yet. Run supabase/add-remove-student.sql once, then reload.", true);
+      } else {
+        removeMessage(friendlyError(error, "That learner could not be removed. Try again."), true);
+      }
+    }
+  });
 
   function getBandColorForRate(rate) {
     if (rate >= 80) return getBandColor('proficient');
