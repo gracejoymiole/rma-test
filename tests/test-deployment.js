@@ -49,6 +49,21 @@ check('rma_get_score_bands orders inside the aggregate',
 check('rma_get_score_bands returns an array even when empty',
   /coalesce\([\s\S]*?jsonb_agg\([\s\S]*?'\[\]'::jsonb[\s\S]*?\)\s*from public\.rma_score_bands/.test(schema));
 
+// --- every function body must be dollar-quoted with $$ ---
+// A single "$" is not a valid delimiter: Postgres stops the function body at the
+// end of the line and the whole schema run fails on the first one that has it.
+// This exists because two functions in schema.sql were written that way and the
+// suite passed, because nothing here had ever looked at the quoting.
+fs.readdirSync(path.join(ROOT, 'supabase'))
+  .filter((f) => f.endsWith('.sql'))
+  .forEach((file) => {
+    const body = fs.readFileSync(path.join(ROOT, 'supabase', file), 'utf8');
+    check(`${file} opens every function body with $$`, !/as \$$/m.test(body));
+    check(`${file} closes every function body with $$`, !/^\$$;/m.test(body));
+    check(`${file} has balanced dollar quotes`,
+      (body.match(/\$\$/g) || []).length % 2 === 0);
+  });
+
 // --- apply-missing.sql is the tail that a rolled-back run never created ---
 const missing = fs.readFileSync(path.join(ROOT, 'supabase', 'apply-missing.sql'), 'utf8');
 ['rma_get_score_bands()', 'rma_teacher_profile(p_token text)',

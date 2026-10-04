@@ -97,14 +97,42 @@ revoke all on public.rma_students, public.rma_teacher_accounts, public.rma_auth_
   public.rma_scores, public.rma_violations from public, anon, authenticated;
 revoke all on sequence public.rma_students_student_no_seq from public, anon, authenticated;
 
-create or replace function public.rma_teacher_suggestions(p_prefix text)
+-- Sign-up suggestions. rma_teacher_suggestions used to return first names only,
+-- so the surname box was filled with first names; p_kind picks the column, and
+-- the grade is used to keep a student inside their own grade.
+create or replace function public.rma_teacher_suggestions(p_kind text, p_prefix text, p_grade smallint default null)
 returns text[] language sql stable security definer
 set search_path = public, extensions, pg_temp
 as $$
-  select coalesce(array_agg(s.teacher_first_name order by s.teacher_first_name), '{}'::text[])
-    from (select distinct teacher_first_name from public.rma_students
-           where teacher_first_name ilike left(coalesce(p_prefix, ''), 40) || '%'
-           order by teacher_first_name limit 8) s;
+  select coalesce(array_agg(s.name order by s.name), '{}'::text[])
+    from (
+      select distinct
+        case when lower(coalesce(p_kind, 'first')) = 'last'
+          then s.teacher_last_name else s.teacher_first_name end as name
+      from public.rma_students s
+      where case when lower(coalesce(p_kind, 'first')) = 'last'
+              then s.teacher_last_name else s.teacher_first_name end
+            ilike left(coalesce(p_prefix, ''), 40) || '%'
+        and (p_grade is null or s.grade = p_grade)
+      order by name
+      limit 8
+    ) s
+where s.name <> '';
+$$;
+
+create or replace function public.rma_section_suggestions(p_grade smallint, p_prefix text)
+returns text[] language sql stable security definer
+set search_path = public, extensions, pg_temp
+as $$
+  select coalesce(array_agg(s.section order by s.section), '{}'::text[])
+    from (
+      select distinct section from public.rma_students
+       where section ilike left(coalesce(p_prefix, ''), 60) || '%'
+         and (p_grade is null or grade = p_grade)
+         and section <> ''
+       order by section
+       limit 12
+) s;
 $$;
 
 create or replace function public.rma_student_register(
@@ -353,7 +381,9 @@ revoke all on function public.rma_teacher_change_password(text,text) from public
 revoke all on function public.rma_teacher_dashboard(text) from public;
 revoke all on function public.rma_teacher_profile(text) from public;
 revoke all on function public.rma_set_attempt_complete(text, text, boolean) from public;
-grant execute on function public.rma_teacher_suggestions(text) to anon, authenticated;
+drop function if exists public.rma_teacher_suggestions(text);
+grant execute on function public.rma_teacher_suggestions(text, text, smallint) to anon, authenticated;
+grant execute on function public.rma_section_suggestions(smallint, text) to anon, authenticated;
 grant execute on function public.rma_student_register(smallint,text,text,text,text,text,text,text) to anon, authenticated;
 grant execute on function public.rma_student_login(text,text,smallint) to anon, authenticated;
 grant execute on function public.rma_submit_score(text,smallint,integer,text,text,text,integer,text,text,text,integer) to anon, authenticated;

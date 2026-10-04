@@ -2,10 +2,16 @@
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 
-const listeners = { input: [], change: [], click: [] };
+// Any event type can be registered. The stub used to know only input, change and
+// click, so adding a focusout listener here threw instead of being collected.
+const listeners = {};
+['input', 'change', 'click', 'focusout', 'keydown'].forEach((t) => { listeners[t] = []; });
 const overlay = {
   innerHTML: '',
-  addEventListener(type, fn, capture) { listeners[type].push(fn); },
+  addEventListener(type, fn, capture) {
+    if (!listeners[type]) listeners[type] = [];
+    listeners[type].push(fn);
+  },
   querySelectorAll() { return []; }
 };
 const store = () => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
@@ -130,6 +136,63 @@ FILIPINO.forEach((w) => check(`auth UI drops "${w}"`, !html.includes(w)));
 check('English labels survive the cleanup',
   ['Log in', 'Sign up', 'Password', 'Grade level', 'Student surname', 'Section']
     .every((l) => html.includes(l)));
+
+// --- sign-up suggestions ---
+// They were <datalist> elements, which browsers ignore entirely on phones, and
+// the surname box called a function that only ever returned first names.
+// Checked against the rendered markup, not the source: the comments in
+// rma-auth.js explain that the datalists were removed and would match a naive
+// search of the file.
+check('no field relies on a datalist', !/<datalist/.test(html));
+check('no field carries a list attribute', !/\slist="/.test(html));
+check('the section field asks for suggestions', /if \(event\.target\.id === "signupSection"\) suggestSection\(\);/.test(src2));
+check('sections come from the database',
+  /rpc\("rma_section_suggestions", \{ p_grade: grade, p_prefix: prefix \}\)/.test(src2));
+check('surnames are requested as surnames',
+  /rpc\("rma_teacher_suggestions", \{ p_kind: "last", p_prefix: prefix, p_grade: grade \}\)/.test(src2));
+check('first names are requested as first names',
+  /rpc\("rma_teacher_suggestions", \{ p_kind: "first", p_prefix: prefix, p_grade: grade \}\)/.test(src2));
+check('suggestions are scoped to the grade the page is showing',
+  (src2.match(/p_grade: grade/g) || []).length >= 3);
+check('suggestions wait for two characters',
+  /if \(prefix\.length < 2\) \{ closeSuggest\(box\); return; \}/.test(src2));
+check('a slow response cannot overwrite a newer one',
+  /var seq = \+\+suggestSeq;/.test(src2) && /if \(seq !== suggestSeq\) return;/.test(src2));
+check('the popup is drawn by the page, not the browser',
+  /\.rma-auth-suggest \{/.test(src2) && /createElement\("ul"\)/.test(src2));
+check('the popup is dismissed on Escape and on focus leaving',
+  /event\.key === "Escape"/.test(src2) && /"focusout"/.test(src2));
+check('accepting a suggestion keeps the typed prefix out of the value',
+  /input\.value = value;/.test(src2));
+check('a missing suggestions function does not block sign-up',
+  /Suggestions unavailable/.test(src2));
+check('the section field stops the browser autofilling it',
+  /id="signupSection" autocomplete="off"/.test(html));
+
+// --- the database half ---
+const schema = fs.readFileSync(path.join(ROOT, 'supabase', 'schema.sql'), 'utf8');
+const suggestSql = fs.readFileSync(path.join(ROOT, 'supabase', 'add-signup-suggestions.sql'), 'utf8');
+[suggestSql, schema].forEach((sql, i) => {
+  const where = i === 0 ? 'add-signup-suggestions.sql' : 'schema.sql';
+  check(`${where} takes a kind for teacher suggestions`,
+    /rma_teacher_suggestions\(p_kind text, p_prefix text, p_grade smallint/.test(sql));
+  check(`${where} can return a surname`,
+    /lower\(coalesce\(p_kind, 'first'\)\) = 'last'/.test(sql)
+    && /then s\.teacher_last_name else s\.teacher_first_name/.test(sql));
+  check(`${where} scopes suggestions to a grade`,
+    /p_grade is null or s\.grade = p_grade/.test(sql));
+  check(`${where} offers section suggestions`,
+    /rma_section_suggestions\(p_grade smallint, p_prefix text\)/.test(sql)
+    && /select distinct section from public\.rma_students/.test(sql));
+  check(`${where} drops the superseded single-argument function`,
+    /drop function if exists public\.rma_teacher_suggestions\(text\)/.test(sql)
+    || i === 1);
+  check(`${where} caps how many suggestions come back`,
+    /limit 8/.test(sql) && /limit 12/.test(sql));
+});
+check('the grants name the new signature',
+  /grant execute on function public\.rma_teacher_suggestions\(text, text, smallint\)/.test(schema)
+  && /grant execute on function public\.rma_section_suggestions\(smallint, text\)/.test(schema));
 
 // --- the password must be normalised before it is checked ---
 // rma_student_login compares with crypt(), which is case-sensitive, while the

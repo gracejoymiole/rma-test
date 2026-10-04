@@ -214,41 +214,108 @@
   }
 
   // ============================================
-  // TEACHER NAME SUGGESTIONS
+  // SIGN-UP SUGGESTIONS
   // ============================================
-  
-  async function suggestTeacherLastNames() {
-    const input = document.getElementById("teacherLastName");
-    const list = document.getElementById("teacherLastNameSuggestions");
-    const prefix = input.value.trim();
-    if (prefix.length < 2) return;
-    try {
-      const names = await rpc("rma_teacher_suggestions", { p_prefix: prefix });
-      list.replaceChildren(...names.map((name) => {
-        const option = document.createElement("option");
-        option.value = name;
-        return option;
-      }));
-    } catch (error) {
-      console.warn("Teacher-name suggestions unavailable:", error.message);
+  //
+  // A student typing a section or a teacher's name gets matches from the
+  // database as they type.
+  //
+  // These used to be <datalist> elements, which browsers do not show at all on
+  // phones -- Chrome on Android and every iOS browser ignore them -- so on a
+  // tablet the boxes simply offered nothing. The popup below is drawn by the
+  // page, so it behaves the same everywhere, and it is keyboard reachable too.
+
+  var suggestSeq = 0;
+
+  function suggestBoxFor(input) {
+    var id = input.id + "Suggest";
+    var box = document.getElementById(id);
+    if (box) return box;
+    box = document.createElement("ul");
+    box.id = id;
+    box.className = "rma-auth-suggest";
+    box.setAttribute("role", "listbox");
+    box.hidden = true;
+    input.insertAdjacentElement("afterend", box);
+    return box;
+  }
+
+  function closeSuggest(box) {
+    if (box) {
+      box.hidden = true;
+      box.replaceChildren();
     }
   }
 
-  async function suggestTeacherFirstNames() {
-    const input = document.getElementById("teacherFirstName");
-    const list = document.getElementById("teacherFirstNameSuggestions");
-    const prefix = input.value.trim();
-    if (prefix.length < 2) return;
+  function closeAllSuggests(except) {
+    var open = document.querySelectorAll(".rma-auth-suggest");
+    Array.prototype.forEach.call(open, function (box) {
+      if (box !== except) closeSuggest(box);
+    });
+  }
+
+  function paintSuggest(input, values) {
+    var box = suggestBoxFor(input);
+    if (!values || !values.length) { closeSuggest(box); return; }
+    closeAllSuggests(box);
+    box.replaceChildren(...values.map(function (value) {
+      var item = document.createElement("li");
+      item.setAttribute("role", "option");
+      item.tabIndex = -1;
+      item.textContent = value;
+      // Keep whatever the student already typed, so accepting a suggestion does
+      // not throw away the characters they entered.
+      item.addEventListener("mousedown", function (event) {
+        event.preventDefault();
+        input.value = value;
+        closeSuggest(box);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      return item;
+    }));
+    box.hidden = false;
+  }
+
+  // Fired on every keystroke; a slow response is discarded rather than shown
+  // after the student has typed on.
+  async function suggestInto(input, fetchValues) {
+    var prefix = input.value.trim();
+    var box = suggestBoxFor(input);
+    if (prefix.length < 2) { closeSuggest(box); return; }
+    var seq = ++suggestSeq;
     try {
-      const names = await rpc("rma_teacher_suggestions", { p_prefix: prefix });
-      list.replaceChildren(...names.map((name) => {
-        const option = document.createElement("option");
-        option.value = name;
-        return option;
-      }));
+      var values = await fetchValues(prefix);
+      if (seq !== suggestSeq) return;
+      paintSuggest(input, values);
     } catch (error) {
-      console.warn("Teacher-name suggestions unavailable:", error.message);
+      // Suggestions are a convenience. If the function has not been applied yet,
+      // the student can still type the section and the name by hand.
+      console.warn("Suggestions unavailable:", error.message);
     }
+  }
+
+  function suggestSection() {
+    var input = document.getElementById("signupSection");
+    if (!input) return Promise.resolve();
+    return suggestInto(input, function (prefix) {
+      return rpc("rma_section_suggestions", { p_grade: grade, p_prefix: prefix });
+    });
+  }
+
+  function suggestTeacherLastNames() {
+    var input = document.getElementById("teacherLastName");
+    if (!input) return Promise.resolve();
+    return suggestInto(input, function (prefix) {
+      return rpc("rma_teacher_suggestions", { p_kind: "last", p_prefix: prefix, p_grade: grade });
+    });
+  }
+
+  function suggestTeacherFirstNames() {
+    var input = document.getElementById("teacherFirstName");
+    if (!input) return Promise.resolve();
+    return suggestInto(input, function (prefix) {
+      return rpc("rma_teacher_suggestions", { p_kind: "first", p_prefix: prefix, p_grade: grade });
+    });
   }
 
   function render() {
@@ -310,7 +377,7 @@
           </label>
           <label>
             <span>Section</span>
-            <input id="signupSection" maxlength="60" placeholder="TYPE YOUR SECTION" required>
+            <input id="signupSection" autocomplete="off" maxlength="60" placeholder="TYPE YOUR SECTION" required>
           </label>
           <p class="rma-auth-section">MATH TEACHER'S NAME</p>
           <label>
@@ -319,13 +386,11 @@
           </label>
           <label>
             <span>MATH Teacher's surname</span>
-            <input id="teacherLastName" maxlength="100" autocomplete="off" placeholder="REYES" list="teacherLastNameSuggestions" required>
-            <datalist id="teacherLastNameSuggestions"></datalist>
+            <input id="teacherLastName" maxlength="100" autocomplete="off" placeholder="REYES" required>
           </label>
           <label>
             <span>MATH Teacher's first name</span>
-            <input id="teacherFirstName" maxlength="100" autocomplete="off" placeholder="JUAN" list="teacherFirstNameSuggestions" required>
-            <datalist id="teacherFirstNameSuggestions"></datalist>
+            <input id="teacherFirstName" maxlength="100" autocomplete="off" placeholder="JUAN" required>
           </label>
           <p class="rma-auth-note">All fields are automatically written in CAPITAL LETTERS.</p>
           <p class="rma-auth-note">Keep your generated student ID and password safe.</p>
@@ -480,6 +545,27 @@
       .rma-auth-eye-slash { opacity:0; }
       .rma-auth-eye[aria-pressed="true"] .rma-auth-eye-slash { opacity:1; }
       .rma-auth-eye[aria-pressed="true"] { color:var(--primary,#521018); }
+      /* Sign-up suggestions. Drawn by the page rather than a <datalist>, which
+         browsers ignore entirely on phones, so the section and teacher boxes
+         offer matches on a tablet as well as a desktop. */
+      .rma-auth-suggest {
+        position:absolute; z-index:20; left:0; right:0; top:100%; margin:3px 0 0;
+        max-height:190px; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+        list-style:none; margin-inline:0; padding:4px;
+        border:1px solid #d8d1cc; border-radius:10px; background:#fff;
+        box-shadow:0 14px 30px rgba(36,25,26,.18);
+      }
+      .rma-auth-suggest[hidden] { display:none; }
+      .rma-auth-suggest li {
+        padding:9px 11px; border-radius:7px; font-size:.88rem; font-weight:600;
+        cursor:pointer; text-transform:none; letter-spacing:0;
+      }
+      .rma-auth-suggest li:hover, .rma-auth-suggest li:focus-visible {
+        color:#fff; background:var(--primary,#521018);
+      }
+      /* The popup is anchored to its field, so the label above it must not
+         collapse onto it. */
+      .rma-auth-panel label { position:relative; }
       .rma-auth-primary:disabled { 
         opacity:.65; 
         cursor:wait; 
@@ -732,8 +818,30 @@
     }
 
     // Trigger suggestions
+    if (event.target.id === "signupSection") suggestSection();
     if (event.target.id === "teacherLastName") suggestTeacherLastNames();
     if (event.target.id === "teacherFirstName") suggestTeacherFirstNames();
+
+    // Typing anywhere else, or pressing Tab out of a field, dismisses the popup.
+    if (!event.target.id.startsWith("signupSection")
+      && event.target.id !== "teacherLastName"
+      && event.target.id !== "teacherFirstName") {
+      closeAllSuggests(null);
+    }
+  });
+
+  // A tap outside, an Escape, or switching tab closes whichever popup is open.
+  overlay.addEventListener("focusout", (event) => {
+    // A short delay lets a mousedown on an option land before the list is torn
+    // down, otherwise tapping a suggestion on a phone closes it first.
+    setTimeout(function () {
+      if (overlay.contains(document.activeElement)) return;
+      closeAllSuggests(null);
+    }, 120);
+  });
+
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAllSuggests(null);
   });
 
   overlay.addEventListener("click", async (event) => {
