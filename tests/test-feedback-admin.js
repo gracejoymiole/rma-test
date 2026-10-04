@@ -63,9 +63,15 @@ check('removal is listed after the student status table',
 
 check('the portal renders the removable list', /function renderRemovableStudents\(\)/.test(portal));
 check('the list is scoped to the chosen grade',
-  /Number\(row\.grade\) === grade[\s\S]{0,120}row\.student_id/.test(portal));
+  /Number\(row\.grade\) === removeGrade[\s\S]{0,120}row\.student_id/.test(portal));
 check('the list is scoped to the chosen section',
-  /section === "\*" \|\| String\(row\.section\) === String\(section\)/.test(portal));
+  /!removeSection \|\| String\(row\.section\) === String\(removeSection\)/.test(portal));
+check('the card has its own grade picker', /id="removeGradeFilter"/.test(teacherHtml));
+check('the card has its own section picker', /id="removeSectionFilter"/.test(teacherHtml));
+check('the section picker waits for a grade',
+  /sectionSelect\.disabled\s*=\s*true/.test(portal));
+check('the card does not borrow the dashboard grade filter',
+  !/renderRemovableStudents[\s\S]{0,900}Number\(currentGrade\)/.test(portal));
 check('removal needs a second, separate confirm',
   /button\.dataset\.armed !== "1"/.test(portal) && /Confirm delete/.test(portal));
 check('a stray first click only arms the confirm',

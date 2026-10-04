@@ -463,7 +463,13 @@
     .header-actions { flex-wrap:wrap; gap:8px; }
     .brand-id { min-width:0; flex-wrap:wrap; }
     /* A sticky header would eat a fifth of a short phone screen. */
-    header { position:static; padding:12px var(--gutter); }
+    /* The header must stay a positioning context. It carries header::after, the
+       signature gradient strip, which is position:absolute against the header's
+       bottom edge. Making the header static (to stop it eating a fifth of a short
+       phone screen) released that strip, and it rendered as a stray gradient line
+       across the page instead. The header is now offset by a normal flow margin
+       rather than by taking itself out of flow. */
+    header { padding:12px var(--gutter); margin-bottom:4px; }
     /* Bounded on a phone too, not just on a desktop. The Question mastery list
        runs to one row per item, so uncapped it pushed every card below it off
        the page. Viewport-relative so it adapts rather than assuming a pixel
@@ -473,6 +479,25 @@
     :root { --card-list-max: 62dvh; }
     .scroll, .mm-scroll { max-height:var(--card-list-max); overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
     .scroll thead th, .scroll th { position:sticky; top:0; z-index:1; background:#F3FBFE; }
+
+    /* ---------- even column widths ----------
+       Each panel's table shares its width equally between its columns, so a
+       "Question" cell and a "Rate" cell are the same width instead of the Rate
+       column collapsing to a few pixels beside a long question. table-layout
+       fixed is what makes the browser honour the split; without it the layout
+       is content-driven and the columns come out lopsided. Cells wrap inside
+       their share rather than forcing the table wider than the card. */
+    .scroll table, table.leaderboard-table { table-layout:fixed; width:100%; }
+    .scroll th, .scroll td, table.leaderboard-table th, table.leaderboard-table td {
+      width:auto; white-space:normal; overflow-wrap:anywhere; word-break:break-word;
+      vertical-align:top;
+    }
+    /* A numeric or status column reads better centred in its even share. */
+    .scroll td:nth-child(n+3):not(:last-child), .scroll th:nth-child(n+3):not(:last-child) {
+      text-align:center;
+    }
+    /* Bars and percentages need the full width of their column to be legible. */
+    .scroll .bar { min-width:60px; }
     .card-list-scroll { -webkit-overflow-scrolling:touch; }
     /* ---------- remove a student ---------- */
     .remove-card { border-color:#e9c3c8; }
@@ -493,6 +518,8 @@
     .btn-danger-ghost:disabled { opacity:.55; cursor:wait; }
     .remove-confirm { color:#9f1239; font-weight:700; }
     .remove-empty { color:var(--muted); font-size:.86rem; }
+    .remove-scope { color:var(--muted); font-size:.82rem; font-weight:700; padding:2px 2px 0; }
+    .remove-filters { margin:12px 0 14px; }
 
     @media (min-width:560px) {
       .report-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
@@ -617,7 +644,11 @@
                and every row names exactly what will be deleted. -->
           <section class="card remove-card" id="removeStudentCard" style="margin-top:16px">
             <h2 class="report-heading">Remove a student</h2>
-            <p class="report-note" id="removeScopeNote">Choose a grade level and section above to see who can be removed. Removing a learner deletes their account and every attempt recorded against it. This cannot be undone.</p>
+            <p class="report-note">Choose a grade level and section, then pick the learner to remove. Removing a learner deletes their account and every attempt recorded against it. This cannot be undone.</p>
+            <div class="filters remove-filters">
+              <label>Grade level<select id="removeGradeFilter"><option value="">Choose a grade level</option></select></label>
+              <label>Section<select id="removeSectionFilter" disabled><option value="">Select a grade first</option></select></label>
+            </div>
             <div id="removeMessage" role="status"></div>
             <div class="scroll remove-list"><ul id="removableList" class="remove-list-items"></ul></div>
           </section>

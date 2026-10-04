@@ -3749,43 +3749,67 @@
     node.textContent = text;
   }
 
+  // The card carries its own grade and section picks rather than borrowing the
+  // dashboard's. Removing somebody is a different decision from reading a report,
+  // and sharing one control meant the scope could silently change under the
+  // teacher's hands while they were picking a name.
+  let removeGrade = null;
+  let removeSection = "";
+
+  function renderRemoveFilters() {
+    const gradeSelect = document.getElementById("removeGradeFilter");
+    const sectionSelect = document.getElementById("removeSectionFilter");
+    if (!gradeSelect || !sectionSelect) return;
+
+    const grades = unique(rows.map((row) => Number(row.grade)).filter(Boolean)).sort((a, b) => a - b);
+    gradeSelect.innerHTML = '<option value="">Choose a grade level</option>'
+      + grades.map((g) => `<option value="${g}"${g === removeGrade ? " selected" : ""}>Grade ${g}</option>`).join("");
+
+    if (!removeGrade) {
+      sectionSelect.innerHTML = '<option value="">Select a grade first</option>';
+      sectionSelect.disabled = true;
+      return;
+    }
+
+    const sections = unique(rows.filter((row) => Number(row.grade) === removeGrade).map((row) => row.section))
+      .sort((a, b) => String(a).localeCompare(String(b)));
+    sectionSelect.disabled = sections.length === 0;
+    if (!sections.includes(removeSection)) removeSection = "";
+    sectionSelect.innerHTML = '<option value="">' + (sections.length ? "All sections" : "No sections") + '</option>'
+      + sections.map((s) => `<option value="${escapeHtml(s)}"${s === removeSection ? " selected" : ""}>${escapeHtml(s)}</option>`).join("");
+  }
+
   function renderRemovableStudents() {
     const list = document.getElementById("removableList");
-    const note = document.getElementById("removeScopeNote");
     if (!list) return;
 
-    const grade = Number(currentGrade);
-    const section = currentSection;
+    renderRemoveFilters();
 
-    if (!grade) {
-      if (note) note.textContent = "Choose a grade level and section above to see who can be removed. Removing a learner deletes their account and every attempt recorded against it. This cannot be undone.";
-      list.innerHTML = '<li class="remove-empty">No grade level chosen yet.</li>';
+    if (!removeGrade) {
+      list.innerHTML = '<li class="remove-empty">Choose a grade level to begin.</li>';
       return;
+    }
+    if (!removeSection && !document.getElementById("removeSectionFilter").disabled) {
+      // "All sections" is a real choice, so an empty value means all of them.
+      removeSection = "";
     }
 
     // Only learners with a real id can be named; a row without one is a
     // placeholder from the left join in the dashboard query.
     const candidates = rows
-      .filter((row) => Number(row.grade) === grade
+      .filter((row) => Number(row.grade) === removeGrade
         && row.student_id
-        && (!section || section === "*" || String(row.section) === String(section)))
+        && (!removeSection || String(row.section) === String(removeSection)))
       .sort((a, b) => String(a.student_name || "").localeCompare(String(b.student_name || "")));
 
-    const where = section && section !== "*"
-      ? `Grade ${grade} · ${section}`
-      : `Grade ${grade} · all sections`;
-
-    if (note) {
-      note.textContent = `${where}. ${candidates.length} learner${candidates.length === 1 ? "" : "s"} can be removed. `
-        + "Removing a learner deletes their account and every attempt recorded against it, and it cannot be undone.";
-    }
-
     if (!candidates.length) {
-      list.innerHTML = '<li class="remove-empty">There is nobody to remove in this scope.</li>';
+      list.innerHTML = '<li class="remove-empty">There is nobody to remove in this selection.</li>';
       return;
     }
 
-    list.innerHTML = candidates.map((row) => `
+    const where = removeSection ? `Grade ${removeGrade} · ${removeSection}` : `Grade ${removeGrade} · all sections`;
+    list.innerHTML = `<li class="remove-scope">${escapeHtml(where)} — ${candidates.length} learner${candidates.length === 1 ? "" : "s"} can be removed</li>`
+      + candidates.map((row) => `
       <li class="remove-row">
         <span class="remove-who">
           <b>${escapeHtml(row.student_name || "")}</b>
@@ -3794,6 +3818,19 @@
         <button type="button" class="btn-danger-ghost" data-remove-student="${escapeHtml(row.student_id)}">Remove</button>
       </li>`).join("");
   }
+
+  document.getElementById("removeGradeFilter")?.addEventListener("change", (event) => {
+    removeGrade = event.target.value ? Number(event.target.value) : null;
+    removeSection = "";
+    removeMessage("", false);
+    renderRemovableStudents();
+  });
+
+  document.getElementById("removeSectionFilter")?.addEventListener("change", (event) => {
+    removeSection = event.target.value;
+    removeMessage("", false);
+    renderRemovableStudents();
+  });
 
   // Arms a confirm, or performs the removal when the confirm is already armed.
   document.addEventListener("click", async (event) => {
