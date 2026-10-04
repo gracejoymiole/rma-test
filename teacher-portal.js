@@ -3700,6 +3700,14 @@
       </tr>`
     ).join("") : '<tr><td colspan="5">No item-level results have been submitted for this report scope.</td></tr>';
     
+    // Score is overall mastery. When the learner spent XP on help, unaided mastery is
+    // the share answered correctly with no help, so intervention can target real gaps.
+    const unaidedNote = (row) => {
+      if (row.unaided_score === null || row.unaided_score === undefined) return "";
+      const used = row.help_data ? String(row.help_data).split("|").filter(Boolean).length : 0;
+      return `<span class="unaided">${Number(row.unaided_score)}% unaided${used ? ` · help on ${used}` : ""}</span>`;
+    };
+
     document.getElementById("studentRows").innerHTML = allMembers.map((row) => {
       const state = statusFor(row.score, row.attempt_number, row.is_complete);
       const score = row.score === null || row.score === undefined ? "—" : `${Number(row.score)}%`;
@@ -3708,7 +3716,7 @@
         <td>${escapeHtml(row.student_code)}</td>
         <td>${escapeHtml(row.student_name || `${row.last_name}, ${row.first_name}`)}</td>
         <td>${escapeHtml(row.teacher_name)}</td>
-        <td>${score}</td>
+        <td>${score}${unaidedNote(row)}</td>
         <td><span class="status ${state.className}">${state.label}</span></td>
         <td>${escapeHtml(attempt)}</td>
       </tr>`;
@@ -3924,7 +3932,9 @@
     { header: "Level", key: "level" },
     { header: "Status", key: "status" },
     { header: "Attempts", key: "attempts" },
-    { header: "Last Assessment", key: "date" }
+    { header: "Last Assessment", key: "date" },
+    { header: "Unaided Score", key: "unaided" },
+    { header: "Questions With Help", key: "help" }
   ];
 
   function exportRows() {
@@ -3943,7 +3953,9 @@
           status.band ? status.band.label : "",
           status.label,
           row.attempts === undefined || row.attempts === null ? (row.attempt_number || "") : row.attempts,
-          row.created_at ? new Date(row.created_at).toLocaleDateString() : ""
+          row.created_at ? new Date(row.created_at).toLocaleDateString() : "",
+          row.unaided_score === null || row.unaided_score === undefined ? "" : Number(row.unaided_score),
+          row.help_data ? String(row.help_data).split("|").filter(Boolean).length : (row.unaided_score === null || row.unaided_score === undefined ? "" : 0)
         ];
       });
   }

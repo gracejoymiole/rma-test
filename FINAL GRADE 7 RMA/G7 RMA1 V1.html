@@ -3,29 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Grade 7 RMA - Practice Test</title>
+tle>Grade 7 RMA - Practice Test</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
-  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../rma-theme.css">
   <style>
-    :root {
-        --primary: #1b5e20; /* Deep elegant forest green */
-        --accent: #43a047;  /* Fresh vibrant green */
-        --success: #2e7d32; /* Solid green for correct */
-        --danger: #d32f2f;  /* Red for wrong answers */
-        --gold: #ffb300;    /* Warm gold */
-        --bg-light: #f1f8e9; /* Soft greenish-white background */
-    }
-
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: var(--bg-light);
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        box-sizing: border-box;
-    }
+    
 
     @media print {
         body * { visibility: hidden; }
@@ -66,7 +51,7 @@
     .certificate-border { 
         border: 12px solid var(--primary);
         padding: 12px; 
-        background-color: var(--bg-light);
+        background-color: var(--bg-light); /* Soft Blue Background */
     }
     .certificate-inner { 
         border: 4px solid var(--gold);
@@ -75,168 +60,45 @@
         padding: 40px; 
         background-color: white;
     }
-    .cert-title { font-size: 2.8rem; color: var(--primary); margin-bottom: 10px; font-family: 'Times New Roman', serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;}
-    .cert-subtitle { font-size: 1.3rem; color: var(--accent); margin-bottom: 10px; font-family: sans-serif; font-weight: 700; letter-spacing: 2px;}
-    .cert-name { font-size: 2.2rem; font-weight: bold; border-bottom: 2px solid var(--primary); display: inline-block; padding: 0 30px 10px; margin: 20px 0; color: #113c15; }
+    .cert-title { font-size: 2.8rem; color: var(--ink); margin-bottom: 10px; font-family: 'Times New Roman', serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;}
+	.cert-subtitle { font-size: 1.3rem; color: var(--accent); margin-bottom: 10px; font-family: sans-serif; font-weight: 700; letter-spacing: 2px;}
+    .cert-name { font-size: 2.2rem; font-weight: bold; border-bottom: 2px solid var(--primary); display: inline-block; padding: 0 30px 10px; margin: 20px 0; color: var(--ink); }
     .cert-score { font-size: 2.8rem; color: var(--success); font-weight: 900; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
     .cert-footer { margin-top: 40px; display: flex; justify-content: space-around; }
     .sign-line { border-top: 2px solid #333; width: 220px; padding-top: 8px; font-size: 1.1rem; font-weight: bold; color: var(--primary); }
 
-    /* MODERNIZED LOGIN OVERLAY */
+    /* MODERNIZED LOGIN OVERLAY (BLUE TINT) */
+    /* MODERNIZED LOGIN OVERLAY (WARM/MAROON TINT) */
     #loginOverlay {
         position: fixed; 
         top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(17, 36, 18, 0.9); /* Deep green transparent background */
+        background: rgba(40, 10, 10, 0.9); /* Warm dark maroon transparent background */
         display: flex; justify-content: center; align-items: center; 
         z-index: 9999; 
     }
     .login-box {
-        background: white; 
-        padding: 3rem 2.5rem; 
-        border-radius: 16px; /* Smoother corners */
-        width: 90%; max-width: 420px; 
-        text-align: center;
+        background: white; padding: 3rem 2.5rem; border-radius: 16px; 
+        width: 90%; max-width: 420px; text-align: center;
         box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         border-top: 6px solid var(--primary);
     }
-    .login-box h2 {
-        font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 25px;
-    }
-    .login-box input, .login-box select {
-        width: 100%; padding: 14px; font-size: 16px; margin-bottom: 16px; 
-        border: 2px solid #e0e0e0; border-radius: 8px; box-sizing: border-box;
-        transition: all 0.3s ease;
-        background-color: #fafafa;
-    }
-    .login-box input:focus, .login-box select:focus {
-        border-color: var(--accent);
-        background-color: white;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(67, 160, 71, 0.2);
-    }
-
-    /* MAIN CONTAINER & CARDS */
-    .main-container {
-        display: flex; flex-wrap: wrap; max-width: 1200px;
-        margin: 30px auto; padding: 0 20px; gap: 25px; flex: 1;
-    }
-    .quiz-section { flex: 2; min-width: 300px; }
-    .sidebar { flex: 1; min-width: 250px; }
-    .card {
-        background: white; border-radius: 12px; padding: 30px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 20px;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-    .progress-container { background: #e0e0e0; border-radius: 20px; height: 12px; overflow: hidden; margin-bottom: 10px; }
-    .progress-bar { background: linear-gradient(90deg, var(--accent), var(--success)); height: 100%; width: 0%; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .question-text { font-size: 1.3rem; margin-bottom: 25px; line-height: 1.6; color: #2c3e50; }
+    .login-box h2 { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 25px; color: var(--ink) !important; }
     
-    /* OPTIONS GRID AESTHETICS */
-    .options-grid { display: grid; gap: 12px; }
-    .option-label {
-        display: flex; align-items: center; gap: 15px; padding: 16px;
-        background: white; border: 2px solid #e0e0e0; border-radius: 10px;
-        cursor: pointer; font-size: 1.05rem; font-weight: bold; color: #444;
-        transition: all 0.2s ease; margin: 0;
-    }
-    /* Updated to Green Theme Highlights */
-    .option-label:hover { border-color: var(--accent); background: var(--bg-light); transform: translateY(-1px); }
-    .option-label.selected { background: #c8e6c9; border-color: var(--primary); color: var(--primary); }
-    .option-label.correct { background: #d4efdf; border-color: var(--success); color: var(--success); }
-    .option-label.wrong { background: #fadbd8; border-color: var(--danger); color: var(--danger); }
-    .option-label input[type="checkbox"] { transform: scale(1.4); cursor: pointer; margin: 0; accent-color: var(--primary); }
-    .option-label.disabled { pointer-events: none; opacity: 0.7; }
-
-    /* MODERN BUTTONS */
-    .btn {
-        background-color: var(--primary); color: #ffffff; 
-        padding: 12px 24px; border: none; border-radius: 30px; /* Pill-shape for 3D feel */
-        font-size: 1.05rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;
-        cursor: pointer; transition: all 0.1s ease; display: inline-block; text-align: center;
-        /* 3D Chunky Shadow (Dark Green) */
-        box-shadow: 0 6px 0 #0d3b13, 
-                    0 10px 15px rgba(0, 0, 0, 0.3);
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    }
-    .btn:hover:not([disabled]) {
-        background-color: var(--accent);
-        transform: translateY(-2px); /* Umaangat ng konti pag tinapatan */
-        box-shadow: 0 8px 0 #115019, 
-                    0 12px 18px rgba(0, 0, 0, 0.3);
-    }
-    .btn:active:not([disabled]) {
-        transform: translateY(4px); /* Nabaon pababa! */
-        box-shadow: 0 2px 0 #0d3b13, 
-                    0 5px 8px rgba(0, 0, 0, 0.3);
-    }
-    .btn:disabled { 
-        opacity: 0.6; cursor: not-allowed; 
-        transform: translateY(4px); /* Nabaon na by default pag disabled */
-        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3); 
-        background-color: #9e9e9e; 
-    }
-    
-    /* 3D Effect para sa GOLD Button */
-    .btn-gold { 
-        background: var(--gold) !important; color: #333 !important; 
-        box-shadow: 0 6px 0 #cc8f00, 0 10px 15px rgba(0,0,0,0.3) !important; 
-        text-shadow: 1px 1px 1px rgba(255,255,255,0.8) !important;
-    }
-    .btn-gold:hover:not([disabled]) { 
-        background: #ffc107 !important; 
-        box-shadow: 0 8px 0 #cc8f00, 0 12px 18px rgba(0,0,0,0.3) !important;
-    }
-    .btn-gold:active:not([disabled]) { 
-        transform: translateY(4px);
-        box-shadow: 0 2px 0 #cc8f00, 0 5px 8px rgba(0,0,0,0.3) !important; 
-    }
-
-    /* 3D Effect para sa DANGER (Red) Button */
-    .btn-danger { 
-        background: var(--danger) !important; color: white !important; 
-        box-shadow: 0 6px 0 #9a0007, 0 10px 15px rgba(0,0,0,0.3) !important; 
-    }
-    .btn-danger:hover:not([disabled]) { 
-        box-shadow: 0 8px 0 #9a0007, 0 12px 18px rgba(0,0,0,0.3) !important; 
-    }
-    .btn-danger:active:not([disabled]) { 
-        transform: translateY(4px);
-        box-shadow: 0 2px 0 #9a0007, 0 5px 8px rgba(0,0,0,0.3) !important; 
-    }
-    
-    .hidden { display: none !important; }
-    .explanation { background: #fdfae6; border-left: 5px solid var(--gold); padding: 18px; margin-top: 25px; display: none; border-radius: 0 8px 8px 0; color: #555; }
-    .img-placeholder { background: #f8f9fa; border: 2px dashed #bdc3c7; padding: 20px; text-align: center; margin: 10px 0; font-style: italic; border-radius: 8px; }
-    .question-img { max-width: 100%; height: auto; display: block; margin: 15px auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    
-    /* LEADERBOARD */
-    .leaderboard-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-    .leaderboard-table th, .leaderboard-table td { padding: 14px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.95rem; overflow: hidden; }
-    .leaderboard-table th { color: var(--primary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; border-bottom: 2px solid var(--primary); }
-    .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { text-align: center; width: 15%; }
-    .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { text-align: left; width: 45%; }
-    .leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3) { text-align: center; width: 20%; font-weight: bold; }
-    .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { text-align: center; width: 20%; color: #777; }
-    .active-user { background-color: var(--bg-light); border-radius: 8px; }
-    .active-user td { font-weight: bold; color: var(--primary); border-bottom: none; }
-    .rank-top-3-name { font-weight: 800; }
-    .medal { font-size: 1.4rem; margin-right: 6px; }
-	
-	/* DEVELOPER CREDIT BADGE (SUPER LIIT) */
+    /* DEVELOPER CREDIT BADGE (SUPER LIIT NA PANG-WATERMARK) */
     .developer-credit {
         position: fixed;
-        bottom: 10px; 
-        left: 10px; 
+        bottom: 10px; /* Ibinaba pa natin nang konti */
+        left: 10px; /* Isinagad pa sa kaliwa */
         background: rgba(255, 255, 255, 0.95);
-        color: var(--primary); 
-        padding: 3px 8px; 
+        color: var(--primary);
+        padding: 3px 8px; /* Sobrang nipis na ng spacing */
         border-radius: 12px;
-        font-size: 0.55rem; 
+        font-size: 0.55rem; /* SUPER LIIT NA FONT (parang 8-9px na lang) */
         font-family: 'Segoe UI', Tahoma, sans-serif;
         font-weight: bold;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         z-index: 1000;
-        border: 1px solid var(--primary); 
+        border: 1px solid var(--primary); /* Pinanipis ang border */
         transition: all 0.3s ease;
         backdrop-filter: blur(5px);
     }
@@ -249,13 +111,14 @@
         cursor: pointer;
     }
 
+    /* DEVELOPER SIGNATURE IN MAROON */
     .dev-signature {
         font-family: 'Gill Sans', sans-serif;
         font-size: 0.7rem; 
         font-weight: normal;
         letter-spacing: 0.5px;
         margin-left: 2px;
-        color: #1b5e20; /* DARK GREEN */
+        color: var(--ink); 
     }
     
     @media print {
@@ -264,124 +127,137 @@
 	
     </style>
  </head>
- <body data-grade="7">
+  <script defer src="../rma-theme.js"></script>
+  <script defer src="../rma-help.js"></script>
+<body data-grade="7">
     <div id="loginOverlay" class="no-print"></div>
-
-<header class="no-print" style="background: linear-gradient(135deg, var(--primary), var(--accent)); color:white; padding: 15px 30px; display:flex; justify-content:space-between; align-items:center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-bottom: 4px solid var(--gold);">
-   <div style="display: flex; align-items: center; gap: 20px;">
-    <img src="../assets/mwnhslogo.png" alt="MWNHS Logo" width="90" height="90" style="border-radius: 50%; background: white; padding: 4px; object-fit: contain; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" onerror="this.style.display='none';">
-    <div style="display: flex; flex-direction: column; text-align: left; gap: 5px;">
-     <h1 style="margin: 0; line-height: 1; font-size: 2.2rem; color: var(--gold); text-transform: uppercase; font-weight: 900; text-shadow: 1px 1px 2px rgba(0,0,0,0.4);">MOONWALK NATIONAL HIGH SCHOOL</h1>
-     <h2 style="margin: 0; line-height: 1; font-size: 1.6rem; color: #FFFFFF; font-weight: 700; letter-spacing: 1px;">RMA PRACTICE TEST</h2>
-     <h3 style="margin: 0; line-height: 1; font-size: 1.2rem; color: rgba(255,255,255,0.9); font-weight: 500;">S.Y. 2026-2027</h3>
-    </div>
-   </div>
-
-   <div class="user-info" style="text-align:right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-    <div id="displayStudentName" style="margin: 0; line-height: 1; font-weight: 900; color: var(--gold); font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
-     Guest
-    </div>
-    <div id="displaySection" style="margin: 0; line-height: 1; opacity:0.95; font-weight: bold; color: #FFFFFF; font-size: 1.3rem;">
-     Grade 7
-    </div>
-    <div style="margin-top: 5px;">
-     <span id="timerDisplay" style="font-weight: 700; color: #FFFFFF; font-size: 1.2rem; background: rgba(0,0,0,0.25); padding: 6px 16px; border-radius: 20px; display: none; border: 1px solid rgba(255,255,255,0.2);"> 00:00 </span>
-    </div>
-   </div>
-</header>
   
-  <div class="main-container no-print">
-   <div class="quiz-section">
-    <div id="questionTimerContainer" style="display: none; text-align: center; margin-bottom: 20px; background: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-     <span style="font-size: 1.1rem; font-weight: bold; color: #555;"> Time Left: </span> 
-     <span id="timeRemaining" style="font-weight: 900; color: var(--danger); font-size: 1.4rem; margin-left: 5px;">30</span><span style="color: var(--danger); font-weight: bold;">s</span>
+<header class="rma-header no-print">
+    <div class="rma-brand">
+      <img class="rma-logo" src="../assets/mwnhslogo.png" alt="MWNHS logo" width="46" height="46">
+      <div><div class="rma-brand-name">RMA Pathways</div><div class="rma-brand-sub">Moonwalk National High School</div></div>
     </div>
-    <div class="card">
-     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-         <h3 id="qNumber" style="color:var(--primary); font-size: 1.4rem; font-weight: 900; margin: 0;">Question 1</h3>
-         <div style="font-size: 0.95rem; color: #7f8c8d; font-weight: bold; background: var(--bg-light); padding: 5px 12px; border-radius: 15px;">
-          <span id="qIndexDisp">1</span> / <span id="qTotalDisp">35</span>
-         </div>
-     </div>
-     <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
-     </div>
-     
-     <div id="quizContent">
-      <div id="imgContainer"></div>
-      <div class="question-text" id="qText" style="font-weight: 600;">
-       Loading...
-      </div>
-      <div class="options-grid" id="optionsBox"></div>
-      <div class="explanation" id="explanationBox">
-       <strong>Explanation:</strong> <span id="explanationText"></span>
-      </div>
-      <div class="controls" style="margin-top: 30px; text-align: right; border-top: 1px solid #eee; padding-top: 20px;">
-       <button class="btn" id="checkBtn" style="background-color: var(--accent);" disabled>Check Answer</button> 
-       <button class="btn hidden" id="nextBtn">Next Question</button>
-      </div>
-     </div>
-     
-     <div id="resultContent" class="hidden" style="text-align: center; padding: 20px;">
-      <h2 id="resultTitle" style="color: var(--primary); font-size: 2.2rem; font-weight: 900;">Practice Complete</h2>
-      <div style="font-size: 4.5rem; font-weight: 900; margin: 20px 0; color: var(--accent); text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
-       <span id="finalScore">0</span>
-      </div>
-      <p id="resultMessage" style="font-size: 1.4rem; color: #555; font-weight: 500;">You answered <span id="finalCorrectCount" style="font-weight: bold; color: var(--primary);">0</span> questions correctly.</p>
-      <img id="resultGif" src="" alt="Result GIF" style="width: 250px; margin: 25px auto; display: none; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
-      <div id="actionButtons" style="margin-top: 35px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-       <button class="btn" id="retryBtn" onclick="initGame()" style="background-color: var(--accent);">Try Again</button> 
-       <button class="btn btn-gold hidden" id="certBtn" onclick="showCertificate()">View Certificate</button> 
-       <button class="btn btn-danger" onclick="voluntaryExit()">Logout Session</button>
-      </div>
-     </div>
+    <div class="rma-title"><span class="chip chip-grade">Grade 7</span><span>Rapid Mathematics Assessment</span></div>
+    <div class="rma-tools">
+      <div class="rma-user rma-user-text"><span id="displayStudentName">Guest</span><span id="displaySection">Grade 7</span></div>
+      <span class="pill pill-xp" title="Points earned this session"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9l-5.6 1.9L12 16.5l-1.9-5.6L4.5 9l5.6-1.4L12 2zm7 11l.9 2.6 2.6.9-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9L19 13z"/></svg><span><b id="xpValue">0</b> XP</span></span>
+      <span id="timerDisplay" class="pill" style="display:none" aria-label="Time elapsed"> 00:00</span>
+      <button type="button" class="icon-btn" id="soundToggle" aria-pressed="false" aria-label="Mute sounds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg></button>
     </div>
-   </div>
-   
-   <div class="sidebar">
-    <div class="card">
-     <h3 id="leaderboard-title" style="color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 12px; font-weight: 900; margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
-         Live Leaderboard 
-         <span id="lb-status" style="font-size: 0.75rem; background: var(--bg-light); padding: 4px 10px; border-radius: 12px; color: var(--primary); font-weight: bold;">LOADING</span>
-     </h3>
-     <table class="leaderboard-table" id="leaderboard">
-      <thead>
-       <tr>
-        <th>#</th>
-        <th>Student</th>
-        <th>Score</th>
-        <th>Time</th>
-       </tr>
-      </thead>
-      <tbody>
-      </tbody>
-     </table>
-    </div>
-   </div>
+  </header>
+
+  <div class="quest no-print">
+    <div class="quest-row"><span>Question <span id="qIndexDisp">1</span> of <span id="qTotalDisp">50</span></span><span><span id="progressPct">0%</span> complete</span></div>
+    <div class="progress-container" role="progressbar" aria-label="Quiz progress"><div class="progress-bar" id="progressBar"></div></div>
   </div>
 
+  <div class="main-container no-print">
+    <div class="quiz-section">
+      <div class="card quiz-card">
+        <div id="quizContent">
+          <h2 id="qNumber" class="sr-only">Question 1</h2>
+          <div class="q-meta">
+            <span class="chip chip-topic" id="qTopic">Practice</span>
+            <span class="chip chip-xp">+1 XP</span>
+            <div id="questionTimerContainer" class="q-timer" style="display: none;">Time left <span id="timeRemaining">30</span>s</div>
+          </div>
+          <div id="imgContainer"></div>
+          <div class="question-text" id="qText">Loading...</div>
+          <p class="q-help">Choose the best answer.</p>
+          <div class="options-grid" id="optionsBox"></div>
+          <div class="help-card" id="helpCard" role="group" aria-label="Spend XP for help">
+            <div class="help-head">
+              <div><b class="help-title">Need a hand?</b><span class="help-sub">Earn 1 XP for each correct answer, then spend it on help. Your teacher can see when help is used.</span></div>
+              <div class="help-meta"><span class="help-balance"><b id="helpBalance">0 XP</b> available</span><span class="help-token" id="helpToken">Second chance: 1 left</span></div>
+            </div>
+            <div class="help-actions">
+              <button type="button" class="help-btn" id="help-eliminate"><span class="help-row"><span class="help-name">Remove one wrong option</span><span class="help-cost">10 XP</span></span><span class="help-desc">Greys out one answer that is not correct.</span><span class="help-why"></span></button>
+              <button type="button" class="help-btn" id="help-time"><span class="help-row"><span class="help-name">Add 10 seconds</span><span class="help-cost">5 XP</span></span><span class="help-desc">More time to think on this question.</span><span class="help-why"></span></button>
+              <button type="button" class="help-btn" id="help-retry"><span class="help-row"><span class="help-name">Second chance</span><span class="help-cost">20 XP</span></span><span class="help-desc">After a wrong answer, try once more.</span><span class="help-why"></span></button>
+            </div>
+            <p class="help-budget" id="helpBudget"></p>
+            <p class="help-note" id="helpNote" aria-live="polite"></p>
+          </div>
+          <div class="explanation" id="explanationBox"><strong class="fb-title">Exactly right.</strong><span id="explanationText"></span></div>
+          <div class="controls">
+            <button class="btn btn-primary" id="checkBtn" disabled>Check answer</button>
+            <button class="btn btn-success hidden" id="nextBtn">Next question</button>
+          </div>
+        </div>
+        <div id="resultContent" class="result hidden">
+          <div class="result-badge" aria-hidden="true">&#10022;</div>
+          <h2 id="resultTitle">Practice complete</h2>
+          <p id="resultMessage">You answered <span id="finalCorrectCount">0</span> correctly.</p>
+          <div class="ring" id="scoreRing"><div class="ring-inner"><span id="finalScore">0</span><small>Mastery</small></div></div>
+          <div><span class="band-chip" id="bandChip"></span></div>
+          <div class="stats">
+            <div><span>Correct answers</span><b id="statCorrect">-</b></div>
+            <div><span>Without help</span><b id="statXP">-</b></div>
+            <div><span>Time spent</span><b id="statTime">-</b></div>
+          </div>
+          <p class="help-summary" id="helpSummary"></p>
+          <img id="resultGif" src="" alt="">
+          <div id="actionButtons">
+            <button class="btn btn-primary" id="retryBtn" onclick="initGame()">Practice again</button>
+            <button class="btn btn-gold hidden" id="certBtn" onclick="showCertificate()">View certificate</button>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="lb-toggle" id="lbToggle" aria-controls="lbCard" aria-expanded="false"><span>Class leaderboard</span><span aria-hidden="true">&#9650;</span></button>
+    </div>
+
+    <aside class="sidebar">
+      <div class="card run-card">
+        <p class="run-label">Your run today</p>
+        <div class="run-xp"><b id="runXP">0</b><span>XP</span></div>
+        <div class="run-bar"><i id="runBar"></i></div>
+        <p class="run-note" id="runNote">Answer a question to start earning points.</p>
+      </div>
+      <div class="card lb-card" id="lbCard">
+        <button type="button" class="lb-close" id="lbClose" aria-label="Close leaderboard">&#10005;</button>
+        <div class="lb-head">
+          <div><p class="lb-kicker">Your section</p><h3 id="leaderboard-title">Top learners</h3></div>
+          <span id="lb-status" class="live-pill">Live</span>
+        </div>
+        <table class="leaderboard-table" id="leaderboard">
+          <thead><tr><th>#</th><th>Learner</th><th>Mastery</th><th>Time</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </aside>
+  </div>
+  <div class="lb-backdrop" id="lbBackdrop"></div>
   <div id="certificateContainer">
    <div class="certificate-wrapper">
     <div class="certificate-border">
      <div class="certificate-inner">
-      <div class="cert-title">Certificate of Mastery</div>
-      <div class="cert-subtitle">RAPID MATHEMATICS ASSESSMENT</div>
-      <p class="cert-text" style="color: #555; margin-top: 20px;">This certifies that</p>
-      <div class="cert-name" id="certName">Student Name</div>
-      <p class="cert-text" style="color: #555; max-width: 80%; margin: 0 auto;">has successfully completed the Grade 7 RMA Practice Test with a PERFECT SCORE of</p>
-      <div class="cert-score">100%</div>
-      <p class="cert-text" style="color: #555;">on <span id="certDate" style="font-weight: bold;">Date</span></p>
-    <p class="cert-text" id="certSection" style="color: #555;"></p>
+      <div class="cert-title">
+       Certificate of Mastery
+      </div>
+      <div class="cert-subtitle">
+       RAPID MATHEMATICS ASSESSMENT
+      </div>
+      <p class="cert-text">This certifies that</p>
+      <div class="cert-name" id="certName">
+       Student Name
+      </div>
+      <p class="cert-text">has successfully completed the Grade 7 RMA Practice Test with a PERFECT SCORE of</p>
+      <div class="cert-score">
+       100%
+      </div>
+      <p class="cert-text">on <span id="certDate">Date</span></p>
+    <p class="cert-text" id="certSection"></p>
       <div class="cert-footer">
        <div style="text-align: center;">
         <div class="sign-line" id="teacherName"></div>
-        <div style="color: #666; font-size: 0.9rem; margin-top: 5px; font-weight: bold;">Mathematics Teacher</div>
+        <div>
+         Mathematics Teacher
+        </div>
        </div>
       </div>
      </div>
-     <div class="no-print" style="margin-top: 25px; display: flex; justify-content: center; gap: 15px;">
-      <button class="btn" style="background-color: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none;" onclick="window.print()">Print Certificate</button> 
-      <button class="btn btn-danger" onclick="closeCertificate()">Close</button>
+     <div class="no-print" style="margin-top: 20px;">
+      <button class="btn btn-primary" onclick="window.print()">Print Certificate</button> <button class="btn btn-danger" onclick="closeCertificate()">Close</button>
      </div>
     </div>
    </div>
@@ -404,6 +280,7 @@ let timerInterval = null;
 let idleTimeout = null; 
 let questionTimerInterval = null;
 let selectedOptions = [];
+let questionTimeLeft = 30; // read and extended by rma-help.js
 
 const IDLE_TIME_LIMIT = 60000; // 60 seconds
 
@@ -416,7 +293,7 @@ const SECURITY = {
     isWarningActive: false,
     maxStrikes: 3,
     maxQuits: 3,
-    banDuration: 3 * 24 * 60 * 60 * 1000,
+    banDuration: 1 * 24 * 60 * 60 * 1000,   // one day: a set-back, not a lockout
     
     get strikes() { return parseInt(localStorage.getItem("g7_exam_strikes") || "0"); },
     set strikes(val) { localStorage.setItem("g7_exam_strikes", val); },
@@ -431,6 +308,9 @@ const SECURITY = {
 // ==========================================
 // 3. GAME STATE & DOM ELEMENTS
 // ==========================================
+// XP rule: 1 XP for each correct answer; a wrong or timed-out answer changes nothing.
+const XP_PER_CORRECT = 1;
+
 const gameState = {
     student: { name: "", section: "", lastName: "", firstNameMI: "" }, 
     activeQuestions: [],
@@ -1264,7 +1144,7 @@ function disableSecurityOnFinish() {
     SECURITY.examStarted = false;
     clearTimeout(idleTimeout); 
     sessionStorage.removeItem("g7_exam_ongoing");
-    localStorage.removeItem("g10_exam_strikes");
+    localStorage.removeItem("g7_exam_strikes");
 }
 
 // ==========================================
@@ -1361,19 +1241,19 @@ function stopRealTimer() {
 
 function startQuestionTimer() {
     clearInterval(questionTimerInterval); 
-    let timeRemaining = 30; 
+    questionTimeLeft = 30;
 
     const timerContainer = document.getElementById("questionTimerContainer");
     const timeDisplay = document.getElementById("timeRemaining");
 
     if (timerContainer) timerContainer.style.display = "block";
-    if (timeDisplay) timeDisplay.innerText = timeRemaining;
+    if (timeDisplay) timeDisplay.innerText = questionTimeLeft;
 
     questionTimerInterval = setInterval(() => {
-        timeRemaining--;
-        if (timeDisplay) timeDisplay.innerText = timeRemaining;
+        questionTimeLeft--;
+        if (timeDisplay) timeDisplay.innerText = questionTimeLeft;
 
-        if (timeRemaining <= 0) {
+        if (questionTimeLeft <= 0) {
             clearInterval(questionTimerInterval); 
             showCustomAlert("Time's up! No points for this question.");
             
@@ -1395,7 +1275,10 @@ function startQuestionTimer() {
             document.getElementById('soundWrong').play();
 
             dom.checkBtn.classList.add('hidden');
+
             dom.nextBtn.classList.remove('hidden');
+            // Time ran out, so this counts as a miss for XP and the run card.
+            if (window.RMATheme) window.RMATheme.onAnswer(false);
             dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
         }
     }, 1000);
@@ -1438,13 +1321,15 @@ document.getElementById('startBtn').addEventListener('click', () => {
         let timeLeft = SECURITY.banUntil - now;
         let days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
         let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        alert(`BANNED: Hindi ka muna makakapag-take ng exam.\nLimit Reached: Naka-3 Strikes o 3 Quits ka na.\nMaaari kang umulit pagkalipas ng: ${days} araw at ${hours} oras.`);
+        alert(`This practice test is unavailable right now.
+                Limit reached: ${SECURITY.maxStrikes} warnings or ${SECURITY.maxQuits} cancellations.
+                You can try again in ${days} day${days === 1 ? "" : "s"} and ${hours} hour${hours === 1 ? "" : "s"}.`);
         return; 
     } else if (SECURITY.banUntil > 0 && SECURITY.banUntil <= now) {
         SECURITY.banUntil = 0; 
         SECURITY.quits = 0; 
         SECURITY.strikes = 0;
-        localStorage.removeItem("g10_exam_strikes");
+        localStorage.removeItem("g7_exam_strikes");
     }
 
     const lastName = document.getElementById('lastName').value.trim();
@@ -1481,6 +1366,8 @@ document.getElementById('startBtn').addEventListener('click', () => {
 	function initGame() {
 		gameState.correctCount = 0;
 		gameState.scorePoints = 0;
+		gameState.userAnswers = {};
+		gameState.itemAnalysisRecords = [];
 		dom.resultContent.classList.add('hidden');
 		dom.quizContent.classList.remove('hidden');
 
@@ -1503,6 +1390,8 @@ document.getElementById('startBtn').addEventListener('click', () => {
 		gameState.activeQuestions = finalIndices.map(i => ({ rawIndex: i }));
 		gameState.currentQIndex = 0;
 		dom.qTotalDisp.textContent = gameState.activeQuestions.length;
+		if (window.RMATheme) window.RMATheme.reset();
+		if (window.RMAHelp) window.RMAHelp.reset();
 		
 		loadQuestion();
 		fetchLeaderboard();
@@ -1547,6 +1436,12 @@ function loadQuestion() {
     const pct = Math.round(((gameState.currentQIndex) / gameState.activeQuestions.length) * 100);
     dom.progressBar.style.width = pct + "%";
     dom.qText.innerHTML = qData.text.replace(/\[Refer to.*?\]/gi, '').trim();
+    
+    // Topic chip, progress percentage and the run card live in rma-theme.css.
+    if (window.RMATheme) {
+        window.RMATheme.onQuestion(getMathObjective(pointer.rawIndex + 1),
+            gameState.currentQIndex + 1, gameState.activeQuestions.length);
+    }
 
     dom.optionsBox.innerHTML = "";
     selectedOptions = []; 
@@ -1605,7 +1500,7 @@ dom.checkBtn.addEventListener('click', () => {
 
     if(isCorrect) {
         document.getElementById('soundCorrect').play();
-        gameState.scorePoints += 10;
+        gameState.scorePoints += XP_PER_CORRECT;
         gameState.correctCount++;
         dom.explanationText.textContent = qData.explanation;
         dom.explanationBox.style.display = 'block';
@@ -1632,6 +1527,11 @@ dom.checkBtn.addEventListener('click', () => {
     dom.progressBar.style.width = pct + "%";
     dom.checkBtn.classList.add('hidden');
     dom.nextBtn.classList.remove('hidden');
+        if (window.RMATheme) {
+            window.RMATheme.onAnswer(isCorrect);
+            window.RMATheme.onQuestion(getMathObjective(pointer.rawIndex + 1),
+                gameState.currentQIndex + 1, gameState.activeQuestions.length);
+        }
     dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
 });
 
@@ -1680,6 +1580,13 @@ function endGame() {
     const finalPercent = Math.round((gameState.correctCount / gameState.activeQuestions.length) * 100);
     dom.finalScore.textContent = finalPercent + "%";
     if(fcc) fcc.textContent = gameState.correctCount + " / " + gameState.activeQuestions.length;
+    
+    // Mastery ring, band label and the three stats. The page below still owns
+    // the headline wording and the confetti.
+    if (window.RMATheme) {
+        window.RMATheme.onFinish(finalPercent, gameState.correctCount,
+            gameState.activeQuestions.length);
+    }
 
     const winSound = document.getElementById('soundWin');
     if (winSound) { winSound.currentTime = 0; winSound.play().catch(e => console.log(e)); }
@@ -1777,6 +1684,11 @@ function submitFinalData() {
     formData.append("duration", calculateDuration());
     formData.append("rma", finalRmaData); 
     formData.append("bankData", finalBankData);
+    if (window.RMAHelp) {
+        const help = window.RMAHelp.summary();
+        formData.append("helpData", help.helpData);
+        formData.append("unaidedScore", help.unaidedScore);
+    }
     
     // SEND TO GOOGLE APPS SCRIPT
     window.RMAData.submit(formData)

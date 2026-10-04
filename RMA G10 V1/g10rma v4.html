@@ -3,26 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grade 10 RMA - Practice Test</title>
+  e>Grade 10 RMA - Practice Test</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../rma-theme.css">
   <style>
-    :root {
-		--primary: #b71c1c; /* Deep Red for Grade 10 */
-		--accent: #e53935;  /* Lighter Red for buttons/accents */
-		--success: #27ae60; /* Keep green for correct answers */
-		--danger: #c0392b;  /* Keep dark red for wrong answers */
-		--gold: #f1c40f;
-	}
-
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #ffebee; /* Light red/pinkish background instead of green */
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-    }
+    
 
     @media print {
         body * { visibility: hidden; }
@@ -50,8 +38,9 @@
         margin: 20px auto;
         text-align: center;
         background: white;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        animation: popIn 0.4s ease-out;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border-radius: 4px;
     }
 
     @keyframes popIn {
@@ -60,177 +49,56 @@
     }
 
     .certificate-border { 
-        border: 10px solid var(--primary);
-        padding: 10px; 
-        background-color: #e8f5e9;
+        border: 12px solid var(--primary);
+        padding: 12px; 
+        background-color: var(--bg-light); /* Soft Blue Background */
     }
     .certificate-inner { 
-        border: 6px double var(--gold);
+        border: 4px solid var(--gold);
+        outline: 2px solid var(--gold);
+        outline-offset: 4px;
         padding: 40px; 
         background-color: white;
     }
-    .cert-title { font-size: 2.8rem; color: var(--primary); margin-bottom: 10px; font-family: 'Times New Roman', serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;}
-    .cert-subtitle { font-size: 1.3rem; color: var(--accent); margin-bottom: 10px; font-family: sans-serif; font-weight: 700; letter-spacing: 1px;}
-    .cert-name { font-size: 2.2rem; font-weight: bold; border-bottom: 2px solid var(--primary); display: inline-block; padding: 0 20px 10px; margin: 20px 0; color: #1a5220; }
-    .cert-score { font-size: 2.5rem; color: var(--success); font-weight: bold; margin: 20px 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+    .cert-title { font-size: 2.8rem; color: var(--ink); margin-bottom: 10px; font-family: 'Times New Roman', serif; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;}
+	.cert-subtitle { font-size: 1.3rem; color: var(--accent); margin-bottom: 10px; font-family: sans-serif; font-weight: 700; letter-spacing: 2px;}
+    .cert-name { font-size: 2.2rem; font-weight: bold; border-bottom: 2px solid var(--primary); display: inline-block; padding: 0 30px 10px; margin: 20px 0; color: var(--ink); }
+    .cert-score { font-size: 2.8rem; color: var(--success); font-weight: 900; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
     .cert-footer { margin-top: 40px; display: flex; justify-content: space-around; }
-    .sign-line { border-top: 1px solid black; width: 200px; padding-top: 5px; font-size: 1rem; font-weight: bold; color: var(--primary); }
+    .sign-line { border-top: 2px solid #333; width: 220px; padding-top: 8px; font-size: 1.1rem; font-weight: bold; color: var(--primary); }
 
+    /* MODERNIZED LOGIN OVERLAY (BLUE TINT) */
+    /* MODERNIZED LOGIN OVERLAY (WARM/MAROON TINT) */
     #loginOverlay {
         position: fixed; 
-        top: 0; 
-        left: 0; 
-        width: 100%; 
-        height: 100%;
-        background: rgba(0,0,0,0.9);
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(40, 10, 10, 0.9); /* Warm dark maroon transparent background */
+        display: flex; justify-content: center; align-items: center; 
         z-index: 9999; 
     }
     .login-box {
-        background: white; 
-        padding: 2.5rem; 
-        border-radius: 12px;
-        width: 90%; 
-        max-width: 400px; 
-        text-align: center;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        background: white; padding: 3rem 2.5rem; border-radius: 16px; 
+        width: 90%; max-width: 420px; text-align: center;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        border-top: 6px solid var(--primary);
     }
-    .login-box h2 {
-        font-size: 1.8rem;
-        font-weight: 900;
-        letter-spacing: 1px;
-    }
-    .main-container {
-        display: flex; flex-wrap: wrap; max-width: 1200px;
-        margin: 20px auto; padding: 0 20px; gap: 20px; flex: 1;
-    }
-    .quiz-section { flex: 2; min-width: 300px; }
-    .sidebar { flex: 1; min-width: 250px; }
-    .card {
-        background: white; border-radius: 10px; padding: 25px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;
-    }
-    .progress-container { background: #e0e0e0; border-radius: 10px; height: 20px; overflow: hidden; margin-bottom: 5px; }
-    .progress-bar { background: var(--success); height: 100%; width: 0%; transition: width 0.3s ease; }
-    .question-text { font-size: 1.25rem; margin-bottom: 25px; line-height: 1.5; }
-    .options-grid { display: grid; gap: 12px; }
+    .login-box h2 { font-size: 1.8rem; font-weight: 900; letter-spacing: 1px; margin-bottom: 25px; color: var(--ink) !important; }
     
-    .option-label {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        padding: 15px;
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: bold;
-        transition: all 0.2s;
-        margin: 0;
-    }
-    .option-label:hover { border-color: var(--accent); background: #ebf5fb; }
-    .option-label.selected { background: #d6eaf8; border-color: var(--accent); }
-    .option-label.correct { background: #d4efdf; border-color: var(--success); }
-    .option-label.wrong { background: #fadbd8; border-color: var(--danger); }
-    
-    .option-label input[type="checkbox"] {
-        transform: scale(1.5);
-        cursor: pointer;
-        margin: 0;
-    }
-    .option-label.disabled {
-        pointer-events: none;
-        opacity: 0.8;
-    }
-
-    .btn {
-        background-color: var(--primary); 
-        color: #e0e0e0; 
-        padding: 7px 15px; 
-        border: none;
-        border-radius: 30px;
-        font-size: 1rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        cursor: pointer;
-        box-shadow: 0 6px 0 rgba(0, 0, 0, 0.5), 
-                    0 10px 15px rgba(0, 0, 0, 0.3);
-        text-shadow: -1px -1px 2px rgba(0, 0, 0, 0.8), 
-                      1px  1px 1px rgba(255, 255, 255, 0.2);
-        transition: all 0.1s ease;
-        display: inline-block;
-        text-align: center;
-    }
-
-    .btn:hover:not([disabled]) {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 0 rgba(0, 0, 0, 0.5), 
-                    0 12px 18px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn:active:not([disabled]) {
-        transform: translateY(4px);
-        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5), 
-                    0 5px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: translateY(4px);
-        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
-    }
-
-    .btn-gold {
-        background: var(--gold) !important;
-        color: #333333 !important; 
-        z-index: 20;
-        text-shadow: -1px -1px 1px rgba(0, 0, 0, 0.5), 
-                      1px  1px 1px rgba(255, 255, 255, 0.9) !important;
-    } 
-
-    .btn-danger { 
-        background: var(--danger) !important; 
-        color: #f8f9fa !important;
-    }
-    .hidden { display: none !important; }
-    .explanation { background: #fcf3cf; border-left: 5px solid #f1c40f; padding: 15px; margin-top: 20px; display: none; }
-    .img-placeholder { background: #f8f9fa; border: 2px dashed #bdc3c7; padding: 20px; text-align: center; margin: 10px 0; font-style: italic; }
-    .question-img { max-width: 100%; height: auto; display: block; margin: 10px auto; border: 1px solid #ccc; }
-    
-    .leaderboard-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .leaderboard-table th, .leaderboard-table td { padding: 14px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.95rem; overflow: hidden; }
-    .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { text-align: center; width: 12%; }
-    .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { text-align: left; width: 40%; }
-    .leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3) { text-align: center; width: 24%; }
-    .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { text-align: center; width: 24%; }
-    .active-user { background-color: #e8f8f5; font-weight: bold; border-left: 4px solid var(--success); }
-    .rank-top-3-name { font-weight: bold; font-size: 1.1rem; }
-
-    .medal { font-size: 1.4rem; margin-right: 6px; }
-    .rank-1 { background-color: rgba(255, 215, 0, 0.2); }
-    .rank-2 { background-color: rgba(192, 192, 192, 0.15); }
-    .rank-3 { background-color: rgba(205, 127, 50, 0.15); }
-	
-	/* DEVELOPER CREDIT BADGE (SUPER LIIT) */
+    /* DEVELOPER CREDIT BADGE (SUPER LIIT NA PANG-WATERMARK) */
     .developer-credit {
         position: fixed;
-        bottom: 10px; 
-        left: 10px; 
+        bottom: 10px; /* Ibinaba pa natin nang konti */
+        left: 10px; /* Isinagad pa sa kaliwa */
         background: rgba(255, 255, 255, 0.95);
-        color: var(--primary); /* Gagamitin nito yung Red sa theme mo */
-        padding: 3px 8px; 
+        color: var(--primary);
+        padding: 3px 8px; /* Sobrang nipis na ng spacing */
         border-radius: 12px;
-        font-size: 0.55rem; 
+        font-size: 0.55rem; /* SUPER LIIT NA FONT (parang 8-9px na lang) */
         font-family: 'Segoe UI', Tahoma, sans-serif;
         font-weight: bold;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         z-index: 1000;
-        border: 1px solid var(--primary); 
+        border: 1px solid var(--primary); /* Pinanipis ang border */
         transition: all 0.3s ease;
         backdrop-filter: blur(5px);
     }
@@ -243,107 +111,122 @@
         cursor: pointer;
     }
 
+    /* DEVELOPER SIGNATURE IN MAROON */
     .dev-signature {
         font-family: 'Gill Sans', sans-serif;
         font-size: 0.7rem; 
         font-weight: normal;
         letter-spacing: 0.5px;
         margin-left: 2px;
-        color: #b71c1c; /* DEEP RED */
+        color: var(--ink); 
     }
     
     @media print {
         .developer-credit { display: none !important; }
     }
+	
     </style>
-  <style>body { box-sizing: border-box; }</style>
-  <script src="https://cdn.tailwindcss.com/3.4.17" type="text/javascript"></script>
  </head>
- <body data-grade="10">
-  <div id="loginOverlay" class="no-print"></div>
-<header class="no-print" style="background:var(--primary); color:white; padding: 10px 20px; display:flex; justify-content:space-between; align-items:flex-end; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-   
-   <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 5px; border-bottom: 2px solid #FFD700; padding-bottom: 10px;">
-    
-    <img src="../assets/mwnhslogo.png" alt="MWNHS Logo" width="100" height="100" style="border-radius: 50%; background: white; padding: 5px; object-fit: contain; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));" onerror="this.style.display='none';">
-    
-    <div style="display: flex; flex-direction: column; text-align: left; gap: 4px;">
-     <h1 style="margin: 0; line-height: 1; font-size: 2.3rem; color: #FFD700; text-transform: uppercase; font-weight: 900; text-shadow: 1px 1px 0px #b8860b, 2px 2px 0px #8b6508, 3px 3px 0px #4a3600, 4px 4px 6px rgba(0,0,0,0.6);">MOONWALK NATIONAL HIGH SCHOOL</h1>
-     <h2 style="margin: 0; line-height: 1; font-size: 1.8rem; color: #FFFFFF; font-weight: bold; text-shadow: 1px 1px 0px #a9a9a9, 2px 2px 0px #696969, 3px 3px 5px rgba(0,0,0,0.8);">RMA PRACTICE TEST</h2>
-     <h3 style="margin: 0; line-height: 1; font-size: 1.5rem; color: #FFFFFF; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);">S.Y. 2026-2027</h3>
-    </div>
-   </div>
-
-   <div class="user-info" style="text-align:right; margin-bottom: 5px; border-bottom: 2px solid #FFD700; padding-bottom: 10px;">
-    <div id="displayStudentName" style="margin: 0; line-height: 1; font-weight: bold; color: #FFD700; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-     Guest
-    </div>
-    <div id="displaySection" style="margin: 5px 0 0 0; line-height: 1; opacity:0.9; font-weight: bold; color: #FFFFFF; font-size: 1.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
-     Grade 10
-    </div>
-    <div style="margin-top: 10px;">
-     <span id="timerDisplay" style="font-weight: bold; color: #FFFFFF; font-size: 1.3rem; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 8px; display: none; border: 1px solid #FFD700; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);"> 00:00 </span>
-    </div>
-   </div>
-
-  </header>
+  <script defer src="../rma-theme.js"></script>
+  <script defer src="../rma-help.js"></script>
+<body data-grade="10">
+    <div id="loginOverlay" class="no-print"></div>
   
-  <div class="main-container no-print">
-   <div class="quiz-section">
-    <div id="questionTimerContainer" style="display: none; text-align: center; margin-bottom: 15px; border-bottom: 1px dashed #ddd; padding-bottom: 10px;">
-     <span style="font-size: 1.1rem; font-weight: bold;"> Time Left: </span> <span id="timeRemaining" style="font-weight: bold; color: #e74c3c; font-size: 1.3rem;">30</span><span style="color: #e74c3c; font-weight: bold;">s</span>
+<header class="rma-header no-print">
+    <div class="rma-brand">
+      <img class="rma-logo" src="../assets/mwnhslogo.png" alt="MWNHS logo" width="46" height="46">
+      <div><div class="rma-brand-name">RMA Pathways</div><div class="rma-brand-sub">Moonwalk National High School</div></div>
     </div>
-    <div class="card">
-     <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
-     </div>
-     <div style="text-align: right; font-size: 0.9rem; color: #777; margin-bottom: 10px;">
-      Question <span id="qIndexDisp">1</span> of <span id="qTotalDisp">60</span>
-     </div>
-     <div id="quizContent">
-      <h3 id="qNumber" style="color:var(--primary)">Question 1</h3>
-      <div id="imgContainer"></div>
-      <div class="question-text" id="qText" style="font-weight: bold;">
-       Loading...
-      </div>
-      <div class="options-grid" id="optionsBox"></div>
-      <div class="explanation" id="explanationBox">
-       <strong>Explanation:</strong> <span id="explanationText"></span>
-      </div>
-      <div class="controls" style="margin-top: 25px; text-align: right;">
-       <button class="btn btn-primary" id="checkBtn" style="background-color: var(--accent);" disabled>Check Answer</button> <button class="btn btn-success hidden" id="nextBtn" style="background-color: var(--primary);">Next Question</button>
-      </div>
-     </div>
-     <div id="resultContent" class="hidden" style="text-align: center; padding: 20px;">
-      <h2 id="resultTitle">Practice Complete</h2>
-      <div style="font-size: 3.5rem; font-weight: bold; margin: 20px 0; color: var(--primary);">
-       <span id="finalScore">0</span>
-      </div>
-      <p id="resultMessage" style="font-size: 1.5rem;">You answered <span id="finalCorrectCount">0</span> correctly.</p><img id="resultGif" src="" alt="Result GIF" style="width: 200px; margin: 15px auto; display: none; border-radius: 10px;">
-      <div id="actionButtons" style="margin-top: 30px;">
-       <button class="btn btn-primary" id="retryBtn" onclick="initGame()" style="background-color: var(--accent);">Try Again</button> <button class="btn btn-gold hidden" id="certBtn" onclick="showCertificate()">View Certificate</button> <button class="btn btn-danger" onclick="voluntaryExit()">Logout / New Student</button>
-      </div>
-     </div>
+    <div class="rma-title"><span class="chip chip-grade">Grade 10</span><span>Rapid Mathematics Assessment</span></div>
+    <div class="rma-tools">
+      <div class="rma-user rma-user-text"><span id="displayStudentName">Guest</span><span id="displaySection">Grade 10</span></div>
+      <span class="pill pill-xp" title="Points earned this session"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9l-5.6 1.9L12 16.5l-1.9-5.6L4.5 9l5.6-1.4L12 2zm7 11l.9 2.6 2.6.9-2.6.9L19 20l-.9-2.6-2.6-.9 2.6-.9L19 13z"/></svg><span><b id="xpValue">0</b> XP</span></span>
+      <span id="timerDisplay" class="pill" style="display:none" aria-label="Time elapsed"> 00:00</span>
+      <button type="button" class="icon-btn" id="soundToggle" aria-pressed="false" aria-label="Mute sounds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg></button>
     </div>
-   </div>
-   <div class="sidebar">
-    <div class="card">
-     <h3 id="leaderboard-title" style="color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; font-weight: bold;">Live Leaderboard <span id="lb-status" style="font-size: 0.8rem; background: #eee; padding: 3px 8px; border-radius: 4px; color: #666;">LOADING</span></h3>
-     <table class="leaderboard-table" id="leaderboard">
-      <thead>
-       <tr>
-        <th>#</th>
-        <th>Student</th>
-        <th>Mastery</th>
-        <th>Time</th>
-       </tr>
-      </thead>
-      <tbody>
-      </tbody>
-     </table>
-    </div>
-   </div>
+  </header>
+
+  <div class="quest no-print">
+    <div class="quest-row"><span>Question <span id="qIndexDisp">1</span> of <span id="qTotalDisp">50</span></span><span><span id="progressPct">0%</span> complete</span></div>
+    <div class="progress-container" role="progressbar" aria-label="Quiz progress"><div class="progress-bar" id="progressBar"></div></div>
   </div>
+
+  <div class="main-container no-print">
+    <div class="quiz-section">
+      <div class="card quiz-card">
+        <div id="quizContent">
+          <h2 id="qNumber" class="sr-only">Question 1</h2>
+          <div class="q-meta">
+            <span class="chip chip-topic" id="qTopic">Practice</span>
+            <span class="chip chip-xp">+1 XP</span>
+            <div id="questionTimerContainer" class="q-timer" style="display: none;">Time left <span id="timeRemaining">30</span>s</div>
+          </div>
+          <div id="imgContainer"></div>
+          <div class="question-text" id="qText">Loading...</div>
+          <p class="q-help">Choose the best answer.</p>
+          <div class="options-grid" id="optionsBox"></div>
+          <div class="help-card" id="helpCard" role="group" aria-label="Spend XP for help">
+            <div class="help-head">
+              <div><b class="help-title">Need a hand?</b><span class="help-sub">Earn 1 XP for each correct answer, then spend it on help. Your teacher can see when help is used.</span></div>
+              <div class="help-meta"><span class="help-balance"><b id="helpBalance">0 XP</b> available</span><span class="help-token" id="helpToken">Second chance: 1 left</span></div>
+            </div>
+            <div class="help-actions">
+              <button type="button" class="help-btn" id="help-eliminate"><span class="help-row"><span class="help-name">Remove one wrong option</span><span class="help-cost">10 XP</span></span><span class="help-desc">Greys out one answer that is not correct.</span><span class="help-why"></span></button>
+              <button type="button" class="help-btn" id="help-time"><span class="help-row"><span class="help-name">Add 10 seconds</span><span class="help-cost">5 XP</span></span><span class="help-desc">More time to think on this question.</span><span class="help-why"></span></button>
+              <button type="button" class="help-btn" id="help-retry"><span class="help-row"><span class="help-name">Second chance</span><span class="help-cost">20 XP</span></span><span class="help-desc">After a wrong answer, try once more.</span><span class="help-why"></span></button>
+            </div>
+            <p class="help-budget" id="helpBudget"></p>
+            <p class="help-note" id="helpNote" aria-live="polite"></p>
+          </div>
+          <div class="explanation" id="explanationBox"><strong class="fb-title">Exactly right.</strong><span id="explanationText"></span></div>
+          <div class="controls">
+            <button class="btn btn-primary" id="checkBtn" disabled>Check answer</button>
+            <button class="btn btn-success hidden" id="nextBtn">Next question</button>
+          </div>
+        </div>
+        <div id="resultContent" class="result hidden">
+          <div class="result-badge" aria-hidden="true">&#10022;</div>
+          <h2 id="resultTitle">Practice complete</h2>
+          <p id="resultMessage">You answered <span id="finalCorrectCount">0</span> correctly.</p>
+          <div class="ring" id="scoreRing"><div class="ring-inner"><span id="finalScore">0</span><small>Mastery</small></div></div>
+          <div><span class="band-chip" id="bandChip"></span></div>
+          <div class="stats">
+            <div><span>Correct answers</span><b id="statCorrect">-</b></div>
+            <div><span>Without help</span><b id="statXP">-</b></div>
+            <div><span>Time spent</span><b id="statTime">-</b></div>
+          </div>
+          <p class="help-summary" id="helpSummary"></p>
+          <img id="resultGif" src="" alt="">
+          <div id="actionButtons">
+            <button class="btn btn-primary" id="retryBtn" onclick="initGame()">Practice again</button>
+            <button class="btn btn-gold hidden" id="certBtn" onclick="showCertificate()">View certificate</button>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="lb-toggle" id="lbToggle" aria-controls="lbCard" aria-expanded="false"><span>Class leaderboard</span><span aria-hidden="true">&#9650;</span></button>
+    </div>
+
+    <aside class="sidebar">
+      <div class="card run-card">
+        <p class="run-label">Your run today</p>
+        <div class="run-xp"><b id="runXP">0</b><span>XP</span></div>
+        <div class="run-bar"><i id="runBar"></i></div>
+        <p class="run-note" id="runNote">Answer a question to start earning points.</p>
+      </div>
+      <div class="card lb-card" id="lbCard">
+        <button type="button" class="lb-close" id="lbClose" aria-label="Close leaderboard">&#10005;</button>
+        <div class="lb-head">
+          <div><p class="lb-kicker">Your section</p><h3 id="leaderboard-title">Top learners</h3></div>
+          <span id="lb-status" class="live-pill">Live</span>
+        </div>
+        <table class="leaderboard-table" id="leaderboard">
+          <thead><tr><th>#</th><th>Learner</th><th>Mastery</th><th>Time</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </aside>
+  </div>
+  <div class="lb-backdrop" id="lbBackdrop"></div>
   <div id="certificateContainer">
    <div class="certificate-wrapper">
     <div class="certificate-border">
@@ -397,6 +280,7 @@ let timerInterval = null;
 let idleTimeout = null; 
 let questionTimerInterval = null;
 let selectedOptions = [];
+let questionTimeLeft = 30; // read and extended by rma-help.js
 
 const IDLE_TIME_LIMIT = 60000; // 60 seconds
 
@@ -409,7 +293,7 @@ const SECURITY = {
     isWarningActive: false,
     maxStrikes: 3,
     maxQuits: 3,
-    banDuration: 3 * 24 * 60 * 60 * 1000,
+    banDuration: 1 * 24 * 60 * 60 * 1000,   // one day: a set-back, not a lockout
     
     get strikes() { return parseInt(localStorage.getItem("g10_exam_strikes") || "0"); },
     set strikes(val) { localStorage.setItem("g10_exam_strikes", val); },
@@ -424,6 +308,9 @@ const SECURITY = {
 // ==========================================
 // 3. GAME STATE & DOM ELEMENTS
 // ==========================================
+// XP rule: 1 XP for each correct answer; a wrong or timed-out answer changes nothing.
+const XP_PER_CORRECT = 1;
+
 const gameState = {
     student: { name: "", section: "", lastName: "", firstNameMI: "" }, 
     activeQuestions: [],
@@ -1934,19 +1821,19 @@ function stopRealTimer() {
 
 function startQuestionTimer() {
     clearInterval(questionTimerInterval); 
-    let timeRemaining = 30; 
+    questionTimeLeft = 30;
 
     const timerContainer = document.getElementById("questionTimerContainer");
     const timeDisplay = document.getElementById("timeRemaining");
 
     if (timerContainer) timerContainer.style.display = "block";
-    if (timeDisplay) timeDisplay.innerText = timeRemaining;
+    if (timeDisplay) timeDisplay.innerText = questionTimeLeft;
 
     questionTimerInterval = setInterval(() => {
-        timeRemaining--;
-        if (timeDisplay) timeDisplay.innerText = timeRemaining;
+        questionTimeLeft--;
+        if (timeDisplay) timeDisplay.innerText = questionTimeLeft;
 
-        if (timeRemaining <= 0) {
+        if (questionTimeLeft <= 0) {
             clearInterval(questionTimerInterval); 
             showCustomAlert("Time's up! No points for this question.");
             
@@ -1968,7 +1855,10 @@ function startQuestionTimer() {
             document.getElementById('soundWrong').play();
 
             dom.checkBtn.classList.add('hidden');
+
             dom.nextBtn.classList.remove('hidden');
+            // Time ran out, so this counts as a miss for XP and the run card.
+            if (window.RMATheme) window.RMATheme.onAnswer(false);
             dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
         }
     }, 1000);
@@ -2011,7 +1901,9 @@ document.getElementById('startBtn').addEventListener('click', () => {
         let timeLeft = SECURITY.banUntil - now;
         let days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
         let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        alert(`BANNED: Hindi ka muna makakapag-take ng exam.\nLimit Reached: Naka-3 Strikes o 3 Quits ka na.\nMaaari kang umulit pagkalipas ng: ${days} araw at ${hours} oras.`);
+        alert(`This practice test is unavailable right now.
+                Limit reached: ${SECURITY.maxStrikes} warnings or ${SECURITY.maxQuits} cancellations.
+                You can try again in ${days} day${days === 1 ? "" : "s"} and ${hours} hour${hours === 1 ? "" : "s"}.`);
         return; 
     } else if (SECURITY.banUntil > 0 && SECURITY.banUntil <= now) {
         SECURITY.banUntil = 0; 
@@ -2054,6 +1946,8 @@ document.getElementById('startBtn').addEventListener('click', () => {
 function initGame() {
     gameState.correctCount = 0;
     gameState.scorePoints = 0;
+    gameState.userAnswers = {};
+    gameState.itemAnalysisRecords = [];
     dom.resultContent.classList.add('hidden');
     dom.quizContent.classList.remove('hidden');
     
@@ -2075,6 +1969,8 @@ function initGame() {
     gameState.activeQuestions = finalIndices.map(i => ({ rawIndex: i }));
     gameState.currentQIndex = 0;
     dom.qTotalDisp.textContent = gameState.activeQuestions.length;
+    if (window.RMATheme) window.RMATheme.reset();
+    if (window.RMAHelp) window.RMAHelp.reset();
     
     loadQuestion();
     fetchLeaderboard(); 
@@ -2119,6 +2015,12 @@ function loadQuestion() {
     const pct = Math.round(((gameState.currentQIndex) / gameState.activeQuestions.length) * 100);
     dom.progressBar.style.width = pct + "%";
     dom.qText.innerHTML = qData.text.replace(/\[Refer to.*?\]/gi, '').trim();
+    
+    // Topic chip, progress percentage and the run card live in rma-theme.css.
+    if (window.RMATheme) {
+        window.RMATheme.onQuestion(getMathObjective(pointer.rawIndex + 1),
+            gameState.currentQIndex + 1, gameState.activeQuestions.length);
+    }
 
     dom.optionsBox.innerHTML = "";
     selectedOptions = []; 
@@ -2177,7 +2079,7 @@ dom.checkBtn.addEventListener('click', () => {
 
     if(isCorrect) {
         document.getElementById('soundCorrect').play();
-        gameState.scorePoints += 10;
+        gameState.scorePoints += XP_PER_CORRECT;
         gameState.correctCount++;
         dom.explanationText.textContent = qData.explanation;
         dom.explanationBox.style.display = 'block';
@@ -2204,6 +2106,11 @@ dom.checkBtn.addEventListener('click', () => {
     dom.progressBar.style.width = pct + "%";
     dom.checkBtn.classList.add('hidden');
     dom.nextBtn.classList.remove('hidden');
+        if (window.RMATheme) {
+            window.RMATheme.onAnswer(isCorrect);
+            window.RMATheme.onQuestion(getMathObjective(pointer.rawIndex + 1),
+                gameState.currentQIndex + 1, gameState.activeQuestions.length);
+        }
     dom.nextBtn.textContent = (gameState.currentQIndex === gameState.activeQuestions.length - 1) ? "Finish & See Result" : "Next Question";
 });
 
@@ -2252,6 +2159,13 @@ function endGame() {
     const finalPercent = Math.round((gameState.correctCount / gameState.activeQuestions.length) * 100);
     dom.finalScore.textContent = finalPercent + "%";
     if(fcc) fcc.textContent = gameState.correctCount + " / " + gameState.activeQuestions.length;
+    
+    // Mastery ring, band label and the three stats. The page below still owns
+    // the headline wording and the confetti.
+    if (window.RMATheme) {
+        window.RMATheme.onFinish(finalPercent, gameState.correctCount,
+            gameState.activeQuestions.length);
+    }
 
     const winSound = document.getElementById('soundWin');
     if (winSound) { winSound.currentTime = 0; winSound.play().catch(e => console.log(e)); }
@@ -2349,6 +2263,11 @@ function submitFinalData() {
     formData.append("duration", calculateDuration());
     formData.append("rma", finalRmaData); 
     formData.append("bankData", finalBankData);
+    if (window.RMAHelp) {
+        const help = window.RMAHelp.summary();
+        formData.append("helpData", help.helpData);
+        formData.append("unaidedScore", help.unaidedScore);
+    }
     
     // SEND TO GOOGLE APPS SCRIPT
     window.RMAData.submit(formData)

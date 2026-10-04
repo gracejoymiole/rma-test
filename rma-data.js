@@ -32,6 +32,25 @@
     return response.json();
   }
 
+  // The help-tracking columns arrive with a database migration. Until it has been
+  // applied the server does not know the two extra arguments and answers 404/400
+  // (PGRST202). Retrying without them keeps the student's score safe in that gap.
+  const HELP_PARAMS = ["p_help_data", "p_unaided_score"];
+  function isMissingFunction(error) {
+    const message = String(error && error.message || "");
+    return /\((404|400)\)/.test(message) && /PGRST202|Could not find the function|schema cache/i.test(message);
+  }
+  async function submitScore(payload) {
+    try {
+      return await rpc("rma_submit_score", payload);
+    } catch (error) {
+      if (!isMissingFunction(error) || !HELP_PARAMS.some((key) => key in payload)) throw error;
+      const legacy = { ...payload };
+      HELP_PARAMS.forEach((key) => delete legacy[key]);
+      return rpc("rma_submit_score", legacy);
+    }
+  }
+
   function durationSeconds(value) {
     if (typeof value === "number") return Math.max(0, Math.floor(value));
     const text = String(value || "");
@@ -82,7 +101,7 @@
     const remaining = [];
     for (const item of items) {
       try {
-        await rpc("rma_submit_score", item.payload);
+        await submitScore(item.payload);
       } catch (error) {
         remaining.push(item);
       }
@@ -113,8 +132,13 @@
         p_rma_data: String(formData.get("rma") || "").slice(0, 12000),
         p_bank_data: String(formData.get("bankData") || "").slice(0, 12000)
       };
+      // Sent by pages that load rma-help.js; a page without it omits them and the call is unchanged.
+      if (formData.has("helpData")) {
+        payload.p_help_data = String(formData.get("helpData") || "").slice(0, 2000);
+        payload.p_unaided_score = Math.max(0, Math.min(100, Number.parseInt(formData.get("unaidedScore"), 10) || 0));
+      }
       try {
-        return await rpc("rma_submit_score", payload);
+        return await submitScore(payload);
       } catch (error) {
         queuePending(payload);
         throw error;

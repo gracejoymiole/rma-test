@@ -55,10 +55,49 @@ rather than reported as 0%.
 carries 47 blueprint items and 448 question rows tagged by grade, topic and
 cognitive process.
 
+## XP and help
+
+Students earn **1 XP for each correct answer**; a wrong or timed-out answer changes
+nothing. XP can be spent on help from the card under the options, and **there is no
+free help**: every use is paid for from XP already earned in the run.
+
+| Help | Cost | Limit |
+| --- | --- | --- |
+| Remove one wrong option | 10 XP | once per question |
+| Add 10 seconds | 5 XP | once per question |
+| Second chance | 20 XP | after a wrong answer, **once per attempt** |
+
+A run can spend at most 30 XP on help. Starting a new attempt ("Practice again") resets
+XP, the spending total, the stored answers and the second chance. The costs, the cap and
+the one-second-chance limit live in the `RULES` table at the top of `rma-help.js`; the
+XP per correct answer is `XP_PER_CORRECT` in each grade page. Each use of help is saved
+per question (`help_data`) with the score without help (`unaided_score`), and the teacher
+portal shows both. Run `supabase/add-help-tracking.sql` once to add the columns; until
+then pages keep saving scores without them.
+
+`python3 tools/browser-check.py` drives the real pages in Chromium (needs Playwright).
+
+## Penalties
+
+The practice test is deliberately forgiving. Reaching the limit — 3 warnings, or
+3 cancellations — makes the next attempt unavailable for **one day**, not longer.
+`banDuration` sits in the `SECURITY` object at the top of each grade page, so the
+length is one number per file. The thresholds (`maxStrikes`, `maxQuits`) are in the
+same object, and the ban message reads them from there rather than hardcoding a
+number.
+
+## Type
+
+One font site-wide: **Comic Relief**, loaded from Google Fonts by a `<link>` in each
+page's `<head>`, with the family name held in `--font-display` and `--font-body` in
+`rma-theme.css`. `index.html` and `teacher.html` define their own copies of those two
+custom properties so they match without loading the stylesheet twice. `tests/test-theme.js`
+fails if a page goes back to a different family, or if the old names come back.
+
 ## Tests
 
 ```powershell
-npm test           # all suites, 565 assertions
+npm test           # all suites, 986 assertions
 npm run check      # syntax-check the shipped scripts
 npm run verify     # both, as CI runs it
 npm run verify:live  # checks the deployed Supabase project, not the repo

@@ -141,7 +141,11 @@ check('incomplete learner status correct', xrows.find((r) => r[0] === 'RMA-8-000
 check('not-taken learner status correct', xrows.find((r) => r[0] === 'RMA-8-000004')[7] === 'Not yet taken');
 check('not-taken has empty score and percentage', xrows.find((r) => r[0] === 'RMA-8-000004')[4] === '' && xrows.find((r) => r[0] === 'RMA-8-000004')[5] === '');
 check('score 0 is not blanked', (() => { api.getRows()[1].score = 0; const r = api.exportRows().find((x) => x[0] === 'RMA-8-000001'); api.getRows()[1].score = 30; return r[4] === 0; })());
-check('10 columns', xrows[0].length === 10, String(xrows[0].length));
+// 12 since the XP help system added "Unaided Score" and "Questions With Help".
+// Counted rather than hardcoded elsewhere so a new column fails here loudly.
+check('12 columns', xrows[0].length === 12, String(xrows[0].length));
+check('unaided score is exported', /unaided/i.test(exportBlock));
+check('questions with help is exported', /help/i.test(exportBlock));
 
 globalThis.__links = []; api.msgs.length = 0;
 api.exportClassRecords();

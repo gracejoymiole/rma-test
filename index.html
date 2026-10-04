@@ -1,67 +1,76 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#521018">
+  <meta name="theme-color" content="#1F1D36">
   <meta name="description" content="Choose your grade level to begin the RMA PATHWAYS practice experience at MWNHS.">
   <title>RMA PATHWAYS | Select your Grade Level</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    :root { color-scheme: light; --wine: #521018; --wine-dark: #31090e; --gold: #f0c75e; --ink: #24191a; --muted: #74696a; }
+    :root { color-scheme: light; --ink:#1F1D36; --ink-soft:#5B5878; --coral:#E94560; --coral-deep:#B3203B; --amber:#FFBD69; --amber-tint:#FFF0DA; --teal:#4FD3C4; --ice:#E8F9FD; --line:#D3E6EE;
+      --signature:linear-gradient(45deg,#1F1D36,#E94560,#FFBD69,#4FD3C4,#E8F9FD);
+      --font-display:"Comic Relief","Comic Sans MS",cursive,sans-serif; --font-body:"Comic Relief","Comic Sans MS",cursive,sans-serif; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--ink); background: radial-gradient(ellipse at 50% 0%, #fff9e9 0, #f7f2ea 44%, #eee5dc 100%); }
-    .page { width: min(1100px, calc(100% - 40px)); margin: auto; padding: 36px 0 30px; }
-    header { display: flex; align-items: center; gap: 16px; margin-bottom: 54px; }
-    .logo { width: 62px; height: 62px; object-fit: contain; border-radius: 50%; background: white; box-shadow: 0 4px 18px #31090e20; }
-    .brand { color: var(--wine); font-size: 1.25rem; font-weight: 900; letter-spacing: .10em; text-transform: uppercase; }
-    .brand-sub { margin-top: 4px; color: var(--muted); font-size: 1rem; font-weight: 700;}
-    main { text-align: center; }
-    .eyebrow { display: inline-flex; align-items: center; gap: 9px; color: #846214; background: #f7edcf; border: 1px solid #ead89e; border-radius: 999px; padding: 8px 13px; font-size: .72rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-    h1 { margin: 21px 0 12px; color: var(--wine-dark); font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.6rem, 7vw, 5.3rem); line-height: .99; letter-spacing: -.045em; }
-    h1 span { display: block; color: var(--wine); }
-    .intro { max-width: 570px; margin: 0 auto; color: var(--muted); font-size: clamp(1rem, 2vw, 1.12rem); line-height: 1.7; }
-    .grade-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 42px 0 0; text-align: left; }
-    .grade-card { position: relative; display: flex; min-height: 205px; flex-direction: column; overflow: hidden; padding: 22px; color: inherit; text-decoration: none; border: 1px solid #e8ded7; border-radius: 18px; background: #fffdf9; box-shadow: 0 10px 30px #31090e0d; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-    .grade-card:hover, .grade-card:focus-visible { transform: translateY(-5px); border-color: #d6b95c; box-shadow: 0 18px 40px #31090e1b; outline: none; }
-    .grade-card::after { position: absolute; right: -37px; bottom: -65px; width: 150px; height: 150px; border-radius: 50%; background: #f5edd9; content: ""; }
-    .grade-number { color: var(--wine); font-family: Georgia, "Times New Roman", serif; font-size: 3.3rem; line-height: 1; }
-    .grade-label { margin-top: 13px; font-size: .92rem; font-weight: 800; }
-    .grade-description { margin-top: 5px; color: var(--muted); font-size: .79rem; }
-    .go { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 24px; color: var(--wine); font-size: .82rem; font-weight: 800; }
-    .arrow { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; color: white; background: var(--wine); font-size: 1.25rem; }
-    footer { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 18px; margin-top: 49px; padding-top: 18px; border-top: 1px solid #dfd5cc; color: #807575; text-align: center; font-weight: 700; font-size: 1rem; }
-    footer a { color: #521018; font-weight: 900; text-decoration: none; }
-    @media (max-width: 760px) { header { margin-bottom: 42px; } .grade-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 420px) { .page { width: min(100% - 28px, 1100px); } .grade-card { min-height: 185px; padding: 17px; } .grade-number { font-size: 2.8rem; } }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+    body { margin:0; min-height:100vh; display:flex; flex-direction:column; color:var(--ink); font-family:var(--font-body); background-color:var(--ice);
+      background-image:linear-gradient(rgba(31,29,54,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(31,29,54,.045) 1px,transparent 1px); background-size:32px 32px; }
+    :focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+    .rma-header { position:relative; display:flex; align-items:center; gap:14px; padding:14px max(20px,calc((100% - 1100px)/2)); color:#fff; background:var(--ink); }
+    .rma-header::after { content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:var(--signature); }
+    .logo { width:46px; height:46px; flex:none; object-fit:contain; border-radius:50%; background:#fff; padding:3px; }
+    .brand { font:700 1.05rem/1.15 var(--font-display); }
+    .brand-sub { margin-top:3px; font-size:.72rem; letter-spacing:.04em; color:#C9C7DC; }
+    .page { width:min(1100px,calc(100% - 40px)); margin:auto; padding:48px 0 30px; flex:1; }
+    main { text-align:center; }
+    .eyebrow { display:inline-flex; align-items:center; gap:9px; color:var(--coral-deep); background:#FDE6EA; border-radius:999px; padding:8px 14px; font-size:.72rem; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }
+    h1 { margin:21px 0 12px; color:var(--ink); font-family:var(--font-display); font-weight:800; font-size:clamp(2.2rem,6vw,4.4rem); line-height:1.02; letter-spacing:-.03em; }
+    h1 span { display:block; color:var(--coral); font-size:.62em; font-weight:700; letter-spacing:-.02em; margin-top:6px; }
+    .intro { max-width:570px; margin:0 auto; color:var(--ink-soft); font-size:clamp(1rem,2vw,1.12rem); line-height:1.7; }
+    .grade-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; margin:42px 0 0; text-align:left; }
+    .grade-card { position:relative; display:flex; min-height:205px; flex-direction:column; overflow:hidden; padding:24px; color:inherit; text-decoration:none; border:1px solid var(--line); border-radius:22px; background:radial-gradient(120% 90% at 100% 0%,var(--amber-tint) 0,#fff 60%); box-shadow:0 16px 36px rgba(31,29,54,.07); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .grade-card:hover, .grade-card:focus-visible { transform:translateY(-5px); border-color:var(--coral); box-shadow:0 22px 44px rgba(31,29,54,.14); }
+    .grade-card::after { position:absolute; right:-37px; bottom:-65px; width:150px; height:150px; border-radius:50%; background:var(--teal); opacity:.18; content:""; }
+    .grade-number { color:var(--coral); font-family:var(--font-display); font-weight:800; font-size:3.3rem; line-height:1; }
+    .grade-label { margin-top:13px; font-size:.95rem; font-weight:700; }
+    .grade-description { margin-top:5px; color:var(--ink-soft); font-size:.8rem; }
+    .go { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:24px; color:var(--ink); font-size:.82rem; font-weight:700; }
+    .arrow { display:grid; width:32px; height:32px; place-items:center; border-radius:50%; color:#fff; background:var(--ink); font-size:1.2rem; transition:background .15s; }
+    .grade-card:hover .arrow, .grade-card:focus-visible .arrow { background:var(--coral); }
+    footer { display:flex; justify-content:center; flex-wrap:wrap; gap:8px 18px; width:min(1100px,calc(100% - 40px)); margin:0 auto 28px; padding-top:18px; border-top:1px solid var(--line); color:var(--ink-soft); text-align:center; font-weight:500; font-size:.9rem; }
+    footer a { color:var(--ink); font-weight:700; text-decoration:none; border-bottom:2px solid var(--amber); }
+    @media (max-width:760px) { .grade-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .page { padding-top:36px; } }
+    @media (max-width:420px) { .page { width:min(100% - 28px,1100px); } .grade-card { min-height:185px; padding:17px; } .grade-number { font-size:2.8rem; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; transition:none !important; } }
   </style>
 </head>
 <body>
+  <header class="rma-header">
+    <img class="logo" src="assets/mwnhslogo.png" alt="MWNHS school logo" width="46" height="46">
+    <div><div class="brand">RMA Pathways</div><div class="brand-sub">Moonwalk National High School</div></div>
+  </header>
   <div class="page">
-    <header>
-      <img class="logo" src="assets/mwnhslogo.png" alt="MWNHS school logo">
-      <div><div class="brand">MOONWALK NATIONAL HIGH SCHOOL</div><div class="brand-sub">RMA PATHWAYS LEARNING PORTAL</div></div>
-    </header>
     <main>
-      <div class="eyebrow">✦ &nbsp; Your next step starts here</div>
+      <div class="eyebrow">&#10022; &nbsp; Your next step starts here</div>
       <h1>RMA PATHWAYS<span>Select your Grade Level</span></h1>
       <p class="intro">Choose your current grade to open the RMA practice assessment. Take your time, think it through, and do your best.</p>
       <nav class="grade-grid" aria-label="Select your grade level">
         <a class="grade-card" href="FINAL%20GRADE%207%20RMA/G7%20RMA1%20V1.html" aria-label="Open Grade 7 RMA">
-          <span class="grade-number">07</span><span class="grade-label">Grade 7</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 7 <span class="arrow" aria-hidden="true">→</span></span>
+          <span class="grade-number">07</span><span class="grade-label">Grade 7</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 7 <span class="arrow" aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="grade-card" href="RMA%20G8%20V2/G8%20RMA%20V5.html" aria-label="Open Grade 8 RMA">
-          <span class="grade-number">08</span><span class="grade-label">Grade 8</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 8 <span class="arrow" aria-hidden="true">→</span></span>
+          <span class="grade-number">08</span><span class="grade-label">Grade 8</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 8 <span class="arrow" aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="grade-card" href="RMA%20G9%20V1/rmag9%20v3.html" aria-label="Open Grade 9 RMA">
-          <span class="grade-number">09</span><span class="grade-label">Grade 9</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 9 <span class="arrow" aria-hidden="true">→</span></span>
+          <span class="grade-number">09</span><span class="grade-label">Grade 9</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 9 <span class="arrow" aria-hidden="true">&rarr;</span></span>
         </a>
         <a class="grade-card" href="RMA%20G10%20V1/g10rma%20v4.html" aria-label="Open Grade 10 RMA">
-          <span class="grade-number">10</span><span class="grade-label">Grade 10</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 10 <span class="arrow" aria-hidden="true">→</span></span>
+          <span class="grade-number">10</span><span class="grade-label">Grade 10</span><span class="grade-description">Mathematics RMA practice</span><span class="go">Enter Grade 10 <span class="arrow" aria-hidden="true">&rarr;</span></span>
         </a>
       </nav>
     </main>
-    <footer><span>Mathematics Department • MWNHS • Learn with Purpose • Developed by Miole, G. • 2026</span><a href="teacher.html">Teacher Portal</a></footer>
   </div>
+  <footer><span>Mathematics Department &bull; MWNHS &bull; Learn with Purpose &bull; Developed by Miole, G. &bull; 2026</span><a href="teacher.html">Teacher Portal</a></footer>
 </body>
 </html>

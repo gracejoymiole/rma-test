@@ -175,7 +175,8 @@ $$;
 
 create or replace function public.rma_submit_score(
   p_token text, p_grade smallint, p_score integer, p_start_time text, p_end_time text,
-  p_duration text, p_duration_seconds integer, p_rma_data text, p_bank_data text
+  p_duration text, p_duration_seconds integer, p_rma_data text, p_bank_data text,
+  p_help_data text default '', p_unaided_score integer default null
 ) returns boolean language plpgsql security definer
 set search_path = public, extensions, pg_temp
 as $$
@@ -186,14 +187,17 @@ begin
      and se.role = 'student' and se.expires_at > now();
   if not found or v_student.grade <> p_grade then raise exception 'Student session expired. Please sign in again.' using errcode = '28000'; end if;
   insert into public.rma_scores (grade, last_name, first_name_mi, section, score, start_time, end_time,
-      duration, duration_seconds, rma_data, bank_data, student_id, student_code, teacher_name)
+      duration, duration_seconds, rma_data, bank_data, student_id, student_code, teacher_name,
+      help_data, unaided_score)
     values (v_student.grade, v_student.last_name,
       concat_ws(' ', v_student.first_name, nullif(v_student.middle_initial, '')), v_student.section,
       greatest(0, least(100, p_score)), coalesce(p_start_time, ''), coalesce(p_end_time, ''),
       coalesce(p_duration, ''), greatest(0, coalesce(p_duration_seconds, 0)),
       left(coalesce(p_rma_data, ''), 12000), left(coalesce(p_bank_data, ''), 12000),
       v_student.id, v_student.student_code,
-      concat_ws(' ', v_student.teacher_title, v_student.teacher_first_name, v_student.teacher_last_name));
+      concat_ws(' ', v_student.teacher_title, v_student.teacher_first_name, v_student.teacher_last_name),
+      left(coalesce(p_help_data, ''), 2000),
+      case when p_unaided_score is null then null else greatest(0, least(100, p_unaided_score)) end);
   return true;
 end;
 $$;
@@ -274,11 +278,12 @@ begin
         st.teacher_first_name, st.teacher_last_name), 'score', latest.score, 'duration', latest.duration,
       'rma_data', latest.rma_data, 'bank_data', latest.bank_data, 'created_at', latest.created_at,
       'attempt_number', coalesce(latest.attempt_number, 0), 'is_complete', latest.is_complete,
+      'help_data', latest.help_data, 'unaided_score', latest.unaided_score,
       'attempts', coalesce(tally.attempts, 0))
       order by st.grade, st.section, st.last_name, st.first_name)
     from public.rma_students st
     left join lateral (select sc.score, sc.duration, sc.rma_data, sc.bank_data, sc.created_at,
-        sc.attempt_number, sc.is_complete
+        sc.attempt_number, sc.is_complete, sc.help_data, sc.unaided_score
       from public.rma_scores sc where sc.student_id = st.id order by sc.created_at desc limit 1) latest on true
     left join lateral (select count(*)::int as attempts
       from public.rma_scores sc where sc.student_id = st.id) tally on true
@@ -351,7 +356,7 @@ revoke all on function public.rma_set_attempt_complete(text, text, boolean) from
 grant execute on function public.rma_teacher_suggestions(text) to anon, authenticated;
 grant execute on function public.rma_student_register(smallint,text,text,text,text,text,text,text) to anon, authenticated;
 grant execute on function public.rma_student_login(text,text,smallint) to anon, authenticated;
-grant execute on function public.rma_submit_score(text,smallint,integer,text,text,text,integer,text,text) to anon, authenticated;
+grant execute on function public.rma_submit_score(text,smallint,integer,text,text,text,integer,text,text,text,integer) to anon, authenticated;
 grant execute on function public.rma_report_violation(text,smallint,text,text) to anon, authenticated;
 grant execute on function public.rma_teacher_login(text,text) to anon, authenticated;
 grant execute on function public.rma_teacher_change_password(text,text) to anon, authenticated;
@@ -553,6 +558,12 @@ on conflict (band_name) do nothing;
 -- Add attempt tracking to scores table
 alter table public.rma_scores add column if not exists attempt_number smallint not null default 1;
 alter table public.rma_scores add column if not exists is_complete boolean not null default true;
+
+-- XP help tracking: which questions used help, and the score without any help.
+-- Repeated here (not just in add-help-tracking.sql) so a fresh install from this
+-- file has the columns the pages send.
+alter table public.rma_scores add column if not exists help_data text not null default '';
+alter table public.rma_scores add column if not exists unaided_score smallint check (unaided_score between 0 and 100);
 
 -- RPC to get score bands
 create or replace function public.rma_get_score_bands()
