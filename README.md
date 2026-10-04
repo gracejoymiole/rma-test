@@ -1,4 +1,4 @@
-# RMA Pathways
+﻿# RMA Pathways
 
 Assessment and teacher-reporting platform for the Mathematics Department of
 MWNHS, covering the Read, Make, and Assess (RMA) instruments for Grades 7-10.
@@ -33,7 +33,7 @@ serve `supabase/`, which holds the schema and the bootstrap script.
 
 `teacher.html` is three tabs over the same session-scoped data.
 
-**📊 Overview** — grade and section filters, then class metrics, section
+**ðŸ“Š Overview** â€” grade and section filters, then class metrics, section
 completion and average-score charts, highest and lowest item mastery for the
 grade and per section, a question mastery table, and a per-student status table.
 Status comes from the `rma_score_bands` table rather than hardcoded thresholds:
@@ -42,14 +42,14 @@ Status comes from the `rma_score_bands` table rather than hardcoded thresholds:
 `Not yet taken` for no attempt at all. The Who Needs Help card filters by band. A
 teacher sees their own sections unless `see_all_sections` is set on their account.
 
-**📚 Question Map** — answer keys and explanations, filterable by search text, by
+**ðŸ“š Question Map** â€” answer keys and explanations, filterable by search text, by
 type (RMA original / bank / aligned Filipino), and by mastery band. Mastery
 appears for RMA items only, computed from real submissions: `rma_data` stores one
 bit per RMA item, so item N maps to `RMA-Q<grade>-<NN>`. Bank and aligned items
 are never submitted per-item, so they carry no mastery value and are left blank
 rather than reported as 0%.
 
-**🗺️ Master Map** — the full question inventory across all four grades, from
+**ðŸ—ºï¸ Master Map** â€” the full question inventory across all four grades, from
 `rma-master-map.js`, which is generated from
 `RMA_Grade7-10_Complete_Question_Mapping.xlsx` and must not be edited by hand. It
 carries 47 blueprint items and 448 question rows tagged by grade, topic and
@@ -79,8 +79,8 @@ then pages keep saving scores without them.
 
 ## Penalties
 
-The practice test is deliberately forgiving. Reaching the limit — 3 warnings, or
-3 cancellations — makes the next attempt unavailable for **one day**, not longer.
+The practice test is deliberately forgiving. Reaching the limit â€” 3 warnings, or
+3 cancellations â€” makes the next attempt unavailable for **one day**, not longer.
 `banDuration` sits in the `SECURITY` object at the top of each grade page, so the
 length is one number per file. The thresholds (`maxStrikes`, `maxQuits`) are in the
 same object, and the ban message reads them from there rather than hardcoding a
@@ -88,7 +88,7 @@ number.
 
 ## Type
 
-One font site-wide: **Comic Relief**, loaded from Google Fonts by a `<link>` in each
+One font site-wide: **Fredoka**, loaded from Google Fonts by a `<link>` in each
 page's `<head>`, with the family name held in `--font-display` and `--font-body` in
 `rma-theme.css`. `index.html` and `teacher.html` define their own copies of those two
 custom properties so they match without loading the stylesheet twice. `tests/test-theme.js`
@@ -135,7 +135,7 @@ Coverage worth knowing about:
 Static hosting; the docs name Vercel. Two things to set before the first deploy:
 
 1. Apply `supabase/schema.sql`, or every RPC returns 404.
-2. Replace nothing in `supabase-config.js` — the publishable key is meant for the
+2. Replace nothing in `supabase-config.js` â€” the publishable key is meant for the
    browser. All protection is in RLS, which is why the schema matters.
 
 The project ref lives in `supabase-config.js`. Confirm it matches the project you

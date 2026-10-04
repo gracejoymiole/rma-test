@@ -7,7 +7,7 @@ tle>Grade 7 RMA - Practice Test</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../rma-theme.css">
   <style>
     
@@ -291,6 +291,7 @@ const SECURITY = {
     examStarted: false,
     cheatDetected: false,
     isWarningActive: false,
+    enforceSecurity: false,   // TESTING: set true to enforce warnings and bans
     maxStrikes: 3,
     maxQuits: 3,
     banDuration: 1 * 24 * 60 * 60 * 1000,   // one day: a set-back, not a lockout
@@ -1021,7 +1022,16 @@ function showCustomAlert(msg) {
     setTimeout(() => { if(alertBox) alertBox.remove(); }, 3000);
 }
 
+// A ban left over from an earlier rule is erased, so changing the rule cannot
+// strand someone who was already locked out. Only touches this grade's keys.
+(function clearStaleBan() {
+  try {
+    ["g7_exam_ban_until", "g7_exam_strikes", "g7_exam_quits"].forEach(function (k) { localStorage.removeItem(k); });
+    sessionStorage.removeItem("g7_exam_ongoing");
+  } catch (e) { /* private mode */ }
+})();
 function handleViolation(reason) {
+    if (!SECURITY.enforceSecurity) { console.warn("Security check skipped (testing):", reason); return; }
     if (!SECURITY.examStarted || SECURITY.cheatDetected || window.isExamFinished || SECURITY.isWarningActive || violationCooldown) {
         return; 
     }
@@ -1317,7 +1327,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 
     const now = Date.now();
     
-    if (SECURITY.banUntil > now) {
+    if (SECURITY.enforceSecurity && SECURITY.banUntil > now) {
         let timeLeft = SECURITY.banUntil - now;
         let days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
         let hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

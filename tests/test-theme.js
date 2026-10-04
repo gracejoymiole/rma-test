@@ -51,10 +51,11 @@ check('rma-theme.js gives the leaderboard sheet a dismiss path',
   /lbClose/.test(js) && /Escape/.test(js));
 check('rma-theme.js has a reset for a second attempt', /reset: function/.test(js));
 
-check('the theme tokens are the site-wide font', /--font-display:\s*"Comic Relief"/.test(css)
-  && /--font-body:\s*"Comic Relief"/.test(css),
-  'Comic Relief');
-check('the theme carries no superseded font family', !/Encode Sans Expanded|"Rubik"/.test(css));
+check('the theme tokens are the site-wide font', /--font-display:\s*"Fredoka"/.test(css)
+  && /--font-body:\s*"Fredoka"/.test(css),
+  'Fredoka');
+check('the theme carries no superseded font family',
+  !/Encode Sans Expanded|"Rubik"|Comic Relief|Comic Sans/.test(css));
 
 // --- each page uses the shared theme and nothing else ---
 PAGES.forEach(({ grade, rel }) => {
@@ -68,12 +69,12 @@ PAGES.forEach(({ grade, rel }) => {
 // One font family site-wide. If this ever changes, change it here too, so the
   // pages cannot each drift back to their own typeface.
   check(`${base} loads the shared font`,
-    /fonts\.googleapis\.com\/css2\?family=Comic\+Relief:wght@400;700/.test(src));
+    /fonts\.googleapis\.com\/css2\?family=Fredoka:wght@300\.\.700/.test(src));
   check(`${base} preconnects to the font host`,
     /<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">/.test(src)
     && /fonts\.gstatic\.com" crossorigin/.test(src));
   check(`${base} has no superseded font family left`,
-    !/Encode\+Sans|family=Rubik|"Rubik"/.test(src));
+    !/Encode\+Sans|family=Rubik|"Rubik"|Comic\+Relief/.test(src));
   check(`${base} is tagged with its grade`, new RegExp(`<body data-grade="${grade}">`).test(src));
   check(`${base} has no leftover school-year banner`, !/S\.Y\./.test(src));
 
@@ -154,6 +155,62 @@ check('.vercelignore keeps supabase/ out of the deploy', /supabase\//.test(ignor
 check('.vercelignore keeps tests/ out of the deploy', /tests\//.test(ignore));
 check('.vercelignore keeps tools/ out of the deploy', /tools\//.test(ignore));
 check('.vercelignore excludes .kilo/', /^\.kilo\//m.test(ignore));
+
+// --- phone-first: the base rules must suit a phone, not a desktop ---
+// The sheet used to declare a two-column grid and a 1200px measure as the base
+// and bolt max-width queries on top, which left nothing decided at 320px.
+check('the base layout is one column', /\.main-container\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(css));
+check('wider screens are added with min-width, not max-width',
+  (css.match(/@media \(min-width:/g) || []).length >= 3);
+check('the desktop grid only returns at a min-width', /@media \(min-width:\s*1000px\)[\s\S]{0,900}?grid-template-columns:\s*minmax\(0,\s*1fr\)\s+clamp/.test(css));
+check('gutter and padding are fluid', /--gutter:\s*clamp\(/.test(css)
+  && /--pad-card:\s*clamp\(/.test(css));
+check('question text is fluid, not a fixed size', /font:\s*600 clamp\(/.test(css));
+check('tap targets have a floor', /--tap:\s*44px/.test(css) && /min-height:\s*max\(var\(--tap\)/.test(css));
+check('actions stick within thumb reach', /\.controls\s*\{[^}]*position:\s*sticky/.test(css));
+check('the action bar clears the home indicator', /env\(safe-area-inset-bottom/.test(css));
+check('the bottom sheet tracks the visible viewport', /max-height:\s*85dvh/.test(css));
+check('the page cannot be pushed sideways', /overflow-x:\s*hidden/.test(css));
+check('the chart is no longer pinned to a wide floor', !/min-width:560px/.test(css));
+
+// --- penalties: one day, and switchable off while testing ---
+const ENFORCE = process.env.RMA_ENFORCE_SECURITY === '1';
+PAGES.forEach(({ rel }) => {
+  const page = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const base = path.basename(rel);
+  check(`${base} has a ban length of one day`, /banDuration:\s*1 \* 24 \* 60 \* 60 \* 1000/.test(page));
+  check(`${base} no longer hardcodes the ban message`, !/Naka-3 Strikes/.test(page));
+  check(`${base} reads the thresholds for the message`, /SECURITY\.maxStrikes\} warnings/.test(page));
+  check(`${base} has a security on/off switch`, /enforceSecurity:\s*(true|false)/.test(page));
+  // Either it is enabled, or the violation handler really does bail out.
+  const enforcing = /enforceSecurity:\s*true/.test(page);
+  check(`${base} enforcement matches the expected state`,
+    enforcing === ENFORCE, enforcing ? 'enforcing' : 'not enforcing');
+  if (!enforcing) {
+    check(`${base} handleViolation returns early when off`,
+      /if \(!SECURITY\.enforceSecurity\)[\s\S]{0,120}?return;/.test(page));
+    check(`${base} an old ban cannot block a new attempt`,
+      /SECURITY\.enforceSecurity && SECURITY\.banUntil > now/.test(page));
+  }
+  check(`${base} clears its own grade's stale keys`, /clearStaleBan/.test(page));
+});
+// Grade 7 used to clear g10_exam_* keys, so its own strikes survived and the next
+// attempt was banned again.
+PAGES.forEach(({ grade, rel }) => {
+  const page = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const keys = [...page.matchAll(/localStorage\.removeItem\("(g\d+_exam_\w+)"\)/g)].map((m) => m[1]);
+  const foreign = keys.filter((k) => !k.startsWith(`g${grade}_exam_`));
+  check(`${path.basename(rel)} only clears its own storage keys`, foreign.length === 0, foreign.join(', '));
+});
+
+// --- the teacher portal must be usable on a phone ---
+const teacherHtml = fs.readFileSync(path.join(ROOT, 'teacher.html'), 'utf8');
+check('teacher tables are not nowrap throughout', !/\.leaderboard-table th, \.leaderboard-table td \{[^}]*white-space:nowrap/.test(teacherHtml));
+check('teacher charts can shrink to the card', /min-width:min\(560px, 100%\)/.test(teacherHtml));
+check('teacher tables pin the first column', /\.leaderboard-table th:first-child[\s\S]{0,200}?position:sticky; left:0/.test(teacherHtml));
+check('teacher portal grows with min-width', (teacherHtml.match(/@media \(min-width:/g) || []).length >= 3);
+check('teacher controls meet the tap floor', /--tap:\s*44px/.test(teacherHtml));
+check('teacher portal has a reduced-motion rule', /@media \(prefers-reduced-motion:reduce\)/.test(teacherHtml));
 
 console.log(out.join('\n'));
 const failed = out.filter((r) => r.startsWith('FAIL'));

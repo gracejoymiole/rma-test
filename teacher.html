@@ -7,12 +7,12 @@
   <title>Teacher Portal | RMA PATHWAYS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
   <style>
     :root { --wine:#1F1D36; --wine-dark:#1F1D36; --gold:#FFBD69; --ink:#1F1D36; --muted:#5B5878; --line:#D3E6EE;
       --coral:#E94560; --coral-deep:#B3203B; --amber:#FFBD69; --teal:#4FD3C4; --ice:#E8F9FD;
       --signature:linear-gradient(45deg,#1F1D36,#E94560,#FFBD69,#4FD3C4,#E8F9FD);
-      --font-display:"Comic Relief","Comic Sans MS",cursive,sans-serif; --font-body:"Comic Relief","Comic Sans MS",cursive,sans-serif; }
+      --font-display:"Fredoka","Trebuchet MS",system-ui,sans-serif,cursive,sans-serif; --font-body:"Fredoka","Trebuchet MS",system-ui,sans-serif,cursive,sans-serif; }
     * { box-sizing:border-box; } body { margin:0; min-height:100vh; color:var(--ink); background:#E8F9FD; font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
     header { padding:18px max(22px,calc((100% - 1180px)/2)); color:#fff; background:linear-gradient(120deg,var(--wine-dark),var(--wine)); border-bottom:4px solid var(--gold); }
     .brand { display:flex; justify-content:space-between; align-items:center; gap:15px; width:100%; max-width:1180px; margin:auto; }
@@ -44,8 +44,11 @@
     .report-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:16px 0; }
     .report-heading { margin:0 0 6px; color:var(--wine); font-size:1.1rem; }
     .report-note { margin:0 0 14px; font-size:.82rem; }
-    .chart-wrap { width:100%; overflow-x:auto; }
-    .chart-wrap svg { display:block; width:100%; min-width:560px; height:auto; }
+    .chart-wrap { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    /* The floor used to be a flat 560px, which forced a sideways scroll on any
+       phone. It is now a min() so the chart scales down with the card and only
+       becomes a scroll at genuinely narrow widths. */
+    .chart-wrap svg { display:block; width:100%; min-width:min(560px, 100%); height:auto; }
     .highlight { padding:15px; border-radius:12px; background:#E8F9FD; }
     .highlight strong { display:block; margin:5px 0; color:var(--wine); }
     .unaided { display:block; margin-top:2px; font-size:.74rem; font-weight:700; color:#5b5878; }
@@ -86,7 +89,7 @@
     .gap-summary { margin-bottom:16px; padding:12px 14px; border:1px solid var(--line); border-left:4px solid var(--gold); border-radius:10px; background:#F3FBFE; }
     .scope-all { color:var(--muted); }
     .scope-scoped { padding:9px 12px; border-left:4px solid var(--wine); border-radius:6px; background:#E8F9FD; color:var(--ink); font-weight:700; }
-    /* Grade 8 look: ink header with the signature bar, ice grid background, Comic Relief throughout. */
+    /* Grade 8 look: ink header with the signature bar, ice grid background, Trebuchet MS Relief throughout. */
     body { font-family:var(--font-body); background-color:var(--ice);
       background-image:linear-gradient(rgba(31,29,54,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(31,29,54,.045) 1px,transparent 1px); background-size:32px 32px; }
     header { position:relative; background:var(--ink); border-bottom:0; }
@@ -400,10 +403,74 @@
     .leaderboard-heading { margin:0 0 8px; font-size:.95rem; }
     .leaderboard-scroll { max-height:min(46vh,380px); }
     .leaderboard-table { width:100%; border-collapse:collapse; font-size:.85rem; }
-    .leaderboard-table th, .leaderboard-table td { padding:7px 9px; border-bottom:1px solid #D3E6EE; text-align:left; white-space:nowrap; }
+    .leaderboard-table th, .leaderboard-table td { padding:7px 9px; border-bottom:1px solid #D3E6EE; text-align:left; }
     .leaderboard-table th { position:sticky; top:0; background:#F3FBFE; }
     .leaderboard-table .learner-name { display:block; font-weight:600; }
     .leaderboard-table .learner-code { display:block; color:var(--muted); font-size:.74rem; }
+
+    /* ---------- phone-first pass ----------
+       Appended last so it wins over the desktop-first queries above. A teacher
+       checking a class between lessons is usually on a phone, so the phone is
+       treated as the default and wider screens add back what they can afford. */
+    :root {
+      --tap: 44px;
+      --gutter: clamp(14px, 3.5vw, 28px);
+    }
+    body { overflow-x:hidden; line-height:1.5; }
+    img, svg, table, .card { max-width:100%; }
+    main { width:min(1180px, 100% - var(--gutter) * 2); margin:clamp(14px,3vw,32px) auto; }
+
+    /* Tables used to be nowrap throughout, which forced the whole page sideways.
+       The first column sticks so a scrolled row still says whose row it is. */
+    .leaderboard-table { table-layout:fixed; }
+    .leaderboard-table th, .leaderboard-table td { white-space:normal; overflow-wrap:anywhere; }
+    .leaderboard-table th:first-child, .leaderboard-table td:first-child {
+      position:sticky; left:0; z-index:2; background:inherit;
+      box-shadow:1px 0 0 #D3E6EE;
+    }
+    .leaderboard-table th:first-child { z-index:3; background:#F3FBFE; }
+    .leaderboard-table col:first-child { width:34%; }
+
+    /* Controls sized for a thumb. */
+    button, .btn, select, input, .tab {
+      min-height:var(--tap);
+    }
+    .filters select, .filters input, .mm-filters select, .mm-filters input { min-width:0; width:100%; }
+
+    /* Single column by default; the wider grids come back by min-width below. */
+    .filters, .summary, .mm-summary, .report-grid { grid-template-columns:minmax(0,1fr); }
+    .summary { grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); }
+    .question-header, .question-meta { flex-direction:column; align-items:flex-start; gap:6px; }
+    .student-score { flex-direction:column; align-items:flex-start; gap:6px; }
+    .header-actions { flex-wrap:wrap; gap:8px; }
+    .brand-id { min-width:0; flex-wrap:wrap; }
+    /* A sticky header would eat a fifth of a short phone screen. */
+    header { position:static; padding:12px var(--gutter); }
+    .scroll, .mm-scroll { max-height:none; }
+    .card-list-scroll { -webkit-overflow-scrolling:touch; }
+
+    @media (min-width:560px) {
+      .report-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+      .summary, .mm-summary { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    }
+    @media (min-width:900px) {
+      .filters { grid-template-columns:repeat(2, minmax(0,1fr)); }
+      .summary, .mm-summary { grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); }
+      .question-header, .question-meta { flex-direction:row; align-items:center; }
+      .student-score { flex-direction:row; align-items:center; }
+      .scroll, .mm-scroll { max-height:var(--card-list-max); }
+    }
+    @media (min-width:1200px) {
+      :root { --gutter: 28px; }
+      .report-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    }
+    /* Landscape phone: a tall sticky header is worse than a scrolling one. */
+    @media (max-height:520px) and (orientation:landscape) {
+      .scroll, .mm-scroll, .leaderboard-scroll { max-height:70dvh; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      *, *::before, *::after { transition:none !important; animation:none !important; }
+    }
   </style>
 </head>
 <body>

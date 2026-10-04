@@ -1,7 +1,7 @@
-/* RMA Pathways shared theme.
+﻿/* RMA Pathways shared theme.
    Linked by every grade page: <link rel="stylesheet" href="../rma-theme.css">
    Palette: #1F1D36 ink, #E94560 coral, #FFBD69 amber, #4FD3C4 teal, #E8F9FD ice.
-   Fonts: Comic Relief, loaded by the Google Fonts <link> tags in each page's
+   Fonts: Fredoka, loaded by the Google Fonts <link> tags in each page's
    <head>; the fallback stack covers a failed load. */
 
 
@@ -21,8 +21,8 @@
   --teal-tint: #DDF7F4;
   --teal-deep: #0E6F65;
   --signature: linear-gradient(45deg, #1F1D36, #E94560, #FFBD69, #4FD3C4, #E8F9FD);
-  --font-display: "Comic Relief", "Comic Sans MS", cursive, sans-serif;
-  --font-body: "Comic Relief", "Comic Sans MS", cursive, sans-serif;
+  --font-display: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
   /* names the older inline styles and certificate still use */
   --primary: var(--ink);
   --accent: var(--coral);
@@ -217,39 +217,277 @@ body {
 /* ---------- dialogs and notices that older code builds inline ---------- */
 body .developer-credit { z-index: 40; }
 
-/* ---------- tablet and phone ---------- */
-@media (max-width: 960px) {
-  .main-container { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 0 16px 56px; margin-top: 18px; }
-  .quest { width: calc(100% - 32px); }
-  .rma-title { display: none; }
-  .rma-header { padding: 12px 16px; }
-  .quiz-card { padding: 26px 22px; }
-  .quiz-card::before { display: none; }
-  .lb-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 56px; padding: 0 20px; border: 1px solid var(--line); border-radius: 18px; background: #fff; color: var(--ink); font: 700 1rem var(--font-body); cursor: pointer; box-shadow: 0 10px 24px rgba(31,29,54,.06); }
-  .lb-card { visibility: hidden; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; max-height: 78vh; overflow: auto; border-radius: 26px 26px 0 0; padding: 14px 22px 26px; transform: translateY(105%); transition: transform .25s ease, visibility 0s .25s; box-shadow: 0 -16px 40px rgba(31,29,54,.25); }
-  .lb-card::before { content: ""; display: block; width: 44px; height: 5px; margin: 0 auto 14px; border-radius: 99px; background: var(--line); }
-  .lb-card.open { visibility: visible; transform: none; transition-delay: 0s; }
-  .lb-close { display: grid; place-items: center; position: absolute; right: 18px; top: 22px; width: 38px; height: 38px; padding: 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); font-size: 1rem; cursor: pointer; }
-  .lb-head { padding-right: 52px; }
-  .lb-backdrop { position: fixed; inset: 0; z-index: 55; background: rgba(31,29,54,.45); backdrop-filter: blur(3px); }
-  .lb-backdrop.open { display: block; }
-  .controls { margin-top: 24px; }
-  .controls .btn { flex: 1; }
+/* Mobile-first responsive pass for rma-theme.css.
+
+   The sheet was desktop-first: a two-column grid and a 1200px measure as the
+   base, with max-width queries bolted on. That reads fine at 1280px and falls
+   apart at 320px, and it leaves a phone-sized gap where nothing has been
+   decided yet.
+
+   This replaces the fixed numbers with fluid ones and moves the decisions into
+   min-width queries, so the phone is the default and each wider screen only adds
+   what it can afford. Nothing here changes markup or ids. */
+
+/* ---- fluid foundations ----
+   clamp() lets one declaration cover a 320px phone and a 2560px monitor. The
+   middle value is what the design was drawn at, so nothing moves at the sizes
+   it was reviewed at. */
+:root {
+  /* page gutter: 16px on a phone, breathing room on a desktop */
+  --gutter: clamp(14px, 3.5vw, 32px);
+  --measure: 1180px;
+  /* card padding grows with the viewport but stops before it looks loose */
+  --pad-card: clamp(18px, 4.2vw, 40px);
+  --pad-quiz: clamp(20px, 4.6vw, 44px);
+  --radius: clamp(14px, 2.2vw, 22px);
+  /* one tap target floor across every control */
+  --tap: 44px;
 }
-@media (max-width: 520px) {
-  .rma-brand-sub, .rma-user-text { display: none; }
-  .rma-brand-name { font-size: .95rem; }
+
+body {
+  /* Fredoka has a large x-height; a touch more leading keeps long
+     Filipino question text readable on a small screen. */
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Belt and braces against a stray wide child pushing the page sideways. */
+img, svg, table, .card, .pill, .btn { max-width: 100%; }
+
+.quest {
+  width: min(var(--measure), 100% - var(--gutter) * 2);
+  margin: clamp(12px, 2.4vw, 22px) auto 0;
+}
+
+.main-container {
+  /* Phone first: one column. The sidebar becomes a drawer below. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(14px, 2.2vw, 28px);
+  width: min(var(--measure), 100%);
+  margin: clamp(14px, 2.6vw, 24px) auto clamp(28px, 6vw, 48px);
+  padding: 0 var(--gutter);
+  /* Room for the fixed action bar plus the home indicator. */
+  padding-bottom: calc(var(--tap) * 2 + env(safe-area-inset-bottom, 0px) + 16px);
+}
+
+.card {
+  padding: var(--pad-card);
+  border-radius: var(--radius);
+}
+.quiz-card { padding: var(--pad-quiz); }
+
+/* ---- header: wrap instead of squash ---- */
+.rma-header {
+  gap: 10px;
+  padding: clamp(9px, 1.6vw, 14px) var(--gutter);
+  flex-wrap: wrap;
+}
+.rma-brand { min-width: 0; }
+.rma-logo { width: clamp(34px, 8vw, 46px); height: clamp(34px, 8vw, 46px); }
+/* The name is the one thing that must not wrap mid-word. */
+.rma-brand-name {
+  font: 700 clamp(.92rem, 2.6vw, 1.05rem)/1.15 var(--font-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rma-brand-sub { font-size: clamp(.62rem, 1.9vw, .72rem); }
+.rma-tools { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+/* A pill must never be narrower than what it shows. */
+.pill { height: var(--tap); padding: 0 12px; font-size: clamp(.8rem, 2.2vw, .92rem); }
+.icon-btn { width: var(--tap); height: var(--tap); }
+
+/* ---- question and options ---- */
+.question-text {
+  /* Scales with the screen instead of jumping at a breakpoint. */
+  font: 600 clamp(1.2rem, 4.4vw, 1.75rem)/1.35 var(--font-display);
+  max-width: 42ch;
+  margin: clamp(16px, 3vw, 24px) 0 8px;
+}
+.options-grid { gap: clamp(10px, 2vw, 12px); }
+/* Full-width row, at least a thumb tall, so a mis-tap is unlikely. */
+.option-label {
+  min-height: max(var(--tap), 8.5vh);
+  padding: 12px clamp(12px, 2.4vw, 18px);
+  gap: clamp(10px, 2.2vw, 16px);
+}
+.option-label::before { width: clamp(30px, 8vw, 36px); height: clamp(30px, 8vw, 36px); }
+
+/* ---- actions: a bottom bar the thumb can reach ----
+   On a phone the buttons stay in the flow but stick to the bottom of the
+   viewport, so "Check answer" never sits below the fold. */
+.controls {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: clamp(18px, 3vw, 28px);
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: linear-gradient(to top, #fff 70%, rgba(255, 255, 255, 0));
+}
+.controls .btn { width: 100%; min-height: var(--tap); }
+
+/* ---- leaderboard as a bottom sheet ---- */
+.lb-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  color: var(--ink);
+  font: 700 1rem var(--font-body);
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(31, 29, 54, .06);
+}
+.lb-card {
+  visibility: hidden;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  /* 85dvh tracks the visible area, so a browser bar sliding in does not clip it */
+  max-height: 85dvh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  border-radius: 26px 26px 0 0;
+  padding: 14px clamp(16px, 5vw, 22px) calc(26px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(105%);
+  transition: transform .25s ease, visibility 0s .25s;
+  box-shadow: 0 -16px 40px rgba(31, 29, 54, .25);
+}
+.lb-card::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 5px;
+  margin: 0 auto 14px;
+  border-radius: 99px;
+  background: var(--line);
+}
+.lb-card.open { visibility: visible; transform: none; transition-delay: 0s; }
+.lb-close {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  right: 18px;
+  top: 22px;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.lb-head { padding-right: 58px; }
+.lb-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(31, 29, 54, .45);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s ease, visibility 0s .25s;
+}
+.lb-backdrop.open { opacity: 1; visibility: visible; }
+
+/* The table scrolls inside the sheet rather than widening the page. */
+.leaderboard-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0 4px; }
+
+/* ---- results ---- */
+.ring { width: clamp(140px, 42vw, 196px); height: clamp(140px, 42vw, 196px); }
+#finalScore { font-size: clamp(1.8rem, 6vw, 2.3rem); }
+.stats { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
+.stats b { font-size: clamp(1rem, 3.4vw, 1.15rem); }
+#actionButtons .btn { width: min(360px, 100%); min-height: var(--tap); }
+
+/* ---- run card ---- */
+.run-xp b { font: 700 clamp(2rem, 8vw, 2.6rem)/1 var(--font-display); }
+
+/* ---- very narrow phones ---- */
+@media (max-width: 380px) {
+  .rma-brand-sub { display: none; }
   .pill-xp { display: none; }
-  .question-text { font-size: 1.5rem; }
-  .option-label { padding: 10px 12px; gap: 10px; }
-  .option-label::before { width: 30px; height: 30px; }
-  .option-label input[type="checkbox"] { width: 22px; height: 22px; }
-  .stats b { font-size: 1.15rem; }
+  .option-label { padding: 10px 11px; }
+  .option-label > span { font-size: .95rem; }
+  .statSpan, .stats span { font-size: .72rem; }
 }
+
+/* ---- tablet: two columns, sheet stays a sheet ---- */
+@media (min-width: 720px) {
+  .rma-title { display: flex; }
+}
+
+/* ---- desktop: sidebar comes back beside the quiz ---- */
+@media (min-width: 1000px) {
+  .main-container {
+    grid-template-columns: minmax(0, 1fr) clamp(280px, 26vw, 340px);
+    align-items: start;
+  }
+  /* No fixed action bar needed when everything is already on screen. */
+  .controls {
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: clamp(20px, 3vw, 24px) 0 0;
+    background: none;
+  }
+  .controls .btn { width: auto; min-height: 50px; padding: 0 28px; }
+  /* The leaderboard is visible again, so the sheet chrome is retired. */
+  .lb-toggle { display: none; }
+  .lb-card {
+    position: static;
+    visibility: visible;
+    max-height: none;
+    transform: none;
+    box-shadow: none;
+    padding: var(--pad-card);
+    overflow: visible;
+  }
+  .lb-card::before, .lb-close { display: none; }
+  .lb-backdrop { display: none; }
+}
+
+/* ---- very wide: keep the measure, let the background breathe ---- */
+@media (min-width: 1600px) {
+  :root { --measure: 1320px; }
+  .question-text { font-size: clamp(1.75rem, 1.4vw, 2.05rem); }
+}
+
+/* ---- landscape phones: the sheet must not eat the viewport ---- */
+@media (max-height: 520px) and (orientation: landscape) {
+  .lb-card { max-height: 92dvh; }
+  .ring { width: 120px; height: 120px; padding: 10px; }
+  #finalScore { font-size: 1.6rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
 }
-@media print { body { background: #fff; } }
+
+/* Fredoka has no italic cut in the weights loaded here, so a synthesised
+   italic is worse than a slight slant on the weight we do have. */
+em, i, .cert-name, .q-help em { font-style: normal; }
+
 
 /* clock icon for the elapsed-time pill (the page rewrites its text, so the icon is CSS) */
 #timerDisplay:not([style*="none"]) { display: inline-flex !important; white-space: nowrap; }
