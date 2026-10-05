@@ -63,9 +63,51 @@ check('removal is listed after the student status table',
 
 check('the portal renders the removable list', /function renderRemovableStudents\(\)/.test(portal));
 check('the list is scoped to the chosen grade',
-  /Number\(row\.grade\) === removeGrade[\s\S]{0,120}row\.student_id/.test(portal));
+  /inScope = rows\s*\.filter\(\(row\) => Number\(row\.grade\) === removeGrade/.test(portal));
 check('the list is scoped to the chosen section',
   /!removeSection \|\| String\(row\.section\) === String\(removeSection\)/.test(portal));
+// A section full of learners whose rows carry no id must say so, not claim the
+// section is empty. That misleading message hid an older rma_teacher_dashboard.
+check('a populated section is not reported as empty',
+  /did not send a student id for them/.test(portal));
+check('the empty-section message is only for a genuinely empty scope',
+  /if \(!inScope\.length\)[\s\S]{0,120}nobody to remove in this selection/.test(portal));
+check('add-remove-student.sql also refreshes the dashboard',
+  /create or replace function public\.rma_teacher_dashboard/.test(migration)
+  && /'student_id', st\.id/.test(migration));
+
+// The dashboard function selects sc.help_data and sc.unaided_score. On a database
+// where add-help-tracking.sql has not been run those columns do not exist, and the
+// function fails to execute, taking the whole teacher Overview with it. This is
+// the guard that was missing when that happened: the file has to create the
+// columns before it defines anything that reads them.
+const dashboardAt = migration.indexOf('create or replace function public.rma_teacher_dashboard');
+['help_data', 'unaided_score'].forEach((col) => {
+  const addedAt = migration.indexOf('add column if not exists ' + col);
+  check(`add-remove-student.sql adds ${col} before the dashboard reads it`,
+    addedAt > -1 && dashboardAt > -1 && addedAt < dashboardAt,
+    addedAt < dashboardAt ? 'added first' : 'missing or too late');
+});
+// Every optional column a function body selects must be added by the same file.
+const optional = ['help_data', 'unaided_score', 'attempt_number', 'is_complete'];
+optional.forEach((col) => {
+  if (!new RegExp('sc\\.' + col + '\\b').test(migration)) return;
+  check(`add-remove-student.sql adds ${col} itself`,
+    new RegExp('add column if not exists ' + col).test(migration));
+});
+
+// schema.sql had the same shape: rma_teacher_dashboard selected the columns, but
+// they were declared much further down the file, so any partial paste stopped
+// before them would leave the Overview unrunnable.
+const schemaDashboardAt = schema.indexOf('create or replace function public.rma_teacher_dashboard');
+optional.forEach((col) => {
+  const addedAt = schema.indexOf('add column if not exists ' + col);
+  check(`schema.sql adds ${col} before the dashboard reads it`,
+    addedAt > -1 && schemaDashboardAt > -1 && addedAt < schemaDashboardAt);
+});
+check('schema.sql declares each optional column once',
+  optional.every((col) => (schema.match(new RegExp('add column if not exists ' + col + '\\b', 'g')) || []).length === 1),
+  optional.map((col) => col + '=' + (schema.match(new RegExp('add column if not exists ' + col + '\\b', 'g')) || []).length).join(' '));
 check('the card has its own grade picker', /id="removeGradeFilter"/.test(teacherHtml));
 check('the card has its own section picker', /id="removeSectionFilter"/.test(teacherHtml));
 check('the section picker waits for a grade',

@@ -68,6 +68,14 @@ create table if not exists public.rma_scores (
 alter table public.rma_scores add column if not exists student_id uuid references public.rma_students(id) on delete set null;
 alter table public.rma_scores add column if not exists student_code text;
 alter table public.rma_scores add column if not exists teacher_name text not null default '';
+-- Help tracking and attempt columns. Declared here, next to the table, rather than
+-- further down the file: rma_teacher_dashboard selects them, and a partial paste of
+-- this file that stopped before them would leave that function unable to execute
+-- and take the whole teacher Overview down with it.
+alter table public.rma_scores add column if not exists attempt_number smallint not null default 1;
+alter table public.rma_scores add column if not exists is_complete boolean not null default true;
+alter table public.rma_scores add column if not exists help_data text not null default '';
+alter table public.rma_scores add column if not exists unaided_score smallint check (unaided_score between 0 and 100);
 create index if not exists rma_scores_leaderboard_idx
   on public.rma_scores (grade, section, score desc, duration_seconds asc, created_at asc);
 create index if not exists rma_scores_student_latest_idx
@@ -644,15 +652,9 @@ values
   ('needs_support', 0, 39, 'Needs Intensive Support', '#991b1b', '🔴', 4)
 on conflict (band_name) do nothing;
 
--- Add attempt tracking to scores table
-alter table public.rma_scores add column if not exists attempt_number smallint not null default 1;
-alter table public.rma_scores add column if not exists is_complete boolean not null default true;
-
--- XP help tracking: which questions used help, and the score without any help.
--- Repeated here (not just in add-help-tracking.sql) so a fresh install from this
--- file has the columns the pages send.
-alter table public.rma_scores add column if not exists help_data text not null default '';
-alter table public.rma_scores add column if not exists unaided_score smallint check (unaided_score between 0 and 100);
+-- Attempt tracking, and the XP help tracking columns, are declared with the
+-- rma_scores table near the top of this file. Re-running them here would be
+-- harmless but redundant, and would hide which copy is load-bearing.
 
 -- RPC to get score bands
 create or replace function public.rma_get_score_bands()

@@ -3794,16 +3794,28 @@
       removeSection = "";
     }
 
-    // Only learners with a real id can be named; a row without one is a
-    // placeholder from the left join in the dashboard query.
-    const candidates = rows
+    // Who is in this selection at all. Split from who can be removed, because the
+    // two can differ: rma_remove_student needs the student id, and a row with no
+    // id cannot be named even though the learner plainly exists.
+    const inScope = rows
       .filter((row) => Number(row.grade) === removeGrade
-        && row.student_id
-        && (!removeSection || String(row.section) === String(removeSection)))
+        && (!removeSection || String(row.section) === String(removeSection)));
+    const candidates = inScope
+      .filter((row) => row.student_id)
       .sort((a, b) => String(a.student_name || "").localeCompare(String(b.student_name || "")));
 
-    if (!candidates.length) {
+    if (!inScope.length) {
       list.innerHTML = '<li class="remove-empty">There is nobody to remove in this selection.</li>';
+      return;
+    }
+
+    if (!candidates.length) {
+      // Say what is actually wrong. Saying "nobody to remove" when the section is
+      // full of learners is misleading, and it hid an older rma_teacher_dashboard
+      // on the database that does not return a student id at all.
+      list.innerHTML = `<li class="remove-empty">There ${inScope.length === 1 ? "is 1 learner" : `are ${inScope.length} learners`} `
+        + `in this selection, but this database did not send a student id for them, so they cannot be removed here. `
+        + `Re-paste supabase/schema.sql in the Supabase SQL editor and reload, or run supabase/add-remove-student.sql.</li>`;
       return;
     }
 
