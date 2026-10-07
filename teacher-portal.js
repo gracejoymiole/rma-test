@@ -3421,9 +3421,10 @@
     }
 
     container.innerHTML = `
-      <div class="priority-stats">
+      <div class="priority-tools">
         <span class="priority-count">${visible.length} learner${visible.length === 1 ? "" : "s"}${activeLabel ? ` — ${escapeHtml(activeLabel)}` : ""}</span>
-        ${activeLabel ? `<button type="button" class="priority-clear" onclick="setPriorityBandFilter('all')">Show all ${total}</button>` : ''}
+        <span>${activeLabel ? `<button type="button" class="priority-clear" onclick="setPriorityBandFilter('all')">Show all ${total}</button>` : ''}
+        <button type="button" class="priority-clear" onclick="exportInterventionGroup()">Export this group</button></span>
       </div>
       <div class="priority-list">
         ${visible.map(learner => `
@@ -3457,6 +3458,7 @@
                 <p class="weak-topics-empty">No item-level answers were recorded for this attempt.</p>
               </div>`}
             <div class="student-actions">
+              <button type="button" class="priority-clear" onclick="focusLearner('${escapeHtml(learner.student_code)}')">View record</button>
               ${learner.status.state === "incomplete"
                 ? `<button type="button" class="priority-clear" onclick="setAttemptComplete('${escapeHtml(learner.student_code)}', true)">Mark attempt finished</button>`
                 : `<button type="button" class="priority-clear" onclick="setAttemptComplete('${escapeHtml(learner.student_code)}', false)">Flag attempt as unfinished</button>`}
@@ -3622,6 +3624,12 @@
     const levels = getLevelDistribution(rows, currentGrade, currentSection);
     const priorityLearners = getPriorityLearners(rows, currentGrade, currentSection);
     const scopedLearners = getScopedLearners(rows, currentGrade, currentSection);
+    const actionNeedsHelp = document.getElementById("actionNeedsHelp");
+    const actionIncomplete = document.getElementById("actionIncomplete");
+    const actionCompletion = document.getElementById("actionCompletion");
+    if (actionNeedsHelp) actionNeedsHelp.textContent = priorityLearners.length;
+    if (actionIncomplete) actionIncomplete.textContent = stats.incomplete;
+    if (actionCompletion) actionCompletion.textContent = `${stats.completionRate}%`;
     
     document.getElementById("summary").innerHTML = `
       <div class="metric">
@@ -3682,7 +3690,7 @@
         Number(row.grade) === currentGrade && row.section === section && (!currentSection || row.section === currentSection)
       );
       const range = extremes(sectionRows);
-      return `<tr>
+      return `<tr data-student-code="${escapeHtml(row.student_code)}">
         <td>${escapeHtml(section)}</td>
         <td>${escapeHtml(range ? range.least.map((item) => item.question).join(", ") : "No item data")}</td>
         <td>${range ? `${range.least[0].rate}%` : "—"}</td>
@@ -4150,6 +4158,48 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function exportInterventionGroup() {
+    if (!currentGrade) { setMessage(dashboardMessage, "Choose a grade level first."); return; }
+    const visible = priorityCache.scoped.filter((learner) => priorityMatchesBand(learner, priorityBandFilter));
+    if (!visible.length) { setMessage(dashboardMessage, "There are no learners in this intervention group."); return; }
+    const quote = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const lines = [["Student ID", "Name", "Section", "Score", "Status", "Needs support in"].map(quote).join(",")];
+    visible.forEach((learner) => lines.push([
+      learner.student_code, learner.student_name, learner.section,
+      learner.score ?? "", learner.status.label,
+      (learner.weakTopics || []).map((topic) => topic.topic).join("; ")
+    ].map(quote).join(",")));
+    const group = sanitizeFilenamePart(priorityBandFilter || "all");
+    downloadFile(`RMA-Intervention-Grade${currentGrade}-${group}.csv`, "text/csv;charset=utf-8", lines.join("\r\n"));
+    setMessage(dashboardMessage, `Exported ${visible.length} learner${visible.length === 1 ? "" : "s"} in this intervention group.`, false);
+  }
+
+  function jumpToPanel(id, filter) {
+    if (filter) setPriorityBandFilter(filter);
+    const node = document.getElementById(id);
+    if (node) node.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function focusLearner(studentCode) {
+    const row = [...document.querySelectorAll("#studentRows tr")]
+      .find((item) => item.dataset.studentCode === studentCode);
+    document.querySelectorAll("#studentRows tr.focused-learner").forEach((item) => item.classList.remove("focused-learner"));
+    if (!row) return;
+    row.classList.add("focused-learner");
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function arrangeActionFirstOverview() {
+    const overview = document.getElementById("tabOverviewContent");
+    const actionCenter = document.getElementById("actionCenter");
+    const priority = document.getElementById("priorityLearnersCard");
+    const completion = document.getElementById("completionStatusCard");
+    const trends = document.getElementById("classTrends");
+    if (!overview || !actionCenter || !trends) return;
+    overview.insertBefore(priority, trends);
+    overview.insertBefore(completion, trends);
+  }
+
   function exportClassRecords() {
     if (!currentGrade) { setMessage(dashboardMessage, "Choose a grade level first."); return; }
     const data = exportRows();
@@ -4376,6 +4426,10 @@
   window.setAttemptComplete = setAttemptComplete;
   window.exportClassRecords = exportClassRecords;
   window.printClassReport = printClassReport;
+  window.exportInterventionGroup = exportInterventionGroup;
+  window.jumpToPanel = jumpToPanel;
+  window.focusLearner = focusLearner;
+  arrangeActionFirstOverview();
   
   // Do not silently reuse a stored teacher token: shared devices require a fresh sign-in.
 })();

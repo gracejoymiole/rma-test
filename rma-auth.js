@@ -111,7 +111,26 @@
     localStorage.removeItem(PROGRESS_KEY);
   }
 
-  function continueToAssessment() {
+  function restoreSavedSession() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem("rma_session") || "null");
+      const profile = saved && saved.profile;
+      if (!saved?.token || !profile || Number(profile.grade) !== grade) return false;
+      state.profile = profile;
+      state.token = saved.token;
+      window.RMAAuth.session = saved;
+      document.getElementById("lastName").value = profile.last_name;
+      document.getElementById("firstName").value = profile.first_name;
+      document.getElementById("midInitial").value = profile.middle_initial || "";
+      document.getElementById("studentSection").value = profile.section;
+      return true;
+    } catch {
+      sessionStorage.removeItem("rma_session");
+      return false;
+    }
+  }
+
+  function beginAssessment() {
     const button = document.getElementById("startBtn");
     if (!button || !state.profile) return;
     const student = window.gameState && window.gameState.student;
@@ -127,6 +146,57 @@
     window.RMAAuth.bypass = true;
     button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     window.RMAAuth.bypass = false;
+  }
+
+  function continueToAssessment() {
+    if (!state.profile) return;
+    const plans = {
+      7: { questions: 35, minutes: 20 },
+      8: { questions: 50, minutes: 30 },
+      9: { questions: 60, minutes: 35 },
+      10: { questions: 60, minutes: 35 }
+    };
+    const plan = plans[grade] || { questions: 35, minutes: 25 };
+    // Keep the authenticated form and its hidden profile fields mounted. The
+    // grade page attached its start handler to that exact button node during
+    // initial load; replacing overlay.innerHTML detached the wired button and
+    // made "Begin practice" appear clickable while doing nothing.
+    const authCard = overlay.querySelector(".rma-auth-card");
+    if (authCard) authCard.hidden = true;
+    overlay.querySelector(".rma-ready-card")?.remove();
+    overlay.insertAdjacentHTML("beforeend", `
+      <section class="rma-ready-card" role="dialog" aria-labelledby="rmaReadyTitle" aria-modal="true">
+        <p class="rma-auth-eyebrow">You’re signed in</p>
+        <h2 id="rmaReadyTitle">Ready for Grade ${grade} practice?</h2>
+        <p class="rma-ready-name"></p>
+        <div class="rma-ready-facts" aria-label="Assessment details">
+          <div><b>${plan.questions}</b><span>questions</span></div>
+          <div><b>About ${plan.minutes}</b><span>minutes</span></div>
+          <div><b>30 sec</b><span>per question</span></div>
+        </div>
+        <section class="rma-ready-rules" aria-labelledby="rmaReadyRulesTitle">
+          <h3 id="rmaReadyRulesTitle">Keep your attempt valid</h3>
+          <ul>
+            <li>Stay on this tab and keep the practice in full screen.</li>
+            <li>Do not refresh, close, or cancel while an attempt is running.</li>
+            <li>Keep working—one minute without activity is recorded.</li>
+            <li>Do not open developer tools, view page source, or use screenshot shortcuts.</li>
+          </ul>
+          <p>Repeated violations or cancellations can make practice unavailable for one day.</p>
+        </section>
+        <p class="rma-ready-note">Choose a quiet place. Your progress is saved if the connection drops, and your teacher will see the completed attempt.</p>
+        <button type="button" class="rma-auth-primary" id="confirmAssessmentStart">Begin practice</button>
+        <button type="button" class="rma-auth-secondary" id="returnToSignIn">Not yet</button>
+      </section>`);
+    overlay.style.display = "grid";
+    overlay.querySelector(".rma-ready-name").textContent = `${state.profile.student_code} · ${state.profile.section}`;
+    document.getElementById("confirmAssessmentStart").addEventListener("click", beginAssessment, { once: true });
+    document.getElementById("returnToSignIn").addEventListener("click", () => {
+      window.RMAAuth.logout();
+      state.mode = "login";
+      render();
+    });
+    document.getElementById("confirmAssessmentStart").focus();
   }
 
   // ============================================
@@ -699,6 +769,23 @@
       .rma-progress-notification.hidden {
         display: none;
       }
+
+      .rma-ready-card { width:min(520px,calc(100% - 28px)); padding:28px; border-radius:24px; background:#fff; box-shadow:0 24px 70px rgba(31,29,54,.22); text-align:left; }
+      .rma-auth-eyebrow { margin:0 0 4px; color:#B3203B; font-size:.76rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+      .rma-ready-card h2 { margin:0 0 6px; }
+      .rma-ready-name { margin:0 0 20px; color:#5B5878; font-weight:700; }
+      .rma-ready-facts { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:18px 0; }
+      .rma-ready-facts div { padding:13px 9px; border:1px solid #D3E6EE; border-radius:14px; background:#F3FBFE; text-align:center; }
+      .rma-ready-facts b,.rma-ready-facts span { display:block; }
+      .rma-ready-facts b { color:#1F1D36; font-size:1.05rem; }
+      .rma-ready-facts span { margin-top:3px; color:#5B5878; font-size:.72rem; }
+      .rma-ready-note { color:#5B5878; line-height:1.55; }
+      .rma-ready-rules { margin:16px 0; padding:14px 16px; border:1px solid #FFD2D9; border-radius:14px; background:#FFF6F7; }
+      .rma-ready-rules h3 { margin:0 0 8px; color:#B3203B; font-size:.92rem; }
+      .rma-ready-rules ul { display:grid; gap:6px; margin:0; padding-left:20px; color:#3F3B57; font-size:.82rem; line-height:1.4; }
+      .rma-ready-rules p { margin:10px 0 0; color:#7A2435; font-size:.76rem; font-weight:700; }
+      .rma-ready-card .rma-auth-secondary { width:100%; margin-top:8px; }
+      @media(max-width:480px) { .rma-ready-facts { grid-template-columns:1fr; } .rma-ready-facts div { display:flex; justify-content:space-between; align-items:center; } }
       
       @keyframes slideUp {
         from { opacity: 0; transform: translateX(-50%) translateY(20px); }
@@ -958,4 +1045,9 @@
       button.disabled = false;
     }
   }, true);
+
+  // A refresh before the student begins should return to the readiness screen,
+  // not force another login. Once an attempt starts, the grade page's own
+  // refresh guard still handles it as a violation.
+  if (restoreSavedSession()) continueToAssessment();
 })();

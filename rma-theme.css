@@ -194,6 +194,11 @@ body {
 .lb-tabs button { min-height: 34px; border: 0; border-radius: 9px; padding: 6px 8px; background: transparent; color: var(--ink-soft); font: 700 .75rem/1 var(--font-body); cursor: pointer; }
 .lb-tabs button.is-active { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(39, 35, 55, .12); }
 .lb-message { padding: 18px 8px !important; color: var(--ink-soft); text-align: center; }
+.lb-definition { min-height:2.4em; margin:0 4px 10px; color:var(--ink-soft); font-size:.72rem; line-height:1.35; }
+/* Media and long learner labels must never widen a phone viewport. */
+.main-container img, .main-container svg, .main-container canvas { max-width:100%; height:auto; }
+.lb-card, .lb-card *, .run-card, .run-card * { min-width:0; }
+.leaderboard-table td { overflow-wrap:anywhere; }
 .leaderboard-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; table-layout: fixed; }
 .leaderboard-table th { padding: 4px 8px; font-size: .72rem; font-weight: 500; text-align: left; color: var(--ink-soft); border: 0; }
 .leaderboard-table td { padding: 9px 8px; border: 0; font-size: .9rem; vertical-align: middle; overflow: hidden; }
@@ -230,6 +235,10 @@ body {
 #resultGif { display: none !important; }
 #actionButtons { display: grid; gap: 12px; justify-items: center; margin-top: 22px; }
 #actionButtons .btn { width: min(360px, 100%); }
+.missed-skills-panel { max-width:560px; margin:18px auto 0; padding:18px; border:1px solid var(--line); border-radius:16px; background:var(--teal-tint); text-align:left; }
+.missed-skills-panel h3 { margin:0 0 4px; font:700 1.05rem var(--font-display); }
+.missed-skills-panel p { margin:0 0 10px; color:var(--ink-soft); }
+.missed-skills-panel ul { display:grid; gap:8px; margin:0; padding-left:20px; }
 
 /* ---------- dialogs and notices that older code builds inline ---------- */
 body .developer-credit { z-index: 40; }
@@ -465,6 +474,9 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   .option-label { padding: 10px 11px; }
   .option-label > span { font-size: .95rem; }
   .statSpan, .stats span { font-size: .72rem; }
+  .lb-tabs button { padding-inline:4px; font-size:.68rem; }
+  .lb-definition { min-height:0; margin-bottom:8px; }
+  .leaderboard-table th, .leaderboard-table td { padding-inline:5px; font-size:.8rem; }
 }
 
 /* ---- tablet: two columns, sheet stays a sheet ---- */

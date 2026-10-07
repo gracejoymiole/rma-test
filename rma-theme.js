@@ -71,6 +71,66 @@
     return m + "m " + (s < 10 ? "0" : "") + s + "s";
   }
 
+  function ensureReviewPanel() {
+    var actions = $("actionButtons");
+    if (!actions || $("reviewMissedBtn")) return;
+    var button = document.createElement("button");
+    button.type = "button";
+    button.id = "reviewMissedBtn";
+    button.className = "btn btn-secondary hidden";
+    button.textContent = "Review missed skills";
+    var panel = document.createElement("section");
+    panel.id = "missedSkillsPanel";
+    panel.className = "missed-skills-panel hidden";
+    panel.setAttribute("aria-live", "polite");
+    actions.insertBefore(button, actions.firstChild);
+    actions.insertAdjacentElement("afterend", panel);
+    button.addEventListener("click", function () {
+      panel.classList.toggle("hidden");
+      button.setAttribute("aria-expanded", String(!panel.classList.contains("hidden")));
+      if (!panel.classList.contains("hidden")) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }
+
+  function paintMissedSkills() {
+    ensureReviewPanel();
+    var button = $("reviewMissedBtn");
+    var panel = $("missedSkillsPanel");
+    if (!button || !panel || typeof gameState === "undefined") return;
+    var misses = Array.isArray(gameState.itemAnalysisRecords)
+      ? gameState.itemAnalysisRecords.filter(function (item) { return item.result !== "T" && item.result !== "1"; }) : [];
+    if (!misses.length) {
+      button.classList.add("hidden");
+      panel.classList.add("hidden");
+      panel.replaceChildren();
+      return;
+    }
+    var groups = {};
+    misses.forEach(function (item) {
+      var topic = typeof getMathObjective === "function" ? getMathObjective(Number(item.id)) : "Review this skill";
+      groups[topic] = (groups[topic] || 0) + 1;
+    });
+    panel.replaceChildren();
+    var title = document.createElement("h3");
+    title.textContent = "Skills to review next";
+    panel.appendChild(title);
+    var note = document.createElement("p");
+    note.textContent = "Start with the skills where you missed the most questions.";
+    panel.appendChild(note);
+    var list = document.createElement("ul");
+    Object.keys(groups).sort(function (a, b) { return groups[b] - groups[a]; }).forEach(function (topic) {
+      var item = document.createElement("li");
+      var name = document.createElement("b");
+      name.textContent = topic;
+      item.appendChild(name);
+      item.append(" · " + groups[topic] + (groups[topic] === 1 ? " missed question" : " missed questions"));
+      list.appendChild(item);
+    });
+    panel.appendChild(list);
+    button.classList.remove("hidden");
+    button.setAttribute("aria-expanded", "false");
+  }
+
   /* ---------- called by the page scripts ---------- */
 
   var RMATheme = {
@@ -133,6 +193,7 @@
         setText("statXP", xp());
       }
       setText("statTime", state.startedAt ? formatDuration(Date.now() - state.startedAt) : "-");
+      paintMissedSkills();
 
       var gif = $("resultGif");
       if (gif) gif.style.display = "none";
@@ -146,6 +207,10 @@
       paintXp();
       var note = $("runNote");
       if (note) note.textContent = "Answer a question to start earning points.";
+      var review = $("reviewMissedBtn");
+      var reviewPanel = $("missedSkillsPanel");
+      if (review) review.classList.add("hidden");
+      if (reviewPanel) { reviewPanel.classList.add("hidden"); reviewPanel.replaceChildren(); }
     },
 
     getXp: xp,
@@ -215,11 +280,13 @@
       wireLeaderboardSheet();
       respectReducedMotion();
       paintXp();
+      ensureReviewPanel();
     });
   } else {
     wireSound();
     wireLeaderboardSheet();
     respectReducedMotion();
     paintXp();
+    ensureReviewPanel();
   }
 })();

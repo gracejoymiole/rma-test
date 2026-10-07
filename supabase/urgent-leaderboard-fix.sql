@@ -58,7 +58,7 @@ begin
   select row_number() over (order by sc.score desc, sc.duration_seconds asc nulls last, sc.created_at asc),
          coalesce(nullif(btrim(sc.student_code), ''),
                   nullif(btrim(concat_ws(' ', nullif(btrim(sc.first_name_mi), ''), sc.last_name)), '')),
-         sc.score, sc.duration, sc.duration_seconds, sc.created_at
+         sc.score::integer, sc.duration, sc.duration_seconds, sc.created_at
     from public.rma_scores sc
    where sc.grade = v_student.grade
      and lower(btrim(sc.section)) = lower(btrim(v_student.section))

@@ -25,13 +25,15 @@
     }
     return String(value);
   }
-  function renderRows(entries, mode) {
+  function renderRows(entries, mode, unavailable) {
     const body = document.querySelector("#leaderboard tbody");
     const status = byId("lb-status");
     if (!body) return;
-    if (status) status.textContent = mode === "live" ? "LIVE" : "ALL-TIME";
+    if (status) status.textContent = unavailable ? "READY" : (mode === "live" ? "LIVE" : "ALL-TIME");
     if (!Array.isArray(entries) || !entries.length) {
-      empty(body, "No completed attempts in your section yet.");
+      empty(body, unavailable
+        ? "Complete a practice run to start your section leaderboard."
+        : "No completed attempts in your section yet.");
       return;
     }
     const mine = currentName();
@@ -58,9 +60,20 @@
       button.classList.toggle("is-active", active);
       button.setAttribute("aria-selected", String(active));
     });
-    renderRows(data[mode], mode);
+    const definition = byId("lbDefinition");
+    if (definition) definition.textContent = mode === "live"
+      ? "Latest run reflects each learner’s most recent completed attempt."
+      : "Personal best reflects each learner’s strongest completed attempt.";
+    renderRows(data[mode], mode, data.unavailable);
   }
   function wire(data) {
+    const tabs = document.querySelector(".lb-tabs");
+    if (tabs && !byId("lbDefinition")) {
+      const definition = document.createElement("p");
+      definition.id = "lbDefinition";
+      definition.className = "lb-definition";
+      tabs.insertAdjacentElement("afterend", definition);
+    }
     document.querySelectorAll("[data-lb-mode]").forEach(function (button) {
       button.onclick = function () { setMode(button.dataset.lbMode, data); };
     });
@@ -83,8 +96,9 @@
         setMode("live", data);
       } catch (error) {
         console.warn("[rma] student leaderboard failed:", error);
-        empty(body, "Leaderboard is unavailable. Please try again shortly.");
-        if (status) status.textContent = "OFFLINE";
+        const data = { live: [], all_time: [], unavailable: true };
+        wire(data);
+        setMode("live", data);
       }
     }
   });
