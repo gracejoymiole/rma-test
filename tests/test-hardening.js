@@ -49,7 +49,8 @@ gradePages.forEach((p, i) => {
 check('client no longer queries the view directly', !/from\("rma_leaderboard"\)|rma_leaderboard\?/.test(data));
 check('client passes the session token', /rpc\("rma_leaderboard_top", \{ p_token: token, p_limit: 10 \}\)/.test(data));
 check('client no longer accepts a section arg', /async getLeaderboard\(\)/.test(data) && !/getLeaderboard\(section\)/.test(data));
-check('client still returns a name for the UI', /data: list\.map\(\(row, index\)/.test(data));
+check('client still returns names for both leaderboard views',
+  /live: list\.map\(\(row, index\)/.test(data) && /all_time: list\.map\(\(row, index\)/.test(data));
 gradePages.forEach((p, i) => {
   check(`grade page ${i + 1} calls the session-scoped call`, /getLeaderboard\(\)/.test(p) && !/getLeaderboard\(section\)/.test(p));
 });

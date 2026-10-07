@@ -37,6 +37,7 @@ const REMEDIATION = {
   rma_teacher_profile: 'supabase/apply-missing.sql',
   rma_set_attempt_complete: 'supabase/apply-missing.sql',
   rma_leaderboard_top: 'supabase/urgent-leaderboard-fix.sql',
+  rma_student_leaderboard: 'supabase/apply-student-leaderboard.sql',
   rma_teacher_leaderboard: 'supabase/apply-leaderboard.sql',
   rma_get_score_bands: 'supabase/apply-missing.sql',
   'rma_scores.attempt_number': 'supabase/apply-missing.sql',
@@ -123,6 +124,7 @@ async function main() {
   await checkRpc('rma_teacher_profile', BAD);
   await checkRpc('rma_set_attempt_complete', { ...BAD, p_student_code: 'X', p_complete: true });
   await checkRpc('rma_leaderboard_top', { ...BAD, p_limit: 10 });
+  await checkRpc('rma_student_leaderboard', { ...BAD, p_limit: 10 });
   await checkRpc('rma_teacher_leaderboard', { ...BAD, p_grade: 7, p_section: null, p_limit: 10 });
 
   // 3. rma_get_score_bands takes no session, so it should return real data.

@@ -163,12 +163,27 @@
     async getLeaderboard() {
       const token = window.RMAAuth?.session?.token;
       if (!token) return { success: false, mode: "ALL-TIME", data: [] };
+      // Live means each learner's latest completed attempt; all-time preserves
+      // their personal best. The dedicated RPC keeps both lists session-scoped.
+      // Older deployments receive a graceful all-time fallback until the SQL
+      // migration has been applied.
+      try {
+        const data = await rpc("rma_student_leaderboard", { p_token: token, p_limit: 10 });
+        return {
+          success: true,
+          live: Array.isArray(data?.live) ? data.live : [],
+          all_time: Array.isArray(data?.all_time) ? data.all_time : []
+        };
+      } catch (error) {
+        if (!isMissingFunction(error)) throw error;
+      }
       const rows = await rpc("rma_leaderboard_top", { p_token: token, p_limit: 10 });
       const list = Array.isArray(rows) ? rows : [];
       return {
         success: true,
-        mode: "ALL-TIME",
-        data: list.map((row, index) => ({ ...row, rank: Number(row.rank ?? index + 1) }))
+        live: list.map((row, index) => ({ ...row, rank: Number(row.rank ?? index + 1) })),
+        all_time: list.map((row, index) => ({ ...row, rank: Number(row.rank ?? index + 1) })),
+        fallback: true
       };
     },
 

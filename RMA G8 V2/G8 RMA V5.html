@@ -219,6 +219,10 @@
           <div><p class="lb-kicker">Your section</p><h3 id="leaderboard-title">Top learners</h3></div>
           <span id="lb-status" class="live-pill">Live</span>
         </div>
+        <div class="lb-tabs" role="tablist" aria-label="Leaderboard view">
+          <button type="button" role="tab" aria-selected="true" class="is-active" data-lb-mode="live">Latest run</button>
+          <button type="button" role="tab" aria-selected="false" data-lb-mode="all_time">Personal best</button>
+        </div>
         <table class="leaderboard-table" id="leaderboard">
           <thead><tr><th>#</th><th>Learner</th><th>Mastery</th><th>Time</th></tr></thead>
           <tbody></tbody>
@@ -267,6 +271,7 @@
   <audio id="soundWin" src="https://assets.mixkit.co/active_storage/sfx/510/510-preview.mp3"></audio>
     <script src="../supabase-config.js"></script>
     <script src="../rma-data.js"></script>
+    <script src="../rma-student-leaderboard.js"></script>
     <script src="../rma-auth.js"></script>
 <script src="../rma-selection.js"></script>
     <script>
@@ -1849,6 +1854,7 @@ function forceEnterFullscreen() {
 }
 
 async function fetchLeaderboard() {
+    return window.RMAStudentLeaderboard.render();
     const lbBody = document.querySelector('#leaderboard tbody');
     const statusText = document.getElementById('lb-status');
     const section = gameState.student.section;

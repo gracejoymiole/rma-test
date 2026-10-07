@@ -69,12 +69,12 @@ check('all time takes the personal best per student',
 check('live is not ranked by score, all time is',
   !/order by sc\.student_id, sc\.score desc/.test(liveCte) && /sc\.score desc/.test(allTimeCte));
 check('both return rank and attempts',
-  (schema.match(/row_number\(\) over \(order by ps\.score desc/g) || []).length === 2 &&
-  (schema.match(/as attempts/g) || []).length >= 2);
+  (fnBody.match(/row_number\(\) over \(order by ps\.score desc/g) || []).length === 2 &&
+  (fnBody.match(/as attempts/g) || []).length >= 2);
 check('unfinished attempts are excluded from both',
-  (schema.match(/coalesce\(sc\.is_complete, true\)/g) || []).length === 2);
+  (fnBody.match(/coalesce\(sc\.is_complete, true\)/g) || []).length === 2);
 check('null scores are excluded from both',
-  (schema.match(/and sc\.score is not null/g) || []).length === 2);
+  (fnBody.match(/and sc\.score is not null/g) || []).length === 2);
 check('result is a jsonb object with both lists',
   /return jsonb_build_object\('live', v_live, 'all_time', v_all_time\);/.test(schema));
 check('limit is clamped', /greatest\(1, least\(coalesce\(p_limit, 10\), 100\)\)/.test(schema));

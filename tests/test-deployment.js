@@ -29,7 +29,7 @@ check('urgent file keeps the empty-name guard', /first_name_mi/.test(urgent) && 
 
 // --- the full schema still carries everything the portal calls ---
 ['rma_get_score_bands', 'rma_teacher_profile', 'rma_set_attempt_complete',
-  'rma_teacher_dashboard', 'rma_teacher_login', 'rma_student_login', 'rma_leaderboard_top',
+  'rma_teacher_dashboard', 'rma_teacher_login', 'rma_student_login', 'rma_leaderboard_top', 'rma_student_leaderboard',
   'rma_teacher_leaderboard']
   .forEach((fn) => check(`schema defines ${fn}`, schema.includes(`function public.${fn}(`)));
 
@@ -212,6 +212,7 @@ remedies.forEach(({ name, file }) => {
 // Every RPC the tool probes must have an entry, or a failure would report no fix.
 ['rma_student_login', 'rma_teacher_login', 'rma_teacher_dashboard', 'rma_teacher_profile',
   'rma_set_attempt_complete', 'rma_leaderboard_top', 'rma_teacher_leaderboard',
+  'rma_student_leaderboard',
   'rma_get_score_bands'].forEach((fn) => check(`remediation map covers ${fn}`,
   remedies.some((r) => r.name === fn)));
 
