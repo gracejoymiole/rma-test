@@ -106,6 +106,7 @@
     document.getElementById("firstName").value = profile.first_name;
     document.getElementById("midInitial").value = profile.middle_initial || "";
     document.getElementById("studentSection").value = profile.section;
+    setSignedInChrome(profile);
     
     // Clear any saved progress when logging in fresh
     localStorage.removeItem(PROGRESS_KEY);
@@ -123,11 +124,47 @@
       document.getElementById("firstName").value = profile.first_name;
       document.getElementById("midInitial").value = profile.middle_initial || "";
       document.getElementById("studentSection").value = profile.section;
+      setSignedInChrome(profile);
       return true;
     } catch {
       sessionStorage.removeItem("rma_session");
       return false;
     }
+  }
+
+  function setSignedInChrome(profile) {
+    const tools = document.querySelector(".rma-tools");
+    if (!tools) return;
+    let button = document.getElementById("studentSignOut");
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.id = "studentSignOut";
+      button.className = "student-signout";
+      button.textContent = "Sign out";
+      button.addEventListener("click", () => {
+        const activeAttempt = window.isExamFinished === false;
+        if (activeAttempt) {
+          const leave = window.confirm("Signing out will cancel this practice run and record it as a voluntary exit. Continue?");
+          if (!leave) return;
+          if (typeof window.voluntaryExit === "function") {
+            window.voluntaryExit();
+            return;
+          }
+        }
+        window.RMAAuth.logout();
+        clearProgress();
+        const name = document.getElementById("displayStudentName");
+        const section = document.getElementById("displaySection");
+        if (name) name.textContent = "Guest";
+        if (section) section.textContent = `Grade ${grade}`;
+        state.mode = "login";
+        render();
+        overlay.style.display = "grid";
+      });
+      tools.appendChild(button);
+    }
+    button.hidden = !profile;
   }
 
   function beginAssessment() {
@@ -834,6 +871,7 @@
       this.session = null;
       state.profile = null;
       state.token = null;
+      setSignedInChrome(null);
     },
     saveProgress,
     loadProgress,

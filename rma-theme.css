@@ -71,6 +71,8 @@ body {
 .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255,255,255,.28); border-radius: 12px; background: rgba(255,255,255,.06); color: #fff; cursor: pointer; }
 .icon-btn svg { width: 18px; height: 18px; }
 .icon-btn[aria-pressed="true"] { color: var(--amber); }
+.student-signout { min-height:40px; padding:0 12px; border:1px solid rgba(255,255,255,.28); border-radius:12px; background:transparent; color:#fff; font:700 .8rem var(--font-body); cursor:pointer; white-space:nowrap; }
+.student-signout:hover { border-color:var(--amber); color:var(--amber); }
 .chip { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; }
 .chip-grade { color: var(--amber); border: 1px solid var(--amber); }
 
@@ -477,6 +479,7 @@ img, svg, table, .card, .pill, .btn { max-width: 100%; }
   .lb-tabs button { padding-inline:4px; font-size:.68rem; }
   .lb-definition { min-height:0; margin-bottom:8px; }
   .leaderboard-table th, .leaderboard-table td { padding-inline:5px; font-size:.8rem; }
+  .student-signout { min-height:34px; padding-inline:8px; font-size:.72rem; }
 }
 
 /* ---- tablet: two columns, sheet stays a sheet ---- */

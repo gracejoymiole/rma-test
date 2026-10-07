@@ -33,6 +33,11 @@ check('a pre-start refresh restores the readiness screen without replacing the f
   && /if \(restoreSavedSession\(\)\) continueToAssessment\(\)/.test(auth));
 check('not-yet button is rendered and returns to sign-in',
   /id="returnToSignIn"/.test(auth) && /RMAAuth\.logout\(\)/.test(auth) && /state\.mode = "login"/.test(auth));
+check('student sign-out is rendered, safe during an active attempt, and returns to login',
+  /id = "studentSignOut"/.test(auth)
+  && /Signing out will cancel this practice run/.test(auth)
+  && /typeof window\.voluntaryExit === "function"/.test(auth)
+  && /button\.hidden = !profile/.test(auth));
 check('missed-skills button is rendered, wired and ignores correct T answers',
   /button\.id = "reviewMissedBtn"/.test(theme)
   && /button\.addEventListener\("click"/.test(theme)
