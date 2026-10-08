@@ -1,0 +1,2 @@
+-- This migration version was recorded before its SQL was added.
+-- The corrective, idempotent SQL is in 20261008145207_add_student_removal_history.sql.
