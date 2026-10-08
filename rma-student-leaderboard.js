@@ -18,12 +18,17 @@
     cell.className = "lb-message";
     cell.textContent = message;
   }
-  function duration(value) {
-    if (value === null || value === undefined || value === "") return "—";
-    if (typeof value === "number") {
-      return Math.floor(value / 60) + "m " + String(value % 60).padStart(2, "0") + "s";
+  function duration(value, fallbackSeconds) {
+    if (value !== null && value !== undefined && value !== "") {
+      if (typeof value === "number") {
+        return Math.floor(value / 60) + "m " + String(value % 60).padStart(2, "0") + "s";
+      }
+      return String(value);
     }
-    return String(value);
+    const seconds = Number(fallbackSeconds);
+    if (!Number.isFinite(seconds)) return "—";
+    const totalSeconds = Math.max(0, Math.floor(seconds));
+    return Math.floor(totalSeconds / 60) + "m " + String(totalSeconds % 60).padStart(2, "0") + "s";
   }
   function renderRows(entries, mode, unavailable) {
     const body = document.querySelector("#leaderboard tbody");
@@ -51,7 +56,7 @@
       const scoreCell = row.insertCell();
       scoreCell.textContent = Number.isFinite(Number(entry.score)) ? Number(entry.score) + "%" : "—";
       const timeCell = row.insertCell();
-      timeCell.textContent = duration(entry.duration);
+      timeCell.textContent = duration(entry.duration, entry.duration_seconds);
     });
   }
   function setMode(mode, data) {

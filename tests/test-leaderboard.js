@@ -81,6 +81,18 @@ check('limit is clamped', /greatest\(1, least\(coalesce\(p_limit, 10\), 100\)\)/
 
 // The client must call what the schema offers.
 const portal = fs.readFileSync(path.join(ROOT, 'teacher-portal.js'), 'utf8');
+const studentPortal = fs.readFileSync(path.join(ROOT, 'rma-student-leaderboard.js'), 'utf8');
+check('student leaderboard shows elapsed time with seconds fallback',
+  /duration\(entry\.duration, entry\.duration_seconds\)/.test(studentPortal));
+[
+  'FINAL GRADE 7 RMA/G7 RMA1 V1.html',
+  'RMA G8 V2/G8 RMA V5.html',
+  'RMA G9 V1/rmag9 v3.html',
+  'RMA G10 V1/g10rma v4.html',
+].forEach((file) => {
+  const page = fs.readFileSync(path.join(ROOT, file), 'utf8');
+  check(`${path.basename(file)} labels elapsed leaderboard time`, /<th>Time elapsed<\/th>/.test(page));
+});
 check('portal calls the leaderboard RPC',
   /rpc\("rma_teacher_leaderboard"/.test(portal));
 check('portal sends grade, section and limit',
