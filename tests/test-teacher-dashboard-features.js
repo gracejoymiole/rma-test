@@ -14,7 +14,11 @@ check('refresh timestamp follows a successful dashboard RPC', /rows = await rpc\
 check('manual refresh preserves selected grade and section', /loadDashboard\(\{ preserveSelection: true \}\)/.test(portal));
 check('dashboard displays relative freshness', /Updated just now/.test(portal) && /Last refreshed \$\{elapsedMinutes\}m ago/.test(portal));
 check('short question lists retain their full text as a tooltip', /title="\$\{escapeHtml\(least\.join[\s\S]*?compactQuestions\(range\.least\)/.test(portal));
-check('dashboard layout uses compact spacing', /#dashboard \.card \{ padding:16px; \}/.test(html));
+check('dashboard layout uses compact spacing', /#dashboard \.card \{ padding:13px; \}/.test(html));
+check('dashboard panel cards have tighter vertical gaps', /#dashboard #tabOverviewContent > \.card \{ margin:10px 0 !important; \}/.test(html));
+check('leaderboard score caption uses mastery percentage', /<small>mastery %<\/small>/.test(portal));
+check('redundant completion and grade-extremes panels are removed', !html.includes('completionChart') && !html.includes('Section completion') && !html.includes('gradeHighlights') && !html.includes('Whole-grade question extremes') && html.includes('Section average score'));
+check('section averages use completed scores and render labeled percentages', /row\.is_complete !== false/.test(portal) && /section-score-track[\s\S]*?section-score-count/.test(portal) && /\.section-score-track \{ height:9px/.test(html));
 check('visible table labels include a legend', /Q = question; \+N = additional items/.test(html));
 
 console.log(checks.join('\n'));

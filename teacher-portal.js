@@ -3544,21 +3544,24 @@
     if (!Array.isArray(entries) || !entries.length) {
       return `<p class="report-note">No completed attempts in this scope yet.</p>`;
     }
-    return `<table class="leaderboard-table">
-      <thead><tr><th>#</th><th>Learner</th><th>Section</th><th>Score</th><th>Time</th><th>Attempts</th></tr></thead>
-      <tbody>${entries.map((row) => `
-        <tr>
-          <td><b>${escapeHtml(row.rank)}</b></td>
-          <td>
+    return `<ol class="leaderboard-list" aria-label="Ranked learners">${entries.map((row, index) => {
+      const rank = Number(row.rank) || index + 1;
+      const rankClass = rank <= 3 ? ` top-rank-${rank}` : "";
+      return `
+        <li class="leaderboard-entry${rankClass}">
+          <span class="leaderboard-rank" aria-label="Rank ${escapeHtml(rank)}">${escapeHtml(rank)}</span>
+          <div class="leaderboard-identity">
             <span class="learner-name">${escapeHtml(row.name || "—")}</span>
             ${row.student_code ? `<span class="learner-code">${escapeHtml(row.student_code)}</span>` : ""}
-          </td>
-          <td>${escapeHtml(row.section || "—")}</td>
-          <td><b>${escapeHtml(row[scoreKey] ?? "—")}</b></td>
-          <td>${escapeHtml(row.duration || "—")}</td>
-          <td>${escapeHtml(row.attempts ?? 0)}</td>
-        </tr>`).join("")}</tbody>
-    </table>`;
+          </div>
+          <div class="leaderboard-result"><b class="leaderboard-score">${escapeHtml(row[scoreKey] ?? "—")}</b><small>mastery %</small></div>
+          <div class="leaderboard-meta">
+            <span class="leaderboard-section">${escapeHtml(row.section || "—")}</span>
+            <span>${escapeHtml(row.duration || "—")}</span>
+            <span>${escapeHtml(row.attempts ?? 0)} attempts</span>
+          </div>
+        </li>`;
+    }).join("")}</ol>`;
   }
 
   function renderLeaderboards(payload) {
@@ -3706,6 +3709,30 @@
       rows.filter(r => Number(r.grade) === currentGrade && (!currentSection || r.section === currentSection))
         .map(row => row.section)
     ).sort((a, b) => a.localeCompare(b));
+
+    const scoreRows = rows.filter(row => Number(row.grade) === currentGrade
+      && (!currentSection || row.section === currentSection)
+      && row.score !== null && row.score !== undefined && row.is_complete !== false
+      && Number.isFinite(Number(row.score)));
+    const scoreChart = document.getElementById("scoreChart");
+    if (scoreChart) {
+      scoreChart.innerHTML = sections.length ? `<div class="section-score-chart">${sections.map(section => {
+        const scores = scoreRows.filter(row => row.section === section).map(row => Number(row.score));
+        if (!scores.length) {
+          return `<div class="section-score-row section-score-empty"><span class="section-score-name">${escapeHtml(section)}</span><span class="section-score-count">No completed scores</span></div>`;
+        }
+        const average = scores.reduce((total, score) => total + score, 0) / scores.length;
+        const shownAverage = Math.round(average * 10) / 10;
+        const barWidth = Math.max(0, Math.min(100, average));
+        const learnerLabel = scores.length === 1 ? "learner" : "learners";
+        return `<div class="section-score-row">
+          <span class="section-score-name">${escapeHtml(section)}</span>
+          <div class="section-score-track" role="progressbar" aria-label="${escapeHtml(section)} average mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${shownAverage}"><span style="width:${barWidth}%"></span></div>
+          <strong class="section-score-value">${shownAverage}%</strong>
+          <small class="section-score-count">${scores.length} ${learnerLabel} with completed scores</small>
+        </div>`;
+      }).join("")}</div>` : '<p class="report-note">No sections in this grade yet.</p>';
+    }
     
     const compactQuestions = (items) => {
       const labels = items.map((item) => item.question);

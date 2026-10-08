@@ -205,9 +205,10 @@ PAGES.forEach(({ grade, rel }) => {
 
 // --- the teacher portal must be usable on a phone ---
 const teacherHtml = fs.readFileSync(path.join(ROOT, 'teacher.html'), 'utf8');
-check('teacher tables are not nowrap throughout', !/\.leaderboard-table th, \.leaderboard-table td \{[^}]*white-space:nowrap/.test(teacherHtml));
+check('teacher leaderboard uses compact ranked rows', /\.leaderboard-list \{ display:grid; gap:6px/.test(teacherHtml) && /leaderboard-entry\$\{rankClass\}/.test(fs.readFileSync(path.join(ROOT, 'teacher-portal.js'), 'utf8')));
 check('teacher charts can shrink to the card', /min-width:min\(560px, 100%\)/.test(teacherHtml));
-check('teacher tables pin the first column', /\.leaderboard-table th:first-child[\s\S]{0,200}?position:sticky; left:0/.test(teacherHtml));
+check('teacher leaderboard highlights its top three', /\.leaderboard-entry\.top-rank-1/.test(teacherHtml) && /\.leaderboard-entry\.top-rank-2/.test(teacherHtml) && /\.leaderboard-entry\.top-rank-3/.test(teacherHtml));
+check('teacher dashboard cards use tighter spacing and type', /#dashboard \.report-note \{ margin-bottom:8px; font-size:\.74rem/.test(teacherHtml));
 check('teacher portal grows with min-width', (teacherHtml.match(/@media \(min-width:/g) || []).length >= 3);
 check('teacher controls meet the tap floor', /--tap:\s*44px/.test(teacherHtml));
 check('teacher portal has a reduced-motion rule', /@media \(prefers-reduced-motion:reduce\)/.test(teacherHtml));

@@ -51,6 +51,14 @@
     .leaderboard-note { margin:-4px 0 14px; }
     .leaderboard-note:empty { display:none; }
     .chart-wrap { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .section-score-chart { display:grid; gap:9px; width:100%; }
+    .section-score-row { display:grid; grid-template-columns:minmax(100px,1fr) minmax(80px,2fr) auto; align-items:center; gap:4px 10px; }
+    .section-score-name { min-width:0; color:var(--ink); font-size:.78rem; font-weight:700; overflow-wrap:anywhere; }
+    .section-score-track { height:9px; overflow:hidden; border-radius:999px; background:#E8F9FD; }
+    .section-score-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#4FD3C4,#E94560); }
+    .section-score-value { color:var(--coral-deep); font-size:.82rem; font-variant-numeric:tabular-nums; }
+    .section-score-count { grid-column:1 / -1; margin-top:-3px; color:var(--muted); font-size:.68rem; }
+    .section-score-empty { grid-template-columns:1fr; }
     /* The floor used to be a flat 560px, which forced a sideways scroll on any
        phone. It is now a min() so the chart scales down with the card and only
        becomes a scroll at genuinely narrow widths. */
@@ -420,13 +428,36 @@
     .not-taken-list li { padding:11px 12px; }
     .metric { padding:12px 14px; }
     .summary { gap:10px; }
-    .leaderboard-heading { margin:0 0 8px; font-size:.95rem; }
-    .leaderboard-scroll { max-height:min(46vh,380px); }
-    .leaderboard-table { width:100%; border-collapse:collapse; font-size:.85rem; }
-    .leaderboard-table th, .leaderboard-table td { padding:7px 9px; border-bottom:1px solid #D3E6EE; text-align:left; }
-    .leaderboard-table th { position:sticky; top:0; background:#F3FBFE; }
-    .leaderboard-table .learner-name { display:block; font-weight:600; }
-    .leaderboard-table .learner-code { display:block; color:var(--muted); font-size:.74rem; }
+    .leaderboard-heading { margin:0 0 7px; font-size:.9rem; }
+    .leaderboard-heading small { color:var(--muted); font-size:.72rem; font-weight:500; }
+    .leaderboard-scroll { max-height:min(42vh,340px); }
+    .leaderboard-list { display:grid; gap:6px; margin:0; padding:0; list-style:none; }
+    .leaderboard-entry {
+      display:grid; grid-template-columns:30px minmax(0,1fr) auto;
+      grid-template-areas:"rank identity result" "rank meta result";
+      align-items:center; gap:2px 9px; padding:7px 9px;
+      border:1px solid #D3E6EE; border-radius:9px; background:#fff;
+    }
+    .leaderboard-rank {
+      grid-area:rank; display:grid; place-items:center; width:26px; height:26px;
+      border-radius:8px; color:#34315A; background:#E8F9FD;
+      font-size:.76rem; font-weight:800; font-variant-numeric:tabular-nums;
+    }
+    .leaderboard-entry.top-rank-1 { border-color:#E5B94F; background:#FFFAF0; }
+    .leaderboard-entry.top-rank-1 .leaderboard-rank { color:#684500; background:#FFBD69; }
+    .leaderboard-entry.top-rank-2 { border-color:#9CCEC8; background:#F5FCFA; }
+    .leaderboard-entry.top-rank-2 .leaderboard-rank { color:#175E58; background:#C8F2E8; }
+    .leaderboard-entry.top-rank-3 { border-color:#E6B1B8; background:#FFF8F8; }
+    .leaderboard-entry.top-rank-3 .leaderboard-rank { color:#8A2437; background:#F9D5DA; }
+    .leaderboard-identity { grid-area:identity; display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 7px; min-width:0; }
+    .leaderboard-identity .learner-name { color:var(--ink); font-size:.8rem; font-weight:800; overflow-wrap:anywhere; }
+    .leaderboard-identity .learner-code { color:var(--muted); font-size:.66rem; }
+    .leaderboard-result { grid-area:result; display:grid; justify-items:end; line-height:1.05; }
+    .leaderboard-score { color:var(--coral-deep); font-size:1rem; font-variant-numeric:tabular-nums; }
+    .leaderboard-result small { color:var(--muted); font-size:.62rem; }
+    .leaderboard-meta { grid-area:meta; display:flex; flex-wrap:wrap; gap:2px 9px; color:var(--muted); font-size:.66rem; line-height:1.3; }
+    .leaderboard-meta span { min-width:0; overflow-wrap:anywhere; }
+    .leaderboard-section { color:#34315A; font-weight:700; }
 
     /* ---------- phone-first pass ----------
        Appended last so it wins over the desktop-first queries above. A teacher
@@ -454,15 +485,6 @@
 
     /* Tables used to be nowrap throughout, which forced the whole page sideways.
        The first column sticks so a scrolled row still says whose row it is. */
-    .leaderboard-table { table-layout:fixed; }
-    .leaderboard-table th, .leaderboard-table td { white-space:normal; overflow-wrap:anywhere; }
-    .leaderboard-table th:first-child, .leaderboard-table td:first-child {
-      position:sticky; left:0; z-index:2; background:inherit;
-      box-shadow:1px 0 0 #D3E6EE;
-    }
-    .leaderboard-table th:first-child { z-index:3; background:#F3FBFE; }
-    .leaderboard-table col:first-child { width:34%; }
-
     /* Controls sized for a thumb. */
     button, .btn, select, input, .tab {
       min-height:var(--tap);
@@ -501,8 +523,8 @@
        fixed is what makes the browser honour the split; without it the layout
        is content-driven and the columns come out lopsided. Cells wrap inside
        their share rather than forcing the table wider than the card. */
-    .scroll table, table.leaderboard-table { table-layout:fixed; width:100%; }
-    .scroll th, .scroll td, table.leaderboard-table th, table.leaderboard-table td {
+    .scroll table { table-layout:fixed; width:100%; }
+    .scroll th, .scroll td {
       width:auto; white-space:normal; overflow-wrap:anywhere; word-break:break-word;
       vertical-align:top;
     }
@@ -558,11 +580,16 @@
     @media (prefers-reduced-motion:reduce) {
       *, *::before, *::after { transition:none !important; animation:none !important; }
     }
-    #dashboard .card { padding:16px; }
+    #dashboard .card { padding:13px; }
+    #dashboard #tabOverviewContent > .card { margin:10px 0 !important; }
+    #dashboard .report-heading { margin-bottom:4px; font-size:.98rem; }
+    #dashboard .report-note { margin-bottom:8px; font-size:.74rem; line-height:1.35; }
     #dashboard .summary { gap:8px; margin:12px 0; }
     #dashboard .metric { padding:10px; }
-    #dashboard .report-grid { gap:10px; margin:10px 0; }
-    #dashboard th, #dashboard td { padding:6px 8px; font-size:.8rem; }
+    #dashboard .report-grid { gap:8px; margin:8px 0; }
+    #dashboard .action-center { gap:8px; margin-bottom:10px; }
+    #dashboard .action-card { min-height:72px; padding:10px 12px; }
+    #dashboard th, #dashboard td { padding:5px 7px; font-size:.76rem; }
     .dashboard-controls { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
     .dashboard-freshness { color:var(--muted); font-size:.76rem; white-space:nowrap; }
     .intervention-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
@@ -573,9 +600,11 @@
     .removal-history-list { display:grid; gap:4px; margin:0; padding-left:18px; color:var(--muted); font-size:.78rem; }
     .removal-history-empty { color:var(--muted); font-size:.78rem; }
     @media (max-width:720px) {
-      #dashboard .card { padding:12px; }
+      #dashboard .card { padding:11px; }
       .dashboard-controls { justify-content:flex-start; }
       .compact-question-list { max-width:12ch; }
+      .leaderboard-entry { grid-template-columns:27px minmax(0,1fr) auto; gap:2px 7px; padding:7px; }
+      .leaderboard-meta { gap:2px 7px; }
     }
   </style>
 </head>
@@ -627,19 +656,19 @@
             <button type="button" class="action-card" onclick="jumpToPanel('completionStatusCard','incomplete')"><b id="actionIncomplete">0</b><span>Unfinished attempts</span><small>Follow up today</small></button>
             <button type="button" class="action-card" onclick="jumpToPanel('classTrends')"><b id="actionCompletion">0%</b><span>Class completion</span><small>View trends</small></button>
           </section>
-          <div class="report-grid" id="classTrends">
-            <section class="card"><h2 class="report-heading">Section completion</h2><p class="report-note">Share of registered students with a submitted attempt.</p><div id="completionChart" class="chart-wrap"></div></section>
+          <div id="classTrends">
             <section class="card"><h2 class="report-heading">Section average score</h2><p class="report-note">Mean of latest submitted scores for students in each section.</p><div id="scoreChart" class="chart-wrap"></div></section>
           </div>
-          <div class="report-grid">
-            <section class="card"><h2 class="report-heading">Whole-grade question extremes</h2><p class="report-note">Highest and lowest mastery across students in the selected grade.</p><div id="gradeHighlights" class="report-grid"></div></section>
-            <section class="card"><h2 class="report-heading">Section item extremes</h2><p class="report-note" title="Extremes are calculated from the latest attempt for each student.">Q = question; +N = additional items.</p><div class="scroll"><table><thead><tr><th>Section</th><th title="Least mastered questions">Least Q</th><th>Rate</th><th title="Most mastered questions">Most Q</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div></section>
-          </div>
+          <section class="card">
+            <h2 class="report-heading">Section item extremes</h2>
+            <p class="report-note" title="Extremes are calculated from the latest attempt for each student.">Q = question; +N = additional items.</p>
+            <div class="scroll"><table><thead><tr><th>Section</th><th title="Least mastered questions">Least Q</th><th>Rate</th><th title="Most mastered questions">Most Q</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div>
+          </section>
           
           <!-- Section leaderboards -->
           <section class="card" id="leaderboardCard" style="margin-bottom:16px">
             <h2 class="report-heading">Section Leaderboard</h2>
-            <p class="report-note">Live shows each learner's most recent completed attempt; all time shows their personal best. Both follow the grade and section selected above.</p>
+            <p class="report-note">Both lists follow the selected grade and section.</p>
             <p class="report-note leaderboard-note" id="leaderboardNote" hidden></p>
             <div class="report-grid">
               <div>
