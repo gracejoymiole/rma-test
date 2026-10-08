@@ -204,10 +204,10 @@ body {
 .leaderboard-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; table-layout: fixed; }
 .leaderboard-table th { padding: 4px 8px; font-size: .72rem; font-weight: 500; text-align: left; color: var(--ink-soft); border: 0; }
 .leaderboard-table td { padding: 9px 8px; border: 0; font-size: .9rem; vertical-align: middle; overflow: hidden; }
-.leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 14%; text-align: center; }
-.leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: 56%; text-align: left; }
-.leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3) { width: 30%; text-align: right !important; font-weight: 700; color: var(--ink); }
-.leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { display: none; }
+.leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 10%; text-align: center; }
+.leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: 42%; text-align: left; }
+.leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3) { width: 23%; text-align: right !important; font-weight: 700; color: var(--ink); }
+.leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { width: 25%; text-align: right; white-space: nowrap; }
 .leaderboard-table tr.rank-1, .leaderboard-table tr.rank-2, .leaderboard-table tr.rank-3 { background: none; }
 .lb-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .lb-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; }

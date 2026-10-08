@@ -82,8 +82,12 @@ check('limit is clamped', /greatest\(1, least\(coalesce\(p_limit, 10\), 100\)\)/
 // The client must call what the schema offers.
 const portal = fs.readFileSync(path.join(ROOT, 'teacher-portal.js'), 'utf8');
 const studentPortal = fs.readFileSync(path.join(ROOT, 'rma-student-leaderboard.js'), 'utf8');
+const studentTheme = fs.readFileSync(path.join(ROOT, 'rma-theme.css'), 'utf8');
 check('student leaderboard shows elapsed time with seconds fallback',
   /duration\(entry\.duration, entry\.duration_seconds\)/.test(studentPortal));
+check('student leaderboard elapsed-time column is visible',
+  !/\.leaderboard-table th:nth-child\(4\), \.leaderboard-table td:nth-child\(4\) \{ display:\s*none; \}/.test(studentTheme)
+  && /\.leaderboard-table th:nth-child\(4\), \.leaderboard-table td:nth-child\(4\) \{ width: 25%;/.test(studentTheme));
 [
   'FINAL GRADE 7 RMA/G7 RMA1 V1.html',
   'RMA G8 V2/G8 RMA V5.html',
