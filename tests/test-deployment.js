@@ -33,6 +33,14 @@ check('urgent file keeps the empty-name guard', /first_name_mi/.test(urgent) && 
   'rma_teacher_leaderboard']
   .forEach((fn) => check(`schema defines ${fn}`, schema.includes(`function public.${fn}(`)));
 
+const studentLeaderboard = (schema.match(/create or replace function public\.rma_student_leaderboard\([\s\S]*?\n\$\$;/) || [''])[0];
+const shortStudentName = /concat\(btrim\(peer\.last_name\), ', ', upper\(left\(btrim\(peer\.first_name\), 1\)\), '\.'\) as name/g;
+check('student leaderboard abbreviates names in both lists',
+  (studentLeaderboard.match(shortStudentName) || []).length === 2);
+const studentLeaderboardPatch = fs.readFileSync(path.join(ROOT, 'supabase', 'apply-student-leaderboard.sql'), 'utf8');
+check('standalone student leaderboard patch uses the same abbreviated name',
+  (studentLeaderboardPatch.match(shortStudentName) || []).length === 2);
+
 check('schema drops the dead section comparison', /drop function if exists public\.rma_section_comparison/.test(schema));
 check('schema no longer creates section comparison', !/create or replace function public\.rma_section_comparison/.test(schema));
 

@@ -1,7 +1,6 @@
--- Student live + all-time leaderboard. Paste this whole file in the Supabase
--- SQL Editor, then run `npm run verify:live`. Safe to run more than once.
--- The scope is derived from the signed-in student's session; callers cannot
--- choose a grade or section.
+-- Student live + all-time leaderboard. Apply through `supabase db push --linked`.
+-- Names are abbreviated because the result is visible only to a signed-in student
+-- in the same grade and section.
 create or replace function public.rma_student_leaderboard(p_token text, p_limit integer default 10)
 returns jsonb language plpgsql stable security definer
 set search_path = public, extensions, pg_temp

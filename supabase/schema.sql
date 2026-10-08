@@ -707,7 +707,7 @@ begin
      order by sc.student_id, sc.created_at desc
   ) select coalesce(jsonb_agg(row_to_json(q) order by q.rank), '[]'::jsonb) into v_live from (
     select row_number() over (order by ps.score desc, ps.duration_seconds asc nulls last, ps.created_at asc) as rank,
-           coalesce(nullif(btrim(peer.student_code), ''), concat(peer.last_name, ', ', peer.first_name)) as name,
+           concat(btrim(peer.last_name), ', ', upper(left(btrim(peer.first_name), 1)), '.') as name,
            ps.score, ps.duration, ps.duration_seconds, ps.created_at,
            (ps.student_id = v_student.id) as is_current_student
       from per_student ps join public.rma_students peer on peer.id = ps.student_id
@@ -722,7 +722,7 @@ begin
      order by sc.student_id, sc.score desc, sc.duration_seconds asc nulls last, sc.created_at asc
   ) select coalesce(jsonb_agg(row_to_json(q) order by q.rank), '[]'::jsonb) into v_all_time from (
     select row_number() over (order by ps.score desc, ps.duration_seconds asc nulls last, ps.created_at asc) as rank,
-           coalesce(nullif(btrim(peer.student_code), ''), concat(peer.last_name, ', ', peer.first_name)) as name,
+           concat(btrim(peer.last_name), ', ', upper(left(btrim(peer.first_name), 1)), '.') as name,
            ps.score, ps.duration, ps.duration_seconds, ps.created_at,
            (ps.student_id = v_student.id) as is_current_student
       from per_student ps join public.rma_students peer on peer.id = ps.student_id
