@@ -24,7 +24,7 @@
     { min: 0, label: "Building foundations", note: "Start with the easier items and build up." },
   ];
 
-  var state = { startedAt: null, muted: false };
+  var state = { startedAt: null, muted: false, masteryPercent: null };
 
   /* XP lives in the page (gameState.scorePoints). The page earns it, rma-help.js
      spends it, and this file only draws it, so the pill, the run card and the help
@@ -92,6 +92,39 @@
     });
   }
 
+  function shortExplanation(rawIndex) {
+    var question = (typeof rawQuestions !== "undefined" && rawQuestions[rawIndex]) || {};
+    var text = String(question.explanation || "Practice the questions you missed to strengthen this skill.")
+      .replace(/\[[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
+    var sentence = text.match(/^.*?[.!?](?:\s|$)/);
+    text = (sentence ? sentence[0] : text).trim();
+    return text.length > 150 ? text.slice(0, 147).trim() + "…" : text;
+  }
+
+  function startTargetedRetry(rawIndices) {
+    if (!rawIndices.length || typeof gameState === "undefined" || typeof loadQuestion !== "function") return;
+    // This is a study-only run. It deliberately never reaches submitFinalData,
+    // so the completed assessment and its recorded mastery percentage stay put.
+    window.RMATargetedRetry = true;
+    gameState.activeQuestions = rawIndices.map(function (rawIndex) { return { rawIndex: rawIndex }; });
+    gameState.currentQIndex = 0;
+    gameState.correctCount = 0;
+    gameState.scorePoints = 0;
+    gameState.userAnswers = {};
+    gameState.itemAnalysisRecords = [];
+    var result = $("resultContent");
+    var quiz = $("quizContent");
+    if (result) result.classList.add("hidden");
+    if (quiz) quiz.classList.remove("hidden");
+    if (window.RMAHelp) window.RMAHelp.reset();
+    RMATheme.reset({ preserveMastery: true });
+    setText("qTotalDisp", rawIndices.length);
+    loadQuestion();
+    var heading = $("qText");
+    if (heading) heading.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function paintMissedSkills() {
     ensureReviewPanel();
     var button = $("reviewMissedBtn");
@@ -108,22 +141,38 @@
     var groups = {};
     misses.forEach(function (item) {
       var topic = typeof getMathObjective === "function" ? getMathObjective(Number(item.id)) : "Review this skill";
-      groups[topic] = (groups[topic] || 0) + 1;
+      var rawIndex = Number(item.id) - 1;
+      if (!Number.isInteger(rawIndex) || rawIndex < 0) return;
+      if (!groups[topic]) groups[topic] = { indices: [], explanation: shortExplanation(rawIndex) };
+      if (groups[topic].indices.indexOf(rawIndex) === -1) groups[topic].indices.push(rawIndex);
     });
     panel.replaceChildren();
     var title = document.createElement("h3");
     title.textContent = "Skills to review next";
     panel.appendChild(title);
     var note = document.createElement("p");
-    note.textContent = "Start with the skills where you missed the most questions.";
+    note.textContent = "Choose one skill for a short retry. This study retry does not change your recorded mastery.";
     panel.appendChild(note);
-    var list = document.createElement("ul");
-    Object.keys(groups).sort(function (a, b) { return groups[b] - groups[a]; }).forEach(function (topic) {
-      var item = document.createElement("li");
+    var list = document.createElement("div");
+    list.className = "missed-skill-cards";
+    Object.keys(groups).sort(function (a, b) { return groups[b].indices.length - groups[a].indices.length; }).forEach(function (topic) {
+      var item = document.createElement("article");
+      item.className = "missed-skill-card";
       var name = document.createElement("b");
       name.textContent = topic;
       item.appendChild(name);
-      item.append(" · " + groups[topic] + (groups[topic] === 1 ? " missed question" : " missed questions"));
+      var count = document.createElement("span");
+      count.textContent = groups[topic].indices.length + (groups[topic].indices.length === 1 ? " missed question" : " missed questions");
+      item.appendChild(count);
+      var explanation = document.createElement("p");
+      explanation.textContent = groups[topic].explanation;
+      item.appendChild(explanation);
+      var retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "btn btn-secondary missed-skill-retry";
+      retry.textContent = "Retry this skill";
+      retry.addEventListener("click", function () { startTargetedRetry(groups[topic].indices); });
+      item.appendChild(retry);
       list.appendChild(item);
     });
     panel.appendChild(list);
@@ -158,9 +207,15 @@
     onFinish: function (percent, correct, total) {
       paintXp();
 
+      var isTargetedRetry = window.RMATargetedRetry === true;
       var ring = $("scoreRing");
-      if (ring) ring.style.setProperty("--pct", String(percent));
-
+      if (isTargetedRetry) {
+        if (ring && state.masteryPercent !== null) ring.style.setProperty("--pct", String(state.masteryPercent));
+        if (state.masteryPercent !== null) setText("finalScore", state.masteryPercent + "%");
+      } else {
+        state.masteryPercent = percent;
+        if (ring) ring.style.setProperty("--pct", String(percent));
+      }
       var band = bandFor(percent);
       var chip = $("bandChip");
       if (chip) {
@@ -175,8 +230,13 @@
         if (!title.textContent || title.textContent === "Practice complete") {
           title.textContent = band.label;
         }
-        message.textContent = band.note + " You answered " + correct +
-          " of " + total + " correctly (" + percent + "%).";
+        if (isTargetedRetry) {
+          title.textContent = "Targeted practice complete";
+          message.textContent = "You answered " + correct + " of " + total + " correctly. This study retry does not change your recorded mastery.";
+        } else {
+          message.textContent = band.note + " You answered " + correct +
+            " of " + total + " correctly (" + percent + "%).";
+        }
       }
 
       setText("statCorrect", correct + " / " + total);
@@ -202,8 +262,9 @@
     /* rma-help.js asks for a redraw after it spends XP. */
     syncRun: function () { paintXp(); },
 
-    reset: function () {
+    reset: function (options) {
       state.startedAt = null;
+      if (!options || !options.preserveMastery) state.masteryPercent = null;
       paintXp();
       var note = $("runNote");
       if (note) note.textContent = "Answer a question to start earning points.";

@@ -149,6 +149,8 @@ check('no revoke targets a function that may be absent',
 const live = fs.readFileSync(path.join(ROOT, 'tools', 'verify-live.js'), 'utf8');
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 ['rma_teacher_dashboard', 'rma_teacher_profile', 'rma_set_attempt_complete',
+  'rma_remove_student',
+  'rma_teacher_removal_history',
   'rma_leaderboard_top', 'rma_student_login', 'rma_teacher_login', 'rma_get_score_bands',
   'rma_teacher_leaderboard']
   .forEach((fn) => check(`verify-live probes ${fn}`, live.includes(`'${fn}'`)));
@@ -213,6 +215,8 @@ remedies.forEach(({ name, file }) => {
 ['rma_student_login', 'rma_teacher_login', 'rma_teacher_dashboard', 'rma_teacher_profile',
   'rma_set_attempt_complete', 'rma_leaderboard_top', 'rma_teacher_leaderboard',
   'rma_student_leaderboard',
+  'rma_remove_student',
+  'rma_teacher_removal_history',
   'rma_get_score_bands'].forEach((fn) => check(`remediation map covers ${fn}`,
   remedies.some((r) => r.name === fn)));
 

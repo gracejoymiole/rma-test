@@ -21,6 +21,21 @@ alter table public.rma_scores add column if not exists unaided_score smallint ch
 alter table public.rma_scores add column if not exists attempt_number smallint not null default 1;
 alter table public.rma_scores add column if not exists is_complete boolean not null default true;
 
+create table if not exists public.rma_student_removal_history (
+  id uuid primary key default gen_random_uuid(),
+  teacher_id uuid not null,
+  grade smallint not null check (grade in (7, 8, 9, 10)),
+  section text not null,
+  removed_at timestamptz not null default now(),
+  scores_deleted integer not null default 0,
+  violations_deleted integer not null default 0,
+  sessions_deleted integer not null default 0
+);
+create index if not exists rma_student_removal_history_teacher_idx
+  on public.rma_student_removal_history (teacher_id, removed_at desc);
+alter table public.rma_student_removal_history enable row level security;
+revoke all on public.rma_student_removal_history from public, anon, authenticated;
+
 create or replace function public.rma_remove_student(p_token text, p_student_id uuid)
 returns jsonb language plpgsql security definer
 set search_path = public, extensions, pg_temp
@@ -65,6 +80,11 @@ begin
 
   delete from public.rma_students where id = v_student.id;
 
+  insert into public.rma_student_removal_history
+    (teacher_id, grade, section, scores_deleted, violations_deleted, sessions_deleted)
+  values
+    (v_teacher.id, v_student.grade, v_student.section, v_scores, v_violations, v_sessions);
+
   return jsonb_build_object(
     'removed', true,
     'student_code', v_student.student_code,
@@ -77,6 +97,44 @@ $$;
 
 revoke all on function public.rma_remove_student(text, uuid) from public;
 grant execute on function public.rma_remove_student(text, uuid) to authenticated;
+
+create or replace function public.rma_teacher_removal_history(p_token text, p_limit integer default 20)
+returns jsonb language plpgsql security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_teacher public.rma_teacher_accounts%rowtype;
+  v_limit integer := greatest(1, least(coalesce(p_limit, 20), 100));
+begin
+  select t.* into v_teacher from public.rma_auth_sessions se
+    join public.rma_teacher_accounts t on t.id = se.teacher_id
+   where se.token_hash = encode(extensions.digest(coalesce(p_token, ''), 'sha256'), 'hex')
+     and se.role = 'teacher' and se.expires_at > now();
+  if v_teacher.id is null then raise exception 'Teacher session expired. Sign in again.' using errcode = '28000'; end if;
+  if v_teacher.must_change_password then
+    raise exception 'Change the initial teacher password before opening student records.' using errcode = '42501';
+  end if;
+
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'grade', history.grade,
+      'section', history.section,
+      'removed_at', history.removed_at,
+      'scores_deleted', history.scores_deleted,
+      'violations_deleted', history.violations_deleted,
+      'sessions_deleted', history.sessions_deleted
+    ) order by history.removed_at desc)
+    from (
+      select * from public.rma_student_removal_history
+       where teacher_id = v_teacher.id
+       order by removed_at desc
+       limit v_limit
+    ) history
+  ), '[]'::jsonb);
+end;
+$$;
+revoke all on function public.rma_teacher_removal_history(text, integer) from public;
+grant execute on function public.rma_teacher_removal_history(text, integer) to anon, authenticated;
 
 -- The removal card needs rma_teacher_dashboard to return a student_id for every
 -- learner, because rma_remove_student identifies the student by that id. An older

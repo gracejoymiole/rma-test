@@ -3296,6 +3296,8 @@
   // rather than one "All learners" chip that quietly meant "needs help".
   const NEEDS_HELP = "needs-help";
   let priorityBandFilter = NEEDS_HELP;
+  let interventionReady = false;
+  let lastDashboardRefresh = null;
   let priorityCache = { scoped: [], stats: null, levels: null, needsHelp: 0 };
 
   function priorityMatchesBand(learner, key) {
@@ -3331,6 +3333,18 @@
     // Clicking the active chip returns to the default group rather than to an
     // undefined state that would show every learner and contradict the label.
     priorityBandFilter = priorityBandFilter === key ? NEEDS_HELP : key;
+    interventionReady = false;
+    const preset = document.getElementById("interventionPreset");
+    if (preset && typeof preset.setAttribute === "function") preset.setAttribute("aria-pressed", "false");
+    renderPriorityFilter(priorityCache.levels, priorityCache.stats, priorityCache.needsHelp);
+    renderPriorityLearners(priorityCache.scoped, priorityCache.stats);
+  }
+
+  function setInterventionReady() {
+    interventionReady = !interventionReady;
+    priorityBandFilter = NEEDS_HELP;
+    const preset = document.getElementById("interventionPreset");
+    if (preset && typeof preset.setAttribute === "function") preset.setAttribute("aria-pressed", String(interventionReady));
     renderPriorityFilter(priorityCache.levels, priorityCache.stats, priorityCache.needsHelp);
     renderPriorityLearners(priorityCache.scoped, priorityCache.stats);
   }
@@ -3424,7 +3438,8 @@
       <div class="priority-tools">
         <span class="priority-count">${visible.length} learner${visible.length === 1 ? "" : "s"}${activeLabel ? ` — ${escapeHtml(activeLabel)}` : ""}</span>
         <span>${activeLabel ? `<button type="button" class="priority-clear" onclick="setPriorityBandFilter('all')">Show all ${total}</button>` : ''}
-        <button type="button" class="priority-clear" onclick="exportInterventionGroup()">Export this group</button></span>
+        ${interventionReady ? `<button type="button" class="priority-clear" onclick="printInterventionGroup()">Print plan</button>` : ''}
+        <button type="button" class="priority-clear" onclick="exportInterventionGroup()">Export</button></span>
       </div>
       <div class="priority-list">
         ${visible.map(learner => `
@@ -3442,7 +3457,7 @@
               <span>Last: ${learner.created_at ? new Date(learner.created_at).toLocaleDateString() : '—'}</span>
               ${learner.attempt_number > 1 ? `<span>Attempt #${learner.attempt_number}</span>` : ''}
             </div>
-            ${learner.weakTopics && learner.weakTopics.length ? `
+            ${interventionReady ? renderTopSkill(learner) : learner.weakTopics && learner.weakTopics.length ? `
               <div class="weak-topics">
                 <span class="weak-topics-label">Needs support in</span>
                 <ul>
@@ -3467,6 +3482,13 @@
         `).join('')}
       </div>
     `;
+  }
+
+  function renderTopSkill(learner) {
+    const top = (learner.weakTopics || [])[0];
+    return `<div class="weak-topics"><span class="weak-topics-label">Top missed skill</span>${top
+      ? `<span class="tag tag-topic" title="${escapeHtml(`${top.missed} missed of ${top.seen} seen`)}">${escapeHtml(top.topic)}</span>`
+      : '<span class="weak-topics-empty">No item data</span>'}</div>`;
   }
 
   function renderCompletionStatus(stats) {
@@ -3685,16 +3707,22 @@
         .map(row => row.section)
     ).sort((a, b) => a.localeCompare(b));
     
+    const compactQuestions = (items) => {
+      const labels = items.map((item) => item.question);
+      return labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ");
+    };
     document.getElementById("sectionExtremes").innerHTML = sections.map((section) => {
       const sectionRows = rows.filter(row => 
         Number(row.grade) === currentGrade && row.section === section && (!currentSection || row.section === currentSection)
       );
       const range = extremes(sectionRows);
-      return `<tr data-student-code="${escapeHtml(row.student_code)}">
+      const least = range ? range.least.map((item) => item.question) : [];
+      const most = range ? range.most.map((item) => item.question) : [];
+      return `<tr>
         <td>${escapeHtml(section)}</td>
-        <td>${escapeHtml(range ? range.least.map((item) => item.question).join(", ") : "No item data")}</td>
+        <td class="compact-question-list" title="${escapeHtml(least.join(", ") || "No item data")}">${escapeHtml(least.length ? compactQuestions(range.least) : "—")}</td>
         <td>${range ? `${range.least[0].rate}%` : "—"}</td>
-        <td>${escapeHtml(range ? range.most.map((item) => item.question).join(", ") : "No item data")}</td>
+        <td class="compact-question-list" title="${escapeHtml(most.join(", ") || "No item data")}">${escapeHtml(most.length ? compactQuestions(range.most) : "—")}</td>
         <td>${range ? `${range.most[0].rate}%` : "—"}</td>
       </tr>`;
     }).join("") || '<tr><td colspan="5">No registered sections yet.</td></tr>';
@@ -4025,13 +4053,43 @@
     renderDashboardOverview();
   }
 
-  async function loadDashboard() {
+  function renderDashboardFreshness() {
+    const node = document.getElementById("dashboardFreshness");
+    if (!node || !lastDashboardRefresh) return;
+    const elapsedMinutes = Math.floor((Date.now() - lastDashboardRefresh) / 60000);
+    node.textContent = elapsedMinutes < 1 ? "Updated just now" : `Last refreshed ${elapsedMinutes}m ago`;
+    node.title = `Last refreshed ${new Date(lastDashboardRefresh).toLocaleString()}`;
+  }
+
+  async function loadRemovalHistory() {
+    const list = document.getElementById("removalHistoryList");
+    if (!list) return;
+    try {
+      const history = await rpc("rma_teacher_removal_history", { p_token: token, p_limit: 10 });
+      list.innerHTML = history.length ? history.map((entry) => {
+        const counts = `${Number(entry.scores_deleted) || 0} attempts, ${Number(entry.violations_deleted) || 0} violations`;
+        return `<li>${escapeHtml(new Date(entry.removed_at).toLocaleString())} · Grade ${escapeHtml(entry.grade)} / ${escapeHtml(entry.section)} · ${escapeHtml(counts)}</li>`;
+      }).join("") : '<li class="removal-history-empty">No removals recorded.</li>';
+    } catch (error) {
+      const text = /PGRST202|schema cache|does not exist/i.test(String(error.message || ""))
+        ? "Run supabase/add-remove-student.sql to enable history."
+        : "Removal history is temporarily unavailable.";
+      list.innerHTML = `<li class="removal-history-empty">${escapeHtml(text)}</li>`;
+    }
+  }
+
+  async function loadDashboard(options = {}) {
+    const previousGrade = options.preserveSelection ? currentGrade : null;
+    const previousSection = options.preserveSelection ? currentSection : null;
     dashboardMessage.hidden = true;
     try {
       await loadScoreBands();
       await renderTeacherScope();
       
       rows = await rpc("rma_teacher_dashboard", { p_token: token });
+      lastDashboardRefresh = Date.now();
+      renderDashboardFreshness();
+      await loadRemovalHistory();
       
       const grades = unique(rows.map((row) => String(row.grade))).sort((a, b) => Number(a) - Number(b));
       gradeFilter.innerHTML = '<option value="">Choose a grade level</option>' + 
@@ -4042,6 +4100,15 @@
       
       if (!rows.length) {
         setMessage(dashboardMessage, "No student accounts are registered yet.", false);
+      }
+      if (previousGrade && grades.includes(String(previousGrade))) {
+        gradeFilter.value = String(previousGrade);
+        renderSelectedReport();
+        if (previousSection) {
+          sectionFilter.value = previousSection;
+          currentSection = previousSection;
+          renderDashboardOverview();
+        }
       }
     } catch (error) {
       setMessage(dashboardMessage, error.message || "Could not load mastery data.");
@@ -4158,20 +4225,38 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function visibleInterventionLearners() {
+    return priorityCache.scoped.filter((learner) => priorityMatchesBand(learner, priorityBandFilter));
+  }
+
   function exportInterventionGroup() {
     if (!currentGrade) { setMessage(dashboardMessage, "Choose a grade level first."); return; }
-    const visible = priorityCache.scoped.filter((learner) => priorityMatchesBand(learner, priorityBandFilter));
+    const visible = visibleInterventionLearners();
     if (!visible.length) { setMessage(dashboardMessage, "There are no learners in this intervention group."); return; }
     const quote = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-    const lines = [["Student ID", "Name", "Section", "Score", "Status", "Needs support in"].map(quote).join(",")];
+    const lines = [["Student ID", "Name", "Section", "Score", "Status", interventionReady ? "Top missed skill" : "Needs support in"].map(quote).join(",")];
     visible.forEach((learner) => lines.push([
       learner.student_code, learner.student_name, learner.section,
       learner.score ?? "", learner.status.label,
-      (learner.weakTopics || []).map((topic) => topic.topic).join("; ")
+      interventionReady ? ((learner.weakTopics || [])[0] || {}).topic || "No item data" : (learner.weakTopics || []).map((topic) => topic.topic).join("; ")
     ].map(quote).join(",")));
     const group = sanitizeFilenamePart(priorityBandFilter || "all");
     downloadFile(`RMA-Intervention-Grade${currentGrade}-${group}.csv`, "text/csv;charset=utf-8", lines.join("\r\n"));
     setMessage(dashboardMessage, `Exported ${visible.length} learner${visible.length === 1 ? "" : "s"} in this intervention group.`, false);
+  }
+
+  function printInterventionGroup() {
+    const visible = visibleInterventionLearners();
+    if (!visible.length) { setMessage(dashboardMessage, "There are no learners in this intervention group."); return; }
+    const rowsHtml = visible.map((learner) => {
+      const top = (learner.weakTopics || [])[0];
+      return `<tr><td>${escapeHtml(learner.student_code)}</td><td>${escapeHtml(learner.student_name)}</td><td>${escapeHtml(learner.section)}</td><td>${escapeHtml(top ? top.topic : "No item data")}</td><td>${escapeHtml(learner.status.label)}</td></tr>`;
+    }).join("");
+    const win = window.open("", "_blank");
+    if (!win) { setMessage(dashboardMessage, "Allow pop-ups to print the intervention plan."); return; }
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Grade ${escapeHtml(currentGrade)} intervention plan</title><style>body{font:12px/1.4 Arial,sans-serif;color:#222;margin:24px}h1{font-size:18px}table{width:100%;border-collapse:collapse}th,td{padding:6px;border:1px solid #aaa;text-align:left}th{background:#eee}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Print</button><h1>Grade ${escapeHtml(currentGrade)} intervention plan</h1><p>${visible.length} learners · Top missed skill by latest attempt · ${new Date().toLocaleDateString()}</p><table><thead><tr><th>ID</th><th>Learner</th><th>Section</th><th>Top missed skill</th><th>Status</th></tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`);
+    win.document.close();
+    win.focus();
   }
 
   function jumpToPanel(id, filter) {
@@ -4397,11 +4482,14 @@
 
   document.getElementById("exportClassRecords").addEventListener("click", exportClassRecords);
   document.getElementById("printClassReport").addEventListener("click", printClassReport);
+  document.getElementById("refreshDashboard").addEventListener("click", () => loadDashboard({ preserveSelection: true }));
+  document.getElementById("interventionPreset").addEventListener("click", setInterventionReady);
 
   document.getElementById("priorityFilterContainer").addEventListener("click", (event) => {
     const chip = event.target.closest(".band-chip");
     if (chip) setPriorityBandFilter(chip.dataset.band);
   });
+  setInterval(renderDashboardFreshness, 30000);
 
   document.getElementById("teacherLogout").addEventListener("click", () => {
     sessionStorage.removeItem("rma_teacher_token"); token = ""; rows = [];
@@ -4427,6 +4515,7 @@
   window.exportClassRecords = exportClassRecords;
   window.printClassReport = printClassReport;
   window.exportInterventionGroup = exportInterventionGroup;
+  window.printInterventionGroup = printInterventionGroup;
   window.jumpToPanel = jumpToPanel;
   window.focusLearner = focusLearner;
   arrangeActionFirstOverview();

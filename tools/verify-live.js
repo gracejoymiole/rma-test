@@ -36,6 +36,8 @@ const REMEDIATION = {
   rma_teacher_dashboard: 'supabase/schema.sql',
   rma_teacher_profile: 'supabase/apply-missing.sql',
   rma_set_attempt_complete: 'supabase/apply-missing.sql',
+  rma_remove_student: 'supabase/add-remove-student.sql',
+  rma_teacher_removal_history: 'supabase/add-remove-student.sql',
   rma_leaderboard_top: 'supabase/urgent-leaderboard-fix.sql',
   rma_student_leaderboard: 'supabase/apply-student-leaderboard.sql',
   rma_teacher_leaderboard: 'supabase/apply-leaderboard.sql',
@@ -122,6 +124,8 @@ async function main() {
   await checkRpc('rma_teacher_login', { p_username: 'x', p_password: 'x' });
   await checkRpc('rma_teacher_dashboard', BAD);
   await checkRpc('rma_teacher_profile', BAD);
+  await checkRpc('rma_remove_student', { ...BAD, p_student_id: '00000000-0000-0000-0000-000000000000' });
+  await checkRpc('rma_teacher_removal_history', { ...BAD, p_limit: 10 });
   await checkRpc('rma_set_attempt_complete', { ...BAD, p_student_code: 'X', p_complete: true });
   await checkRpc('rma_leaderboard_top', { ...BAD, p_limit: 10 });
   await checkRpc('rma_student_leaderboard', { ...BAD, p_limit: 10 });

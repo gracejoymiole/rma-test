@@ -558,6 +558,25 @@
     @media (prefers-reduced-motion:reduce) {
       *, *::before, *::after { transition:none !important; animation:none !important; }
     }
+    #dashboard .card { padding:16px; }
+    #dashboard .summary { gap:8px; margin:12px 0; }
+    #dashboard .metric { padding:10px; }
+    #dashboard .report-grid { gap:10px; margin:10px 0; }
+    #dashboard th, #dashboard td { padding:6px 8px; font-size:.8rem; }
+    .dashboard-controls { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+    .dashboard-freshness { color:var(--muted); font-size:.76rem; white-space:nowrap; }
+    .intervention-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+    .intervention-legend, .compact-legend { color:var(--muted); font-size:.74rem; }
+    .compact-question-list { max-width:16ch; overflow:hidden; text-overflow:ellipsis; }
+    .removal-history { margin:12px 0 0; padding-top:10px; border-top:1px solid var(--line); }
+    .removal-history h3 { margin:0 0 6px; font-size:.88rem; }
+    .removal-history-list { display:grid; gap:4px; margin:0; padding-left:18px; color:var(--muted); font-size:.78rem; }
+    .removal-history-empty { color:var(--muted); font-size:.78rem; }
+    @media (max-width:720px) {
+      #dashboard .card { padding:12px; }
+      .dashboard-controls { justify-content:flex-start; }
+      .compact-question-list { max-width:12ch; }
+    }
   </style>
 </head>
 <body>
@@ -581,7 +600,7 @@
     </section>
     <section id="dashboard" hidden>
       <div class="card">
-        <div class="toolbar"><div><h2>Grade-level mastery dashboard</h2><p>Section progress and item mastery use each registered student's latest attempt.</p></div><div style="display:flex; gap:8px;"><button id="printClassReport" class="secondary" type="button">🖨️ Print Class Report</button><button id="exportClassRecords" class="secondary" type="button">⬇️ Export to Excel</button><button id="teacherLogout" class="secondary">Sign out</button></div></div>
+        <div class="toolbar"><div><h2>Grade mastery</h2><p title="Section progress and item mastery use each registered student's latest attempt.">Latest saved attempt per learner.</p><small id="dashboardFreshness" class="dashboard-freshness" role="status">Not refreshed</small></div><div class="dashboard-controls"><button id="refreshDashboard" class="secondary" type="button" title="Reload results from the database">Refresh</button><button id="printClassReport" class="secondary" type="button">🖨️ Print</button><button id="exportClassRecords" class="secondary" type="button">⬇️ Export</button><button id="teacherLogout" class="secondary">Sign out</button></div></div>
         <div id="dashboardMessage" role="status"></div>
         <p id="teacherScopeNote" class="report-note" hidden></p>
         <div class="filters">
@@ -614,7 +633,7 @@
           </div>
           <div class="report-grid">
             <section class="card"><h2 class="report-heading">Whole-grade question extremes</h2><p class="report-note">Highest and lowest mastery across students in the selected grade.</p><div id="gradeHighlights" class="report-grid"></div></section>
-            <section class="card"><h2 class="report-heading">Most / least mastered by section</h2><p class="report-note">Extremes are calculated from the latest attempt for each student.</p><div class="scroll"><table><thead><tr><th>Section</th><th>Least mastered</th><th>Rate</th><th>Most mastered</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div></section>
+            <section class="card"><h2 class="report-heading">Section item extremes</h2><p class="report-note" title="Extremes are calculated from the latest attempt for each student.">Q = question; +N = additional items.</p><div class="scroll"><table><thead><tr><th>Section</th><th title="Least mastered questions">Least Q</th><th>Rate</th><th title="Most mastered questions">Most Q</th><th>Rate</th></tr></thead><tbody id="sectionExtremes"></tbody></table></div></section>
           </div>
           
           <!-- Section leaderboards -->
@@ -644,7 +663,8 @@
           <!-- PHASE 1: Who Needs Help Card -->
           <section class="card" id="priorityLearnersCard" style="margin-bottom:16px">
             <h2 class="report-heading">Who Needs Help?</h2>
-            <p class="report-note">Opens on the learners who need attention. Pick any group to see exactly who is in it, and each count matches the list below it.</p>
+            <p class="report-note" title="Opens on learners who need attention. Pick any group to see exactly who is in it, and each count matches the list below it.">Filter learners or prepare an intervention group.</p>
+            <div class="intervention-tools"><button id="interventionPreset" class="priority-clear" type="button" aria-pressed="false">Intervention ready</button><span class="intervention-legend">Top skill = most missed RMA topic.</span></div>
             <div id="priorityGapSummary" class="weak-topics gap-summary" hidden></div>
             <div id="priorityFilterContainer" class="band-chips" role="group" aria-label="Filter learners by performance band"></div>
             <div id="priorityLearnersContainer"></div>
@@ -670,6 +690,7 @@
             </div>
             <div id="removeMessage" role="status"></div>
             <div class="scroll remove-list"><ul id="removableList" class="remove-list-items"></ul></div>
+            <div class="removal-history"><h3>Recent removals</h3><ol id="removalHistoryList" class="removal-history-list"><li class="removal-history-empty">No removal history loaded.</li></ol></div>
           </section>
         </div>
         

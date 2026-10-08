@@ -89,14 +89,16 @@ Removing a learner deletes their account, every attempt, every violation record
 and every session. It cannot be undone, so the scope check that matters lives in
 the database: `rma_remove_student` refuses unless the student's recorded teacher
 matches the signed-in teacher, or that account carries `see_all_sections`. The
-list in the browser is a convenience, not the guard. The function is granted to
-signed-in teachers only, never to `anon`.
+list in the browser is a convenience, not the guard. The RPC is callable with
+the browser publishable key but validates the teacher session and scope in SQL;
+the underlying tables remain inaccessible to `anon`.
 
-Run `supabase/add-remove-student.sql` once to enable it. Until then the control
-reports that the database setup is unfinished rather than failing. The child rows
-are deleted before the student because `rma_scores` and `rma_violations` are
-`on delete set null`, so removing the student alone would silently orphan the
-attempt history.
+Run `supabase/add-remove-student.sql` to enable removal and its recent-history
+view; it is safe to rerun on an existing project. The history keeps only the
+teacher, grade/section, timestamp, and deleted-row counts, not learner identity
+or a deletion reason. Until the script runs, the control reports that setup is
+unfinished rather than failing. Child rows are deleted before the student
+because their foreign keys use `on delete set null`.
 
 ## Penalties
 

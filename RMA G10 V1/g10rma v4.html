@@ -1962,6 +1962,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 });
 
 function initGame() {
+    window.RMATargetedRetry = false;
     gameState.correctCount = 0;
     gameState.scorePoints = 0;
     gameState.userAnswers = {};
@@ -2194,11 +2195,21 @@ function endGame() {
             gameState.activeQuestions.length);
     }
 
+    if (window.RMATargetedRetry) {
+        dom.certBtn.classList.add('hidden');
+        dom.retryBtn.classList.remove('hidden');
+        dom.retryBtn.textContent = "Practice again";
+        if (resultGif) resultGif.style.display = "none";
+        return;
+    }
+
     const winSound = document.getElementById('soundWin');
     if (winSound) { winSound.currentTime = 0; winSound.play().catch(e => console.log(e)); }
     if (typeof confetti !== 'undefined') triggerConfetti();
 
-    try { submitFinalData(); } catch (error) { console.error("Error submitting:", error); }
+    if (!window.RMATargetedRetry) {
+        try { submitFinalData(); } catch (error) { console.error("Error submitting:", error); }
+    }
 
     if(finalPercent === 100) {
         dom.retryBtn.classList.add('hidden');
