@@ -19,6 +19,7 @@ check('dashboard panel cards have tighter vertical gaps', /#dashboard #tabOvervi
 check('leaderboard score caption uses mastery percentage', /<small>mastery %<\/small>/.test(portal));
 check('redundant completion and grade-extremes panels are removed', !html.includes('completionChart') && !html.includes('Section completion') && !html.includes('gradeHighlights') && !html.includes('Whole-grade question extremes') && html.includes('Section average score'));
 check('section averages use completed scores and render labeled percentages', /row\.is_complete !== false/.test(portal) && /section-score-track[\s\S]*?section-score-count/.test(portal) && /\.section-score-track \{ height:9px/.test(html));
+check('summary omits duplicate completion-rate card but keeps its action', !/\$\{stats\.completionRate\}%[\s\S]{0,80}Completion Rate/.test(portal) && /id="actionCompletion"/.test(html));
 check('visible table labels include a legend', /Q = question; \+N = additional items/.test(html));
 
 console.log(checks.join('\n'));

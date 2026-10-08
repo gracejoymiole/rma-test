@@ -3673,10 +3673,6 @@
         <b>${stats.notTaken}</b>
         <span>⏳ Not Yet Taken</span>
       </div>
-      <div class="metric">
-        <b>${stats.completionRate}%</b>
-        <span>Completion Rate</span>
-      </div>
     `;
     
     const gradeHighlights = document.getElementById("gradeHighlights");
